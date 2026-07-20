@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#090b10">
   <title>Major Shapes</title>
   <style>
@@ -20,7 +20,7 @@
       --black-key: #30394a;
     }
     * { box-sizing: border-box; }
-    html, body { min-height: 100%; background: var(--bg); }
+    html, body { min-height: 100%; background: var(--bg); touch-action: manipulation; }
     body {
       margin: 0;
       color: var(--ink);
@@ -53,14 +53,14 @@
     .key-name small { display: block; margin: 10px 0 0 3px; color: var(--muted); font-size: .13em; letter-spacing: .14em; text-transform: uppercase; }
     .content { border-top: 1px solid var(--line); padding: 13px; }
     .mini-title { margin: 0 0 8px; color: var(--muted); font-size: .68rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
-    .piano-scroll { overflow-x: auto; padding: 2px 1px 8px; scrollbar-width: thin; }
-    .piano { position: relative; min-width: 570px; height: 128px; overflow: hidden; border: 1px solid #596474; border-radius: 0 0 9px 9px; background: #05070a; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+    .piano-scroll { padding: 2px 1px 8px; }
+    .piano { position: relative; width: 100%; height: 106px; overflow: hidden; border: 1px solid #596474; border-radius: 0 0 9px 9px; background: #05070a; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
     .piano-whites { display: grid; grid-template-columns: repeat(15, 1fr); height: 100%; }
     .piano-white { background: #e9edf3; border-right: 1px solid #87909e; }
     .piano-white:last-child { border-right: 0; }
     .piano-white.active { background: var(--lime); }
     .piano-white.root { background: var(--root); }
-    .piano-black { position: absolute; z-index: 2; top: 0; width: 5.6%; height: 67%; transform: translateX(-50%); border: 1px solid #050609; border-radius: 0 0 6px 6px; background: var(--black-key); box-shadow: 0 5px 8px rgba(0,0,0,.45); }
+    .piano-black { position: absolute; z-index: 2; top: 0; width: 5.6%; height: 64%; transform: translateX(-50%); border: 1px solid #050609; border-radius: 0 0 6px 6px; background: var(--black-key); box-shadow: 0 5px 8px rgba(0,0,0,.45); }
     .piano-black.active { background: #8a77d4; }
     .piano-black.root { background: var(--root); }
     .chord-area { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
