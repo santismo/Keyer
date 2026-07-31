@@ -35,16 +35,18 @@
     }
     button, select { font: inherit; }
     button { cursor: pointer; }
-    button:focus-visible, select:focus-visible { outline: 3px solid var(--root); outline-offset: 3px; }
+    button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--root); outline-offset: 3px; }
     .app { width: min(100%, 760px); margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 14px 44px; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 2px 2px 16px; }
     h1 { margin: 0; font-size: 1.16rem; letter-spacing: .09em; text-transform: uppercase; }
     .formula { color: var(--lime); font: 700 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; }
     .toolbar { display: flex; gap: 8px; margin-bottom: 11px; }
-    select, .icon-button { height: 42px; color: var(--ink); background: var(--card-2); border: 1px solid var(--line); border-radius: 11px; }
-    select { flex: 1; padding: 0 12px; }
+    select, .icon-button, .view-button { height: 42px; color: var(--ink); background: var(--card-2); border: 1px solid var(--line); border-radius: 11px; }
+    select { flex: 1; padding: 0 12px; min-width: 0; }
     .icon-button { width: 42px; font-size: 1.2rem; }
-    .icon-button:active, .nav:active { transform: scale(.95); }
+    .view-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; color: var(--root); text-decoration: none; font-size: .76rem; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
+    .view-button:hover { background: #25202a; border-color: var(--root); }
+    .icon-button:active, .nav:active, .view-button:active { transform: scale(.95); }
     .deck { display: grid; grid-template-columns: 43px minmax(0, 1fr) 43px; gap: 8px; align-items: center; }
     .nav { height: 64px; color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 12px; font-size: 2rem; line-height: 1; }
     .nav:hover { color: var(--ink); background: var(--card); border-color: var(--line); }
@@ -88,6 +90,9 @@
     .legend-card.black:hover, .legend-card.black.current { background: #554e7d; border-color: var(--lime); }
     @media (max-width: 510px) {
       .app { padding-inline: 9px; }
+      .toolbar { flex-wrap: wrap; }
+      .toolbar select { flex-basis: calc(100% - 50px); }
+      .view-button { order: 3; width: 100%; }
       .deck { grid-template-columns: 32px minmax(0, 1fr) 32px; gap: 3px; }
       .nav { font-size: 1.55rem; }
       .card { min-height: 360px; border-radius: 18px; }
@@ -106,6 +111,7 @@
         <option value="random">Random</option><option value="chromatic">Chromatic</option><option value="fifths">Fifths</option><option value="fourths">Fourths</option><option value="progressions">Progressions + modulations</option>
       </select>
       <button class="icon-button" id="refresh" type="button" aria-label="New set">↻</button>
+      <a class="view-button" href="wheel.html" aria-label="Open interactive music wheel view">◉ Wheel view</a>
     </div>
     <section class="deck" aria-label="Infinite scale-card deck">
       <button class="nav" id="previous" type="button" aria-label="Previous card">‹</button>
