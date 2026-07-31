@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090b10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Keyer Practice">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" href="icon.png" type="image/png">
+  <title>Keyer · Practice</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f7f8fc;
+      --muted: #929cad;
+      --bg: #090b10;
+      --card: #121620;
+      --card-2: #181d29;
+      --line: #2d3747;
+      --guide-paper: #f0eee7;
+      --guide-ink: #2c3440;
+      --guide-line: #aab0b5;
+      --chord-root: #55d79d;
+      --chord-tone: #67aef7;
+      --pressed: #ffd36e;
+      --black-key: #222a37;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: radial-gradient(circle at 50% -28%, #1d2936 0, transparent 38rem), var(--bg);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--pressed); outline-offset: 3px; }
+    .app { width: min(100%, 980px); margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 7px max(42px, env(safe-area-inset-bottom)); }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 4px 13px; }
+    .brand h1 { margin: 0; font-size: 1.08rem; letter-spacing: .09em; text-transform: uppercase; }
+    .brand span { display: block; margin-top: 2px; color: var(--chord-root); font: 750 .69rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+    nav { display: flex; gap: 7px; }
+    nav a { color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--card-2); padding: 9px 11px; border-radius: 10px; font-size: .72rem; font-weight: 800; white-space: nowrap; }
+    nav a:active, .guide-button:active, .tonic-button:active { transform: scale(.96); }
+    .practice-card, .range-card { border: 1px solid var(--line); background: linear-gradient(145deg, #151a25, #10131b); box-shadow: 0 18px 48px rgba(0,0,0,.28); }
+    .practice-card { overflow: hidden; border-radius: 19px; }
+    .guide-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 13px; }
+    .eyebrow { display: block; color: var(--muted); font-size: .65rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .guide-title { display: block; margin-top: 2px; font-size: 1rem; }
+    .guide-title b { color: var(--chord-root); }
+    .guide-nudge { display: grid; grid-template-columns: 40px 66px 40px; gap: 6px; }
+    .guide-button, .tonic-button { min-height: 42px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--card-2); }
+    .guide-button { font-size: 1.2rem; }
+    .tonic-button { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+    .tonic-button b { color: var(--pressed); font-size: 1rem; }
+    .tonic-button small { margin-top: 3px; color: var(--muted); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; }
+    .guide-shell {
+      position: relative;
+      height: 112px;
+      overflow: hidden;
+      color: var(--guide-ink);
+      background: var(--guide-paper);
+      border-block: 1px solid #6f7882;
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .drag-hint { height: 31px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #66707c; border-bottom: 1px solid #c3c6c5; background: linear-gradient(#faf9f5, #ebe9e2); font-size: .64rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; pointer-events: none; }
+    .drag-hint::before { content: "↔"; color: #39424e; font-size: .9rem; }
+    .guide { position: absolute; inset: 31px 0 0; }
+    .guide-cell {
+      position: absolute;
+      inset-block: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      min-width: 0;
+      margin: 0;
+      padding: 0 0 11px;
+      color: var(--guide-ink);
+      background: transparent;
+      border: 0;
+      border-left: 1px solid var(--guide-line);
+      border-radius: 0;
+      transition: background-color .12s ease, color .12s ease;
+    }
+    .guide-cell:last-child { border-right: 1px solid var(--guide-line); }
+    button.guide-cell { cursor: pointer; }
+    .guide-cell span { position: absolute; left: var(--degree-x, 50%); bottom: 11px; display: grid; place-items: center; width: clamp(21px, 2.8vw, 27px); aspect-ratio: 1; transform: translateX(-50%); border-radius: 999px; font-size: .8rem; font-weight: 900; pointer-events: none; }
+    .guide-cell.chord-root { color: #09291d; background: #80e3b9; background: color-mix(in srgb, var(--chord-root) 82%, white); }
+    .guide-cell.chord-root span { color: #06271b; background: #f4fff9; box-shadow: 0 0 0 2px #16885d; }
+    .guide-cell.chord-tone { color: #09213c; background: #9fcdfb; background: color-mix(in srgb, var(--chord-tone) 70%, white); }
+    .guide-cell.chord-tone span { color: #0c2a4b; background: #f5faff; box-shadow: 0 0 0 2px #2878c5; }
+    .piano {
+      position: relative;
+      height: clamp(178px, 36vw, 260px);
+      overflow: hidden;
+      background: #07090d;
+      touch-action: none;
+      overscroll-behavior: contain;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .piano-key { position: absolute; top: 0; margin: 0; padding: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .piano-key.white { z-index: 1; height: 100%; color: #46505e; background: linear-gradient(90deg, #cfd5de 0, #f7f8fa 9%, #f7f8fa 89%, #c7cdd6 100%); border: 0; border-right: 1px solid #788291; border-radius: 0 0 7px 7px; }
+    .piano-key.black { z-index: 3; height: 63%; color: #d7dce5; background: linear-gradient(90deg, #0c1017, var(--black-key) 16%, #303a4a 72%, #090c11); border: 1px solid #050609; border-radius: 0 0 6px 6px; box-shadow: 0 7px 10px rgba(0,0,0,.5); }
+    .piano-key.edge { cursor: default; }
+    .piano-key.white.playing { background: linear-gradient(90deg, #d7a83f, var(--pressed) 13%, #ffe7a9 88%, #c59632); }
+    .piano-key.black.playing { background: linear-gradient(90deg, #8b641e, #e0ad41 22%, var(--pressed) 76%, #795416); }
+    .key-label { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); font: 800 clamp(.48rem, 1.35vw, .64rem) ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; white-space: nowrap; }
+    .piano-key.black .key-label { bottom: 5px; color: #eef1f6; }
+    .chord-bar { min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 12px; border-top: 1px solid var(--line); }
+    .chord-status { min-width: 0; }
+    .chord-status strong { display: block; font-size: .81rem; line-height: 1.35; }
+    .chord-status span { display: block; margin-top: 2px; color: var(--muted); font-size: .65rem; }
+    .color-key { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .62rem; white-space: nowrap; }
+    .color-key i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 3px; vertical-align: -1px; }
+    .color-key .root { background: var(--chord-root); }
+    .color-key .tone { background: var(--chord-tone); }
+    .range-card { margin-top: 11px; padding: 13px; border-radius: 15px; }
+    .range-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .range-head label { font-size: .76rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+    .range-head output { color: var(--pressed); font: 800 .8rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    input[type="range"] { width: 100%; margin: 13px 0 7px; accent-color: var(--chord-root); }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: .58rem; }
+    .help { margin: 12px 8px 0; color: var(--muted); font-size: .68rem; line-height: 1.5; text-align: center; }
+    @media (max-width: 560px) {
+      header { align-items: flex-start; }
+      nav { flex-direction: column; gap: 5px; }
+      nav a { padding: 7px 9px; text-align: center; }
+      .guide-tools { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 9px; }
+      .guide-nudge { grid-template-columns: 37px 58px 37px; gap: 4px; }
+      .guide-button, .tonic-button { min-height: 39px; }
+      .guide-shell { height: 104px; }
+      .guide { inset-block-start: 29px; }
+      .drag-hint { height: 29px; }
+      .guide-cell span { width: 15px; font-size: .66rem; }
+      .guide-cell.chord-root span, .guide-cell.chord-tone span { box-shadow: 0 0 0 1px currentColor; }
+      .chord-bar { grid-template-columns: 1fr; gap: 6px; }
+      .color-key { justify-content: flex-start; }
+    }
+    @media (hover: hover) and (pointer: fine) {
+      button.guide-cell:not(.chord-root):not(.chord-tone):hover { background: #dde7e5; }
+    }
+    @media (orientation: landscape) and (max-height: 540px) {
+      .piano { height: 154px; }
+      .guide-shell { height: 91px; }
+      .guide { inset-block-start: 27px; }
+      .drag-hint { height: 27px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .guide-cell { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand"><h1>Keyer</h1><span>Playable practice mode</span></div>
+      <nav aria-label="Keyer views"><a href="index.html">Cards</a><a href="wheel.html">Wheel</a></nav>
+    </header>
+
+    <section class="practice-card" aria-labelledby="practice-title">
+      <div class="guide-tools">
+        <div>
+          <span class="eyebrow" id="practice-title">Movable interval guide</span>
+          <span class="guide-title"><b id="guideName">C major</b> · drag the strip or tap arrows</span>
+        </div>
+        <div class="guide-nudge">
+          <button class="guide-button" id="guideLeft" type="button" aria-label="Move guide one semitone left">←</button>
+          <button class="tonic-button" id="guideReset" type="button" aria-label="Reset guide tonic to C">
+            <b id="guideTonic">C</b><small>tonic</small>
+          </button>
+          <button class="guide-button" id="guideRight" type="button" aria-label="Move guide one semitone right">→</button>
+        </div>
+      </div>
+
+      <div class="guide-shell" id="guideShell" role="group" aria-label="Draggable major scale degree guide">
+        <div class="drag-hint">Drag guide left or right</div>
+        <div class="guide" id="guide"></div>
+      </div>
+
+      <div class="piano" id="keyboard" role="group" aria-label="Playable two-octave piano keyboard"></div>
+
+      <div class="chord-bar">
+        <div class="chord-status" aria-live="polite">
+          <strong id="chordStatus">Tap any scale degree to show its seventh chord.</strong>
+          <span id="chordDetails">Tap that number again to turn the chord guide off.</span>
+        </div>
+        <div class="color-key" role="group" aria-label="Chord guide color key">
+          <span><i class="root"></i>chord root</span><span><i class="tone"></i>other chord tones</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="range-card" aria-labelledby="range-title">
+      <div class="range-head">
+        <label id="range-title" for="rangeSlider">Keyboard position</label>
+        <output id="rangeOutput" for="rangeSlider">C3–C5</output>
+      </div>
+      <input id="rangeSlider" type="range" min="21" max="84" value="48" step="1" aria-label="Move the two-octave keyboard range">
+      <div class="range-ends"><span>Lowest · A0</span><span>Highest start · C6</span></div>
+    </section>
+
+    <p class="help">Hold several keys to play chords, or slide a finger across them. Keyboard position and guide tonic move independently.</p>
+  </main>
+
+  <script>
+    (() => {
+      const PIANO_LOW = 21;
+      const PIANO_HIGH = 108;
+      const WINDOW_SPAN = 24;
+      const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
+      const FLAT_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+      const CHORD_LABELS = ['Imaj7', 'iim7', 'iiim7', 'IVmaj7', 'V7', 'vim7', 'viiø7'];
+      const BLACK_PCS = new Set([1, 3, 6, 8, 10]);
+      const elements = {
+        guide: document.querySelector('#guide'),
+        guideShell: document.querySelector('#guideShell'),
+        guideName: document.querySelector('#guideName'),
+        guideTonic: document.querySelector('#guideTonic'),
+        guideLeft: document.querySelector('#guideLeft'),
+        guideRight: document.querySelector('#guideRight'),
+        guideReset: document.querySelector('#guideReset'),
+        keyboard: document.querySelector('#keyboard'),
+        chordStatus: document.querySelector('#chordStatus'),
+        chordDetails: document.querySelector('#chordDetails'),
+        rangeSlider: document.querySelector('#rangeSlider'),
+        rangeOutput: document.querySelector('#rangeOutput')
+      };
+
+      const state = {
+        viewStartMidi: Number(elements.rangeSlider.value),
+        guideTonicPc: 0,
+        selectedDegree: null,
+        view: null
+      };
+      const pitchGeometry = [];
+      const voices = new Map();
+      const pressedCounts = new Map();
+      const pointerNotes = new Map();
+      const keyboardNotes = new Map();
+      let whiteIndex = 0;
+      let audioContext = null;
+      let audioInput = null;
+      let drag = null;
+      let suppressGuideClickUntil = 0;
+
+      const mod = (number, base) => ((number % base) + base) % base;
+      const isBlack = midi => BLACK_PCS.has(mod(midi, 12));
+      const octaveFor = midi => Math.floor(midi / 12) - 1;
+      const noteName = midi => `${FLAT_NAMES[mod(midi, 12)]}${octaveFor(midi)}`;
+      const centerBetween = (a, b) => (a + b) / 2;
+
+      for (let midi = 0; midi <= 127; midi += 1) {
+        if (isBlack(midi)) {
+          pitchGeometry[midi] = { midi, black: true, center: whiteIndex, left: whiteIndex - .31, right: whiteIndex + .31 };
+        } else {
+          pitchGeometry[midi] = { midi, black: false, center: whiteIndex + .5, left: whiteIndex, right: whiteIndex + 1 };
+          whiteIndex += 1;
+        }
+      }
+
+      function pitchCellBounds(midi) {
+        const geometry = pitchGeometry[midi];
+        const left = midi === PIANO_LOW ? geometry.left : centerBetween(pitchGeometry[midi - 1].center, geometry.center);
+        const right = midi === PIANO_HIGH ? geometry.right : centerBetween(geometry.center, pitchGeometry[midi + 1].center);
+        return { left, right };
+      }
+
+      function createView() {
+        const start = state.viewStartMidi;
+        const end = start + WINDOW_SPAN;
+        const firstCell = pitchCellBounds(start);
+        const lastCell = pitchCellBounds(end);
+        const left = Math.min(firstCell.left, pitchGeometry[start].left);
+        const right = Math.max(lastCell.right, pitchGeometry[end].right);
+        return { start, end, left, right, width: right - left };
+      }
+
+      function percent(value) {
+        return `${value.toFixed(5)}%`;
+      }
+
+      function relativeLeft(value) {
+        return ((value - state.view.left) / state.view.width) * 100;
+      }
+
+      function relativeWidth(left, right) {
+        return ((right - left) / state.view.width) * 100;
+      }
+
+      function degreeFor(midi) {
+        const scaleStep = mod(midi - state.guideTonicPc, 12);
+        const index = MAJOR_STEPS.indexOf(scaleStep);
+        return index === -1 ? null : index + 1;
+      }
+
+      function chordDegrees(rootDegree) {
+        if (!rootDegree) return [];
+        return [0, 2, 4, 6].map(offset => mod(rootDegree - 1 + offset, 7) + 1);
+      }
+
+      function renderGuide() {
+        const selected = chordDegrees(state.selectedDegree);
+        const toneDegrees = new Set(selected.slice(1));
+        const fragment = document.createDocumentFragment();
+
+        for (let midi = state.view.start; midi <= state.view.end; midi += 1) {
+          const bounds = pitchCellBounds(midi);
+          if (midi === state.view.start) bounds.left = state.view.left;
+          if (midi === state.view.end) bounds.right = state.view.right;
+          const degree = degreeFor(midi);
+          const cell = document.createElement(degree ? 'button' : 'div');
+          cell.className = 'guide-cell';
+          cell.style.left = percent(relativeLeft(bounds.left));
+          cell.style.width = percent(relativeWidth(bounds.left, bounds.right));
+          cell.style.setProperty('--degree-x', percent(((pitchGeometry[midi].center - bounds.left) / (bounds.right - bounds.left)) * 100));
+          if (degree) {
+            cell.type = 'button';
+            cell.dataset.degree = String(degree);
+            cell.dataset.midi = String(midi);
+            cell.setAttribute('aria-pressed', String(state.selectedDegree === degree));
+            cell.setAttribute('aria-label', `Scale degree ${degree} over ${noteName(midi)}. ${state.selectedDegree === degree ? 'Turn chord guide off' : `Show ${CHORD_LABELS[degree - 1]} guide`}`);
+            cell.innerHTML = `<span>${degree}</span>`;
+            if (state.selectedDegree === degree) cell.classList.add('chord-root');
+            else if (toneDegrees.has(degree)) cell.classList.add('chord-tone');
+          } else {
+            cell.setAttribute('aria-hidden', 'true');
+          }
+          fragment.appendChild(cell);
+        }
+        elements.guide.replaceChildren(fragment);
+      }
+
+      function visibleKeyboardPitches() {
+        const pitches = [];
+        for (let midi = PIANO_LOW; midi <= PIANO_HIGH; midi += 1) {
+          const geometry = pitchGeometry[midi];
+          const intersectsView = geometry.right > state.view.left && geometry.left < state.view.right;
+          const playableBlack = geometry.black && midi >= state.view.start && midi <= state.view.end;
+          if (intersectsView && (!geometry.black || playableBlack)) pitches.push(geometry);
+        }
+        return pitches;
+      }
+
+      function renderKeyboard() {
+        const fragment = document.createDocumentFragment();
+        const pitches = visibleKeyboardPitches();
+        const ordered = [...pitches.filter(pitch => !pitch.black), ...pitches.filter(pitch => pitch.black)];
+
+        ordered.forEach(pitch => {
+          const playable = pitch.midi >= state.view.start && pitch.midi <= state.view.end;
+          const key = document.createElement('button');
+          key.type = 'button';
+          key.className = `piano-key ${pitch.black ? 'black' : 'white'}${playable ? '' : ' edge'}`;
+          key.style.left = percent(relativeLeft(pitch.left));
+          key.style.width = percent(relativeWidth(pitch.left, pitch.right));
+          key.dataset.midi = String(pitch.midi);
+          key.dataset.playable = String(playable);
+          key.disabled = !playable;
+          key.tabIndex = playable ? 0 : -1;
+          key.setAttribute('aria-label', `${noteName(pitch.midi)} piano key`);
+          if (!playable) key.setAttribute('aria-hidden', 'true');
+          if (mod(pitch.midi, 12) === 0 || pitch.midi === state.view.start || pitch.midi === state.view.end) {
+            key.innerHTML = `<span class="key-label">${noteName(pitch.midi)}</span>`;
+          }
+          fragment.appendChild(key);
+        });
+        elements.keyboard.replaceChildren(fragment);
+      }
+
+      function updateRangeReadout() {
+        const end = state.viewStartMidi + WINDOW_SPAN;
+        const value = `${noteName(state.viewStartMidi)}–${noteName(end)}`;
+        elements.rangeOutput.textContent = value;
+        elements.rangeSlider.setAttribute('aria-valuetext', `${noteName(state.viewStartMidi)} through ${noteName(end)}`);
+      }
+
+      function updateGuideReadout() {
+        const tonic = FLAT_NAMES[state.guideTonicPc];
+        elements.guideName.textContent = `${tonic} major`;
+        elements.guideTonic.textContent = tonic;
+        if (!state.selectedDegree) {
+          elements.chordStatus.textContent = 'Tap any scale degree to show its seventh chord.';
+          elements.chordDetails.textContent = 'Tap that number again to turn the chord guide off.';
+          return;
+        }
+        const degrees = chordDegrees(state.selectedDegree);
+        elements.chordStatus.textContent = `${CHORD_LABELS[state.selectedDegree - 1]} guide · degree ${state.selectedDegree} is the root.`;
+        elements.chordDetails.textContent = `Degrees ${degrees.join(' · ')} · green root, blue chord tones.`;
+      }
+
+      function renderInstrument({ stopNotes = false } = {}) {
+        if (stopNotes) panic();
+        state.view = createView();
+        renderGuide();
+        renderKeyboard();
+        updateRangeReadout();
+        updateGuideReadout();
+      }
+
+      function setGuideTonic(pc) {
+        state.guideTonicPc = mod(pc, 12);
+        renderGuide();
+        updateGuideReadout();
+      }
+
+      function toggleChord(degree) {
+        state.selectedDegree = state.selectedDegree === degree ? null : degree;
+        renderGuide();
+        updateGuideReadout();
+      }
+
+      function ensureAudio() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (audioContext && audioContext.state === 'closed') {
+          voices.forEach(voice => markPressed(voice.midi, -1));
+          voices.clear();
+          audioContext = null;
+          audioInput = null;
+        }
+        if (!audioContext) {
+          audioContext = new AudioContextClass();
+          const compressor = audioContext.createDynamicsCompressor();
+          compressor.threshold.value = -16;
+          compressor.knee.value = 18;
+          compressor.ratio.value = 5;
+          compressor.attack.value = .004;
+          compressor.release.value = .18;
+          const master = audioContext.createGain();
+          master.gain.value = .48;
+          master.connect(compressor);
+          compressor.connect(audioContext.destination);
+          audioInput = master;
+        }
+        if (audioContext.state !== 'running') audioContext.resume().catch(() => {});
+        return audioContext;
+      }
+
+      function markPressed(midi, direction) {
+        const next = Math.max(0, (pressedCounts.get(midi) || 0) + direction);
+        if (next) pressedCounts.set(midi, next);
+        else pressedCounts.delete(midi);
+        const key = elements.keyboard.querySelector(`[data-midi="${midi}"][data-playable="true"]`);
+        if (key) key.classList.toggle('playing', next > 0);
+      }
+
+      function startVoice(id, midi) {
+        if (voices.has(id)) stopVoice(id, true);
+        const context = ensureAudio();
+        markPressed(midi, 1);
+        if (!context || !audioInput) {
+          voices.set(id, { midi, silent: true });
+          return;
+        }
+        const now = context.currentTime;
+        const frequency = 440 * (2 ** ((midi - 69) / 12));
+        const envelope = context.createGain();
+        const body = context.createOscillator();
+        const color = context.createOscillator();
+        const colorGain = context.createGain();
+        body.type = 'triangle';
+        body.frequency.value = frequency;
+        color.type = 'sine';
+        color.frequency.value = frequency * 2;
+        color.detune.value = 3;
+        colorGain.gain.value = .13;
+        envelope.gain.setValueAtTime(.0001, now);
+        envelope.gain.exponentialRampToValueAtTime(.18, now + .012);
+        envelope.gain.exponentialRampToValueAtTime(.085, now + .85);
+        body.connect(envelope);
+        color.connect(colorGain);
+        colorGain.connect(envelope);
+        envelope.connect(audioInput);
+        body.onended = () => {
+          [body, color, colorGain, envelope].forEach(node => { try { node.disconnect(); } catch (_) {} });
+        };
+        body.start(now);
+        color.start(now);
+        voices.set(id, { midi, envelope, oscillators: [body, color], startedAt: now });
+      }
+
+      function stopVoice(id, immediate = false) {
+        const voice = voices.get(id);
+        if (!voice) return;
+        voices.delete(id);
+        markPressed(voice.midi, -1);
+        if (voice.silent || !audioContext) return;
+        const now = audioContext.currentTime;
+        const release = immediate ? .025 : .18;
+        if (typeof voice.envelope.gain.cancelAndHoldAtTime === 'function') {
+          voice.envelope.gain.cancelAndHoldAtTime(now);
+        } else {
+          const elapsed = Math.max(0, now - voice.startedAt);
+          let level = .085;
+          if (elapsed < .012) level = .0001 * ((.18 / .0001) ** (elapsed / .012));
+          else if (elapsed < .85) level = .18 * ((.085 / .18) ** ((elapsed - .012) / .838));
+          voice.envelope.gain.cancelScheduledValues(now);
+          voice.envelope.gain.setValueAtTime(Math.max(.0001, level), now);
+        }
+        voice.envelope.gain.exponentialRampToValueAtTime(.0001, now + release);
+        voice.oscillators.forEach(oscillator => oscillator.stop(now + release + .025));
+      }
+
+      function panic() {
+        const capturedPointers = [...pointerNotes.keys()];
+        [...voices.keys()].forEach(id => stopVoice(id, true));
+        pointerNotes.clear();
+        keyboardNotes.clear();
+        capturedPointers.forEach(pointerId => {
+          if (elements.keyboard.hasPointerCapture(pointerId)) elements.keyboard.releasePointerCapture(pointerId);
+        });
+      }
+
+      function pianoKeyAt(clientX, clientY) {
+        const target = document.elementFromPoint(clientX, clientY);
+        const key = target && target.closest('.piano-key[data-playable="true"]');
+        return key && elements.keyboard.contains(key) ? key : null;
+      }
+
+      function nearestVisiblePitch(clientX) {
+        const rect = elements.guideShell.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const coordinate = state.view.left + ratio * state.view.width;
+        let nearestMidi = state.view.start;
+        let nearestDistance = Infinity;
+        for (let midi = state.view.start; midi <= state.view.end; midi += 1) {
+          const distance = Math.abs(pitchGeometry[midi].center - coordinate);
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestMidi = midi;
+          }
+        }
+        return nearestMidi;
+      }
+
+      function switchPointerNote(pointerId, key) {
+        const id = `pointer-${pointerId}`;
+        const previous = pointerNotes.get(pointerId);
+        const next = key ? Number(key.dataset.midi) : null;
+        if (pointerNotes.has(pointerId) && previous === next) return;
+        if (previous !== undefined && previous !== null) stopVoice(id);
+        pointerNotes.set(pointerId, next);
+        if (next !== null) startVoice(id, next);
+      }
+
+      elements.keyboard.addEventListener('pointerdown', event => {
+        const key = event.target.closest('.piano-key[data-playable="true"]');
+        if (!key) return;
+        event.preventDefault();
+        elements.keyboard.setPointerCapture(event.pointerId);
+        switchPointerNote(event.pointerId, key);
+      });
+      elements.keyboard.addEventListener('pointermove', event => {
+        if (!pointerNotes.has(event.pointerId)) return;
+        event.preventDefault();
+        switchPointerNote(event.pointerId, pianoKeyAt(event.clientX, event.clientY));
+      });
+      const releasePointer = event => {
+        if (!pointerNotes.has(event.pointerId)) return;
+        switchPointerNote(event.pointerId, null);
+        pointerNotes.delete(event.pointerId);
+        if (elements.keyboard.hasPointerCapture(event.pointerId)) elements.keyboard.releasePointerCapture(event.pointerId);
+      };
+      elements.keyboard.addEventListener('pointerup', releasePointer);
+      elements.keyboard.addEventListener('pointercancel', releasePointer);
+      elements.keyboard.addEventListener('lostpointercapture', releasePointer);
+      elements.keyboard.addEventListener('contextmenu', event => event.preventDefault());
+      elements.keyboard.addEventListener('click', event => event.preventDefault());
+      elements.keyboard.addEventListener('keydown', event => {
+        const key = event.target.closest('.piano-key[data-playable="true"]');
+        if (!key || ![' ', 'Enter'].includes(event.key)) return;
+        event.preventDefault();
+        const midi = Number(key.dataset.midi);
+        if (event.repeat || keyboardNotes.has(midi)) return;
+        const id = `keyboard-${midi}`;
+        keyboardNotes.set(midi, id);
+        startVoice(id, midi);
+      });
+      elements.keyboard.addEventListener('keyup', event => {
+        const key = event.target.closest('.piano-key[data-playable="true"]');
+        if (!key || ![' ', 'Enter'].includes(event.key)) return;
+        event.preventDefault();
+        const midi = Number(key.dataset.midi);
+        stopVoice(keyboardNotes.get(midi));
+        keyboardNotes.delete(midi);
+      });
+      elements.keyboard.addEventListener('focusout', event => {
+        const key = event.target.closest('.piano-key[data-playable="true"]');
+        if (!key) return;
+        const midi = Number(key.dataset.midi);
+        if (!keyboardNotes.has(midi)) return;
+        stopVoice(keyboardNotes.get(midi));
+        keyboardNotes.delete(midi);
+      });
+
+      elements.guide.addEventListener('click', event => {
+        const button = event.target.closest('button[data-degree]');
+        if (!button || Date.now() < suppressGuideClickUntil) return;
+        toggleChord(Number(button.dataset.degree));
+      });
+      elements.guideShell.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        drag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startPitch: nearestVisiblePitch(event.clientX), startTonic: state.guideTonicPc, moved: false };
+      });
+      elements.guideShell.addEventListener('pointermove', event => {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        const dx = event.clientX - drag.startX;
+        const dy = event.clientY - drag.startY;
+        if (!drag.moved && (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy))) return;
+        if (!drag.moved) {
+          drag.moved = true;
+          elements.guideShell.setPointerCapture(event.pointerId);
+        }
+        event.preventDefault();
+        setGuideTonic(drag.startTonic + nearestVisiblePitch(event.clientX) - drag.startPitch);
+      });
+      const endGuideDrag = event => {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        if (drag.moved) suppressGuideClickUntil = Date.now() + 260;
+        if (elements.guideShell.hasPointerCapture(event.pointerId)) elements.guideShell.releasePointerCapture(event.pointerId);
+        drag = null;
+      };
+      elements.guideShell.addEventListener('pointerup', endGuideDrag);
+      elements.guideShell.addEventListener('pointercancel', endGuideDrag);
+      elements.guideShell.addEventListener('lostpointercapture', endGuideDrag);
+      elements.guideShell.addEventListener('contextmenu', event => event.preventDefault());
+
+      elements.guideLeft.addEventListener('click', () => setGuideTonic(state.guideTonicPc - 1));
+      elements.guideRight.addEventListener('click', () => setGuideTonic(state.guideTonicPc + 1));
+      elements.guideReset.addEventListener('click', () => setGuideTonic(0));
+      elements.rangeSlider.addEventListener('input', () => {
+        state.viewStartMidi = Number(elements.rangeSlider.value);
+        renderInstrument({ stopNotes: true });
+      });
+
+      window.addEventListener('blur', panic);
+      window.addEventListener('pagehide', panic);
+      document.addEventListener('visibilitychange', () => { if (document.hidden) panic(); });
+
+      renderInstrument();
+    })();
+  </script>
+</body>
+</html>
