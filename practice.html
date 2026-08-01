@@ -82,14 +82,17 @@
       margin: 0;
       padding: 0;
       color: var(--guide-ink);
-      background: transparent;
+      background: rgba(255,255,255,.14);
       border: 0;
+      border-inline-end: 1px solid var(--guide-line);
       border-radius: 0;
+      transition: background-color .12s ease, color .12s ease;
     }
+    .guide-cell:first-child { border-inline-start: 1px solid var(--guide-line); }
     button.guide-cell { cursor: pointer; }
-    .guide-bar { position: absolute; inset-block: 0; left: var(--degree-x, 50%); display: flex; align-items: flex-end; justify-content: center; width: var(--guide-bar-width); padding-bottom: 12px; transform: translateX(-50%); color: var(--guide-ink); background: rgba(255,255,255,.14); border-inline: 1px solid var(--guide-line); font-size: .78rem; font-weight: 900; pointer-events: none; transition: background-color .12s ease, color .12s ease; }
-    .guide-cell.chord-root .guide-bar { color: #06271b; background: #80e3b9; background: color-mix(in srgb, var(--chord-root) 82%, white); }
-    .guide-cell.chord-tone .guide-bar { color: #0c2a4b; background: #9fcdfb; background: color-mix(in srgb, var(--chord-tone) 70%, white); }
+    .guide-cell[data-degree]::after { content: attr(data-degree); position: absolute; left: var(--degree-x, 50%); bottom: 12px; transform: translateX(-50%); font-size: .78rem; font-weight: 900; pointer-events: none; }
+    .guide-cell.chord-root { color: #06271b; background: #80e3b9; background: color-mix(in srgb, var(--chord-root) 82%, white); }
+    .guide-cell.chord-tone { color: #0c2a4b; background: #9fcdfb; background: color-mix(in srgb, var(--chord-tone) 70%, white); }
     .piano {
       position: relative;
       height: clamp(178px, 36vw, 260px);
@@ -128,10 +131,10 @@
       .guide-shell { height: 104px; }
       .guide { inset-block-start: 29px; }
       .drag-hint { height: 29px; }
-      .guide-bar { font-size: .68rem; }
+      .guide-cell[data-degree]::after { font-size: .68rem; }
     }
     @media (hover: hover) and (pointer: fine) {
-      button.guide-cell:not(.chord-root):not(.chord-tone):hover .guide-bar { background: #dde7e5; }
+      button.guide-cell:not(.chord-root):not(.chord-tone):hover { background: #dde7e5; }
     }
     @media (orientation: landscape) and (max-height: 540px) {
       .piano { height: 154px; }
@@ -140,7 +143,7 @@
       .drag-hint { height: 27px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .guide-bar { transition: none; }
+      .guide-cell { transition: none; }
     }
   </style>
 </head>
@@ -293,19 +296,16 @@
           cell.style.left = percent(relativeLeft(bounds.left));
           cell.style.width = percent(relativeWidth(bounds.left, bounds.right));
           cell.style.setProperty('--degree-x', percent(((pitchGeometry[midi].center - bounds.left) / (bounds.right - bounds.left)) * 100));
-          cell.style.setProperty('--guide-bar-width', percent((.5 / (bounds.right - bounds.left)) * 100));
           cell.dataset.midi = String(midi);
           if (degree) {
             cell.type = 'button';
             cell.dataset.degree = String(degree);
             cell.setAttribute('aria-pressed', String(state.selectedDegree === degree));
             cell.setAttribute('aria-label', `Scale degree ${degree} over ${noteName(midi)}. ${state.selectedDegree === degree ? 'Turn chord guide off' : `Show ${CHORD_LABELS[degree - 1]} guide`}`);
-            cell.innerHTML = `<span class="guide-bar">${degree}</span>`;
             if (state.selectedDegree === degree) cell.classList.add('chord-root');
             else if (toneDegrees.has(degree)) cell.classList.add('chord-tone');
           } else {
             cell.setAttribute('aria-hidden', 'true');
-            cell.innerHTML = '<span class="guide-bar"></span>';
           }
           fragment.appendChild(cell);
         }
