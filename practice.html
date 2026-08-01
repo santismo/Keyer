@@ -27,13 +27,16 @@
       --pressed: #ffd36e;
       --black-key: #222a37;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { min-height: 100%; background: var(--bg); }
     body {
       margin: 0;
       color: var(--ink);
       font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
       background: radial-gradient(circle at 50% -28%, #1d2936 0, transparent 38rem), var(--bg);
     }
     button, input { font: inherit; }
@@ -49,15 +52,13 @@
     .practice-card, .range-card { border: 1px solid var(--line); background: linear-gradient(145deg, #151a25, #10131b); box-shadow: 0 18px 48px rgba(0,0,0,.28); }
     .practice-card { overflow: hidden; border-radius: 19px; }
     .guide-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 13px; }
-    .eyebrow { display: block; color: var(--muted); font-size: .65rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-    .guide-title { display: block; margin-top: 2px; font-size: 1rem; }
+    .guide-title { display: block; font-size: 1rem; }
     .guide-title b { color: var(--chord-root); }
     .guide-nudge { display: grid; grid-template-columns: 40px 66px 40px; gap: 6px; }
     .guide-button, .tonic-button { min-height: 42px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--card-2); }
     .guide-button { font-size: 1.2rem; }
-    .tonic-button { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+    .tonic-button { display: flex; align-items: center; justify-content: center; line-height: 1; }
     .tonic-button b { color: var(--pressed); font-size: 1rem; }
-    .tonic-button small { margin-top: 3px; color: var(--muted); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; }
     .guide-shell {
       position: relative;
       height: 112px;
@@ -71,32 +72,24 @@
       -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent;
     }
-    .drag-hint { height: 31px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #66707c; border-bottom: 1px solid #c3c6c5; background: linear-gradient(#faf9f5, #ebe9e2); font-size: .64rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; pointer-events: none; }
+    .drag-hint { height: 31px; display: flex; align-items: center; justify-content: center; color: #66707c; border-bottom: 1px solid #c3c6c5; background: linear-gradient(#faf9f5, #ebe9e2); pointer-events: none; }
     .drag-hint::before { content: "↔"; color: #39424e; font-size: .9rem; }
     .guide { position: absolute; inset: 31px 0 0; }
     .guide-cell {
       position: absolute;
       inset-block: 0;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
       min-width: 0;
       margin: 0;
-      padding: 0 0 11px;
+      padding: 0;
       color: var(--guide-ink);
       background: transparent;
       border: 0;
-      border-left: 1px solid var(--guide-line);
       border-radius: 0;
-      transition: background-color .12s ease, color .12s ease;
     }
-    .guide-cell:last-child { border-right: 1px solid var(--guide-line); }
     button.guide-cell { cursor: pointer; }
-    .guide-cell span { position: absolute; left: var(--degree-x, 50%); bottom: 11px; display: grid; place-items: center; width: clamp(21px, 2.8vw, 27px); aspect-ratio: 1; transform: translateX(-50%); border-radius: 999px; font-size: .8rem; font-weight: 900; pointer-events: none; }
-    .guide-cell.chord-root { color: #09291d; background: #80e3b9; background: color-mix(in srgb, var(--chord-root) 82%, white); }
-    .guide-cell.chord-root span { color: #06271b; background: #f4fff9; box-shadow: 0 0 0 2px #16885d; }
-    .guide-cell.chord-tone { color: #09213c; background: #9fcdfb; background: color-mix(in srgb, var(--chord-tone) 70%, white); }
-    .guide-cell.chord-tone span { color: #0c2a4b; background: #f5faff; box-shadow: 0 0 0 2px #2878c5; }
+    .guide-bar { position: absolute; inset-block: 0; left: var(--degree-x, 50%); display: flex; align-items: flex-end; justify-content: center; width: var(--guide-bar-width); padding-bottom: 12px; transform: translateX(-50%); color: var(--guide-ink); background: rgba(255,255,255,.14); border-inline: 1px solid var(--guide-line); font-size: .78rem; font-weight: 900; pointer-events: none; transition: background-color .12s ease, color .12s ease; }
+    .guide-cell.chord-root .guide-bar { color: #06271b; background: #80e3b9; background: color-mix(in srgb, var(--chord-root) 82%, white); }
+    .guide-cell.chord-tone .guide-bar { color: #0c2a4b; background: #9fcdfb; background: color-mix(in srgb, var(--chord-tone) 70%, white); }
     .piano {
       position: relative;
       height: clamp(178px, 36vw, 260px);
@@ -117,21 +110,14 @@
     .piano-key.black.playing { background: linear-gradient(90deg, #8b641e, #e0ad41 22%, var(--pressed) 76%, #795416); }
     .key-label { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); font: 800 clamp(.48rem, 1.35vw, .64rem) ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; white-space: nowrap; }
     .piano-key.black .key-label { bottom: 5px; color: #eef1f6; }
-    .chord-bar { min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 12px; border-top: 1px solid var(--line); }
-    .chord-status { min-width: 0; }
-    .chord-status strong { display: block; font-size: .81rem; line-height: 1.35; }
-    .chord-status span { display: block; margin-top: 2px; color: var(--muted); font-size: .65rem; }
-    .color-key { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .62rem; white-space: nowrap; }
-    .color-key i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 3px; vertical-align: -1px; }
-    .color-key .root { background: var(--chord-root); }
-    .color-key .tone { background: var(--chord-tone); }
+    .chord-bar { min-height: 43px; display: grid; place-items: center; padding: 8px 12px; border-top: 1px solid var(--line); }
+    .chord-bar strong { font: 850 .82rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     .range-card { margin-top: 11px; padding: 13px; border-radius: 15px; }
-    .range-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-    .range-head label { font-size: .76rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+    .range-head { display: flex; align-items: baseline; justify-content: center; }
     .range-head output { color: var(--pressed); font: 800 .8rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     input[type="range"] { width: 100%; margin: 13px 0 7px; accent-color: var(--chord-root); }
     .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: .58rem; }
-    .help { margin: 12px 8px 0; color: var(--muted); font-size: .68rem; line-height: 1.5; text-align: center; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     @media (max-width: 560px) {
       header { align-items: flex-start; }
       nav { flex-direction: column; gap: 5px; }
@@ -142,13 +128,10 @@
       .guide-shell { height: 104px; }
       .guide { inset-block-start: 29px; }
       .drag-hint { height: 29px; }
-      .guide-cell span { width: 15px; font-size: .66rem; }
-      .guide-cell.chord-root span, .guide-cell.chord-tone span { box-shadow: 0 0 0 1px currentColor; }
-      .chord-bar { grid-template-columns: 1fr; gap: 6px; }
-      .color-key { justify-content: flex-start; }
+      .guide-bar { font-size: .68rem; }
     }
     @media (hover: hover) and (pointer: fine) {
-      button.guide-cell:not(.chord-root):not(.chord-tone):hover { background: #dde7e5; }
+      button.guide-cell:not(.chord-root):not(.chord-tone):hover .guide-bar { background: #dde7e5; }
     }
     @media (orientation: landscape) and (max-height: 540px) {
       .piano { height: 154px; }
@@ -157,60 +140,47 @@
       .drag-hint { height: 27px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .guide-cell { transition: none; }
+      .guide-bar { transition: none; }
     }
   </style>
 </head>
 <body>
   <main class="app">
     <header>
-      <div class="brand"><h1>Keyer</h1><span>Playable practice mode</span></div>
-      <nav aria-label="Keyer views"><a href="index.html">Cards</a><a href="wheel.html">Wheel</a></nav>
+      <div class="brand"><h1>Keyer</h1><span>Practice</span></div>
+      <nav aria-label="Keyer views"><a href="index.html">Cards</a><a href="wheel.html">Circle</a></nav>
     </header>
 
     <section class="practice-card" aria-labelledby="practice-title">
       <div class="guide-tools">
-        <div>
-          <span class="eyebrow" id="practice-title">Movable interval guide</span>
-          <span class="guide-title"><b id="guideName">C major</b> · drag the strip or tap arrows</span>
-        </div>
+        <span class="guide-title" id="practice-title"><b id="guideName">C major</b></span>
         <div class="guide-nudge">
           <button class="guide-button" id="guideLeft" type="button" aria-label="Move guide one semitone left">←</button>
           <button class="tonic-button" id="guideReset" type="button" aria-label="Reset guide tonic to C">
-            <b id="guideTonic">C</b><small>tonic</small>
+            <b id="guideTonic">C</b>
           </button>
           <button class="guide-button" id="guideRight" type="button" aria-label="Move guide one semitone right">→</button>
         </div>
       </div>
 
       <div class="guide-shell" id="guideShell" role="group" aria-label="Draggable major scale degree guide">
-        <div class="drag-hint">Drag guide left or right</div>
+        <div class="drag-hint" aria-hidden="true"></div>
         <div class="guide" id="guide"></div>
       </div>
 
       <div class="piano" id="keyboard" role="group" aria-label="Playable two-octave piano keyboard"></div>
 
-      <div class="chord-bar">
-        <div class="chord-status" aria-live="polite">
-          <strong id="chordStatus">Tap any scale degree to show its seventh chord.</strong>
-          <span id="chordDetails">Tap that number again to turn the chord guide off.</span>
-        </div>
-        <div class="color-key" role="group" aria-label="Chord guide color key">
-          <span><i class="root"></i>chord root</span><span><i class="tone"></i>other chord tones</span>
-        </div>
-      </div>
+      <div class="chord-bar" aria-live="polite"><strong id="chordStatus">—</strong></div>
     </section>
 
     <section class="range-card" aria-labelledby="range-title">
       <div class="range-head">
-        <label id="range-title" for="rangeSlider">Keyboard position</label>
+        <label class="sr-only" id="range-title" for="rangeSlider">Keyboard range</label>
         <output id="rangeOutput" for="rangeSlider">C3–C5</output>
       </div>
       <input id="rangeSlider" type="range" min="21" max="84" value="48" step="1" aria-label="Move the two-octave keyboard range">
-      <div class="range-ends"><span>Lowest · A0</span><span>Highest start · C6</span></div>
+      <div class="range-ends"><span>A0</span><span>C6</span></div>
     </section>
-
-    <p class="help">Hold several keys to play chords, or slide a finger across them. Keyboard position and guide tonic move independently.</p>
   </main>
 
   <script>
@@ -232,7 +202,6 @@
         guideReset: document.querySelector('#guideReset'),
         keyboard: document.querySelector('#keyboard'),
         chordStatus: document.querySelector('#chordStatus'),
-        chordDetails: document.querySelector('#chordDetails'),
         rangeSlider: document.querySelector('#rangeSlider'),
         rangeOutput: document.querySelector('#rangeOutput')
       };
@@ -324,17 +293,19 @@
           cell.style.left = percent(relativeLeft(bounds.left));
           cell.style.width = percent(relativeWidth(bounds.left, bounds.right));
           cell.style.setProperty('--degree-x', percent(((pitchGeometry[midi].center - bounds.left) / (bounds.right - bounds.left)) * 100));
+          cell.style.setProperty('--guide-bar-width', percent((.5 / (bounds.right - bounds.left)) * 100));
+          cell.dataset.midi = String(midi);
           if (degree) {
             cell.type = 'button';
             cell.dataset.degree = String(degree);
-            cell.dataset.midi = String(midi);
             cell.setAttribute('aria-pressed', String(state.selectedDegree === degree));
             cell.setAttribute('aria-label', `Scale degree ${degree} over ${noteName(midi)}. ${state.selectedDegree === degree ? 'Turn chord guide off' : `Show ${CHORD_LABELS[degree - 1]} guide`}`);
-            cell.innerHTML = `<span>${degree}</span>`;
+            cell.innerHTML = `<span class="guide-bar">${degree}</span>`;
             if (state.selectedDegree === degree) cell.classList.add('chord-root');
             else if (toneDegrees.has(degree)) cell.classList.add('chord-tone');
           } else {
             cell.setAttribute('aria-hidden', 'true');
+            cell.innerHTML = '<span class="guide-bar"></span>';
           }
           fragment.appendChild(cell);
         }
@@ -390,13 +361,11 @@
         elements.guideName.textContent = `${tonic} major`;
         elements.guideTonic.textContent = tonic;
         if (!state.selectedDegree) {
-          elements.chordStatus.textContent = 'Tap any scale degree to show its seventh chord.';
-          elements.chordDetails.textContent = 'Tap that number again to turn the chord guide off.';
+          elements.chordStatus.textContent = '—';
           return;
         }
         const degrees = chordDegrees(state.selectedDegree);
-        elements.chordStatus.textContent = `${CHORD_LABELS[state.selectedDegree - 1]} guide · degree ${state.selectedDegree} is the root.`;
-        elements.chordDetails.textContent = `Degrees ${degrees.join(' · ')} · green root, blue chord tones.`;
+        elements.chordStatus.textContent = `${CHORD_LABELS[state.selectedDegree - 1]} · ${degrees.join('–')}`;
       }
 
       function renderInstrument({ stopNotes = false } = {}) {

@@ -24,13 +24,16 @@
       --violet: #c4b2ff;
       --black-key: #30394a;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { min-height: 100%; background: var(--bg); touch-action: manipulation; }
     body {
       margin: 0;
       color: var(--ink);
       font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
       background: radial-gradient(circle at 50% -30%, #1d2936 0, transparent 34rem), var(--bg);
     }
     button, select { font: inherit; }
@@ -112,7 +115,7 @@
       </select>
       <button class="icon-button" id="refresh" type="button" aria-label="New set">↻</button>
       <a class="view-button" href="practice.html" aria-label="Open playable keyboard practice mode">♪ Practice</a>
-      <a class="view-button" href="wheel.html" aria-label="Open interactive music wheel view">◉ Wheel view</a>
+      <a class="view-button" href="wheel.html" aria-label="Open interactive music circle view">◉ Circle view</a>
     </div>
     <section class="deck" aria-label="Infinite scale-card deck">
       <button class="nav" id="previous" type="button" aria-label="Previous card">‹</button>
