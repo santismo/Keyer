@@ -35,9 +35,6 @@
     selectedChord: document.querySelector('#selectedChord'),
     scaleName: document.querySelector('#scaleName'),
     piano: document.querySelector('#piano'),
-    voicingNotes: document.querySelector('#voicingNotes'),
-    scaleNotes: document.querySelector('#scaleNotes'),
-    playVoicing: document.querySelector('#playVoicing'),
     errorCard: document.querySelector('#errorCard'),
     errorMessage: document.querySelector('#errorMessage'),
     retryLoad: document.querySelector('#retryLoad')
@@ -55,6 +52,7 @@
     preferFlats: true,
     searchIndex: -1,
     voicing: [],
+    displayVoicing: [],
     scale: null,
     activeAlternateCellId: null,
     activeAlternateIndex: -1,
@@ -276,13 +274,6 @@
     return `${sectionId || '—'} · ${contextLabel || 'local harmony'}`;
   }
 
-  function noteListForScale(scale) {
-    if (Array.isArray(scale?.notes) && scale.notes.length) return scale.notes;
-    const intervals = Array.isArray(scale?.intervals) ? scale.intervals : [];
-    if (intervals.length) return intervals.map(interval => Theory.noteName(scale.root + interval, state.preferFlats));
-    return (scale?.pcs || []).map(pc => Theory.noteName(pc, state.preferFlats));
-  }
-
   function setChartButtonState(event) {
     document.querySelectorAll('.chart-chord.active, .chart-alternate.active').forEach(button => {
       button.classList.remove('active');
@@ -309,11 +300,6 @@
       view.scrollTo({ top: Math.max(0, measure.offsetTop - margin), behavior: 'smooth' });
     } else if (measure.offsetTop + measure.offsetHeight > view.scrollTop + view.clientHeight - margin) {
       view.scrollTo({ top: measure.offsetTop + measure.offsetHeight - view.clientHeight + margin, behavior: 'smooth' });
-    }
-    if (measure.offsetLeft < view.scrollLeft + margin) {
-      view.scrollTo({ left: Math.max(0, measure.offsetLeft - margin), behavior: 'smooth' });
-    } else if (measure.offsetLeft + measure.offsetWidth > view.scrollLeft + view.clientWidth - margin) {
-      view.scrollTo({ left: measure.offsetLeft + measure.offsetWidth - view.clientWidth + margin, behavior: 'smooth' });
     }
   }
 
@@ -372,7 +358,10 @@
       if (bar.chords.length) {
         const chordWrap = document.createElement('div');
         chordWrap.className = 'measure-chords';
-        chordWrap.style.setProperty('--chord-count', String(Math.min(4, Math.max(1, bar.chords.length))));
+        const chordCount = Math.min(4, Math.max(1, bar.chords.length));
+        chordWrap.style.setProperty('--chord-count', String(chordCount));
+        measure.dataset.chordCount = String(chordCount);
+        if (chordCount > 2) measure.classList.add('dense-measure');
         bar.chords.forEach(item => {
           const stack = document.createElement('span');
           stack.className = 'chord-stack';
@@ -380,9 +369,12 @@
           button.type = 'button';
           button.className = 'chart-chord';
           const cellId = `${bar.barIndex}:${item.chordIndex}`;
+          const display = item.parsed?.display || item.raw;
           button.dataset.cellId = cellId;
-          button.textContent = item.optionalOnly ? `(${item.parsed?.display || item.raw})` : item.parsed?.display || item.raw;
-          button.setAttribute('aria-label', `${item.parsed?.display || item.raw}, bar ${bar.barIndex + 1}`);
+          button.textContent = item.optionalOnly ? `(${display})` : display;
+          button.setAttribute('aria-label', `${display}, bar ${bar.barIndex + 1}`);
+          button.title = display;
+          if (display.length > 6) button.classList.add('long-symbol');
           if (item.optionalOnly) button.classList.add('optional');
           if (!item.parsed) {
             button.classList.add('unsupported');
@@ -401,6 +393,8 @@
               alternate.dataset.alternateFor = cellId;
               alternate.dataset.alternateIndex = String(alternateIndex);
               alternate.textContent = `(${option.parsed.display})`;
+              alternate.title = option.parsed.display;
+              if (option.parsed.display.length > 6) alternate.classList.add('long-symbol');
               alternate.setAttribute('aria-label', `Optional ${option.parsed.display}, bar ${bar.barIndex + 1}`);
               alternate.addEventListener('click', () => selectAlternate(cellId, alternateIndex, true));
               alternates.appendChild(alternate);
@@ -423,16 +417,30 @@
   }
 
   function renderPiano(chord, scale, voicing) {
-    const LOW = 36;
+    const LOW = 48;
     const HIGH = 72;
     const whiteMidis = [];
     for (let midi = LOW; midi <= HIGH; midi += 1) if (!BLACK_PCS.has(Theory.mod(midi))) whiteMidis.push(midi);
     const whiteCount = whiteMidis.length;
     const scaleSet = new Set(scale.pcs.map(pc => Theory.mod(pc)));
     const chordSet = new Set(Theory.chordPitchClasses(chord));
-    const scaleSpellingByPc = new Map(scale.pcs.map((pc, index) => [Theory.mod(pc), scale.notes?.[index]]));
+    const rootBassSet = new Set([Theory.mod(chord.root)]);
+    if (chord.slash != null) rootBassSet.add(Theory.mod(chord.slash));
+    const scaleSpellingByPc = new Map();
+    (scale.notes || []).forEach(note => {
+      const parsed = Theory.parseNoteSpelling(note);
+      if (parsed) scaleSpellingByPc.set(parsed.pc, note);
+    });
+    (scale.pcs || []).forEach(pc => {
+      const pitchClass = Theory.mod(pc);
+      if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
+    });
     const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
-    const voicingByMidi = new Map(voicing.map(note => [note.midi, note]));
+    const fitted = Theory.fitVoicingToRange(voicing, LOW, HIGH);
+    const displayVoicing = fitted.length === voicing.length ? fitted : voicing.filter(note => note.midi >= LOW && note.midi <= HIGH);
+    const voicingByMidi = new Map(displayVoicing.map(note => [note.midi, note]));
+    state.displayVoicing = displayVoicing;
+    elements.piano.dataset.voicingCount = String(displayVoicing.length);
     const fragment = document.createDocumentFragment();
     let whitesBefore = 0;
 
@@ -442,13 +450,14 @@
       const key = document.createElement('button');
       key.type = 'button';
       key.className = `piano-key ${black ? 'black' : 'white'}`;
-      if (scaleSet.has(pc)) key.classList.add('scale');
-      if (chordSet.has(pc)) key.classList.add('chord-tone');
+      if (rootBassSet.has(pc)) key.classList.add('root-tone');
+      else if (chordSet.has(pc)) key.classList.add('chord-tone');
+      else if (scaleSet.has(pc)) key.classList.add('scale-tone');
       const sounding = voicingByMidi.get(midi);
       if (sounding) key.classList.add('voicing');
       if (sounding?.bass) key.classList.add('bass');
       if (black) {
-        const width = (0.62 / whiteCount) * 100;
+        const width = (0.84 / whiteCount) * 100;
         key.style.left = `${(whitesBefore / whiteCount) * 100 - width / 2}%`;
         key.style.width = `${width}%`;
       } else {
@@ -461,7 +470,7 @@
       const name = spelling
         ? Theory.spelledMidiName(midi, spelling, state.preferFlats)
         : Theory.midiName(midi, state.preferFlats);
-      key.setAttribute('aria-label', `${name}${sounding ? `, voicing ${sounding.role}` : ''}`);
+      key.setAttribute('aria-label', `${name}${sounding ? `, suggested ${sounding.role}` : ''}`);
       if (state.showNoteNames) {
         const label = document.createElement('span');
         label.className = 'key-name';
@@ -471,12 +480,7 @@
       if (sounding) {
         const role = document.createElement('span');
         role.className = 'key-role';
-        role.textContent = sounding.role;
-        key.appendChild(role);
-      } else if (pc === chord.root) {
-        const role = document.createElement('span');
-        role.className = 'key-role';
-        role.textContent = 'R';
+        role.textContent = sounding.role === 'Bass' ? 'B' : sounding.role;
         key.appendChild(role);
       }
       fragment.appendChild(key);
@@ -504,8 +508,6 @@
     const parentSuffix = scale.sectionBased ? ` · ${Theory.contextName(section, state.preferFlats)} section` : '';
     const scaleRoot = scale.rootText ? Theory.displayNoteSpelling(scale.rootText) : Theory.noteName(scale.root, state.preferFlats);
     elements.scaleName.textContent = `${scaleRoot} ${scale.name}${parentSuffix}`;
-    elements.voicingNotes.textContent = voicing.map(note => `${note.display || Theory.midiName(note.midi, state.preferFlats)} (${note.role})`).join(' · ');
-    elements.scaleNotes.textContent = noteListForScale(scale).join('  ');
     elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}`;
     renderPiano(event.chord, scale, voicing);
     setChartButtonState(event);
@@ -752,9 +754,10 @@
   }
 
   function playCurrentVoicing() {
-    if (!state.voicing.length) return;
+    const voicing = state.displayVoicing.length ? state.displayVoicing : state.voicing;
+    if (!voicing.length) return;
     [...voices.keys()].filter(id => String(id).startsWith('preview-')).forEach(id => stopVoice(id, true));
-    state.voicing.forEach((note, index) => startVoice(`preview-${index}`, note.midi, 1.35));
+    voicing.forEach((note, index) => startVoice(`preview-${index}`, note.midi, 1.35));
   }
 
   function syncNoteNameToggle() {
@@ -795,7 +798,6 @@
   });
   elements.previousChord.addEventListener('click', () => selectEvent(state.activeIndex - 1, true));
   elements.nextChord.addEventListener('click', () => selectEvent(state.activeIndex + 1, true));
-  elements.playVoicing.addEventListener('click', playCurrentVoicing);
   elements.toggleNoteNames.addEventListener('click', toggleNoteNames);
   elements.retryLoad.addEventListener('click', loadCatalog);
 

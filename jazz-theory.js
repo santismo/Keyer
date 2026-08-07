@@ -448,6 +448,64 @@
     });
   }
 
+  function fitVoicingToRange(voicing, low = 48, high = 72) {
+    const notes = Array.isArray(voicing) ? voicing.filter(note => Number.isFinite(note?.midi)) : [];
+    const floor = Math.trunc(Number(low));
+    const ceiling = Math.trunc(Number(high));
+    if (!notes.length || !Number.isFinite(floor) || !Number.isFinite(ceiling) || ceiling < floor) return [];
+
+    const candidates = notes.map(note => {
+      const values = [];
+      for (let midi = floor; midi <= ceiling; midi += 1) {
+        if (mod(midi) === mod(note.pc ?? note.midi)) values.push(midi);
+      }
+      return values;
+    });
+    if (candidates.some(values => !values.length)) return [];
+
+    const bassIndex = Math.max(0, notes.findIndex(note => note.bass));
+    const targets = notes.map(note => {
+      let midi = note.midi;
+      while (midi < floor) midi += 12;
+      while (midi > ceiling) midi -= 12;
+      return midi;
+    });
+    let best = null;
+
+    function visit(index, assigned, used) {
+      if (index < notes.length) {
+        candidates[index].forEach(midi => {
+          if (used.has(midi)) return;
+          assigned[index] = midi;
+          used.add(midi);
+          visit(index + 1, assigned, used);
+          used.delete(midi);
+        });
+        return;
+      }
+
+      const bassMidi = assigned[bassIndex];
+      if (assigned.some((midi, noteIndex) => noteIndex !== bassIndex && midi <= bassMidi)) return;
+      let score = assigned.reduce((sum, midi, noteIndex) => sum + Math.abs(midi - targets[noteIndex]), 0);
+      score += (Math.max(...assigned) - Math.min(...assigned)) * .12;
+      score += (bassMidi - floor) * .08;
+      for (let left = 0; left < assigned.length; left += 1) {
+        for (let right = left + 1; right < assigned.length; right += 1) {
+          if (notes[left].midi < notes[right].midi && assigned[left] > assigned[right]) score += 1.25;
+        }
+      }
+      if (!best || score < best.score) best = { score, midis: assigned.slice() };
+    }
+
+    visit(0, new Array(notes.length), new Set());
+    if (!best) return [];
+    return notes.map((note, index) => ({
+      ...note,
+      midi: best.midis[index],
+      display: spelledMidiName(best.midis[index], note.spelling)
+    }));
+  }
+
   function resolvesToMinor(chord, nextChord) {
     if (!chord || !nextChord || chord.family !== 'dom') return false;
     return mod(chord.root + 5) === nextChord.root && ['min', 'minmaj', 'hdim', 'dim'].includes(nextChord.family);
@@ -600,6 +658,7 @@
     spellChordTone,
     spellChordTones,
     makeVoicing,
+    fitVoicingToRange,
     suggestScale,
     parseSongKey,
     inferSectionContext,

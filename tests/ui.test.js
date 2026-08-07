@@ -26,7 +26,8 @@ if (!fs.existsSync(browserExecutable)) {
 }
 
 const root = path.resolve(__dirname, '..');
-const fixture = '[url=irealb://Autumn%20Leaves=Kosma%20Joseph==Medium%20Swing=G-=1r34LbKcu7T44*A%7BA-7%7CD7%7CG%5E7%7CC%5E7%7D===Jazz%20Fixture]Jazz Fixture[/url]';
+const music = 'T44*A{A-7 B7 C^7 D7|G^7|C^7|F#h7}';
+const fixture = `[url=irealb://Autumn%20Leaves=Kosma%20Joseph==Medium%20Swing=G-=1r34LbKcu7${encodeURIComponent(music)}===Jazz%20Fixture]Jazz Fixture[/url]`;
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 
 const server = http.createServer((request, response) => {
@@ -64,11 +65,35 @@ const server = http.createServer((request, response) => {
   assert.match(await page.locator('#libraryStatus').textContent(), /1 jazz-standard chart/);
   assert.ok(await page.locator('.chart-chord').count() >= 4);
   assert.equal(await page.locator('.chart-chord[aria-current="true"]').count(), 1);
-  assert.ok(await page.locator('.piano-key.scale').count() > 0);
-  assert.ok(await page.locator('.piano-key.voicing').count() >= 4);
+  assert.equal(await page.locator('.piano-key.white').count(), 15);
+  assert.equal(await page.locator('.piano-key.black').count(), 10);
+  assert.ok(await page.locator('.piano-key.root-tone').count() > 0);
+  assert.ok(await page.locator('.piano-key.chord-tone').count() > 0);
+  assert.ok(await page.locator('.piano-key.scale-tone').count() > 0);
+  const voicingCount = Number(await page.locator('#piano').getAttribute('data-voicing-count'));
+  assert.ok(voicingCount >= 4 && voicingCount <= 5);
+  assert.equal(await page.locator('.piano-key.voicing .key-role').count(), voicingCount);
+  assert.equal(await page.locator('.study-details, #voicingNotes, #scaleNotes, #playVoicing').count(), 0);
+  const semanticColors = await page.evaluate(() => ['root-tone', 'chord-tone', 'scale-tone'].map(className => {
+    const key = document.querySelector(`.piano-key.${className}`);
+    return key ? getComputedStyle(key).backgroundColor : '';
+  }));
+  assert.equal(new Set(semanticColors).size, 3, 'Root, chord, and scale keys need distinct colors');
+  assert.equal(await page.evaluate(() => [...document.querySelectorAll('.piano-key')].every(key => (
+    ['root-tone', 'chord-tone', 'scale-tone'].filter(className => key.classList.contains(className)).length <= 1
+  ))), true, 'Piano color roles should be mutually exclusive');
   assert.ok(await page.locator('.piano-key .key-name').count() > 0);
+  assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('.piano-key')].flatMap(key => {
+    const label = key.querySelector('.key-name');
+    const parsed = label && window.KeyerJazzTheory.parseNoteSpelling(label.textContent);
+    return !parsed || parsed.pc === window.KeyerJazzTheory.mod(Number(key.dataset.midi))
+      ? []
+      : [`${key.dataset.midi}:${label.textContent}`];
+  })), [], 'Every note label should name the physical piano key it appears on');
+  const rolesBeforeToggle = await page.locator('.piano-key .key-role').count();
   await page.locator('#toggleNoteNames').click();
   assert.equal(await page.locator('.piano-key .key-name').count(), 0);
+  assert.equal(await page.locator('.piano-key .key-role').count(), rolesBeforeToggle);
   assert.equal(await page.locator('#toggleNoteNames').getAttribute('aria-pressed'), 'false');
   await page.locator('#toggleNoteNames').click();
 
@@ -77,10 +102,32 @@ const server = http.createServer((request, response) => {
   const after = await page.locator('#chordProgress').textContent();
   assert.notEqual(after, before);
 
-  const target = await page.locator('.chart-chord').nth(2).boundingBox();
-  assert.ok(target && target.height >= 44, 'Chart chord targets should be at least 44px tall');
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  assert.ok(overflow <= 1, `Page has ${overflow}px of horizontal overflow`);
+  await page.locator('.chart-chord').first().click();
+  assert.equal(await page.locator('.piano-key.playing').count(), voicingCount, 'A chart click should play and light the whole voicing');
+
+  async function assertMobileLayout(width, columns) {
+    await page.setViewportSize({ width, height: 844 });
+    const layout = await page.evaluate(() => {
+      const scroller = document.querySelector('#chartScroll');
+      const chart = document.querySelector('#chart');
+      const target = document.querySelector('.dense-measure .chart-chord');
+      return {
+        documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
+        chartOverflow: scroller.scrollWidth - scroller.clientWidth,
+        columns: getComputedStyle(chart).gridTemplateColumns.split(' ').filter(Boolean).length,
+        targetWidth: target?.getBoundingClientRect().width || 0,
+        targetHeight: target?.getBoundingClientRect().height || 0
+      };
+    });
+    assert.ok(layout.documentOverflow <= 1, `${width}px page has ${layout.documentOverflow}px of horizontal overflow`);
+    assert.ok(layout.chartOverflow <= 1, `${width}px chart has ${layout.chartOverflow}px of horizontal overflow`);
+    assert.equal(layout.columns, columns, `${width}px chart column count`);
+    assert.ok(layout.targetWidth >= 44, `${width}px dense chord target is ${layout.targetWidth}px wide`);
+    assert.ok(layout.targetHeight >= 44, `${width}px dense chord target is ${layout.targetHeight}px tall`);
+  }
+
+  await assertMobileLayout(390, 4);
+  await assertMobileLayout(320, 4);
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
