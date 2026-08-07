@@ -70,7 +70,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .panel-head { height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--line); }
 .panel-head h3 { margin: 0; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
 .panel-head span { color: var(--muted); font-size: .63rem; }
-.chart-scroll { height: min(69vh, 735px); overflow-x: hidden; overflow-y: auto; padding: 10px; background: #0b0e13; overscroll-behavior: contain; scroll-behavior: smooth; }
+.chart-scroll { height: min(69vh, 735px); overflow-x: hidden; overflow-y: auto; padding: 10px; background: #0b0e13; overscroll-behavior: contain; scroll-behavior: auto; }
 .realbook-chart { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; min-width: 0; max-width: 100%; overflow: hidden; color: var(--paper-ink); background: var(--paper); border: 1px solid #364154; border-radius: 5px; box-shadow: 0 10px 30px #0008, inset 0 0 40px #73809a0d; font-family: "Marker Felt", "Comic Sans MS", ui-rounded, system-ui, sans-serif; }
 .measure { position: relative; min-width: 0; min-height: 82px; padding: 18px 4px 7px; border-right: 1.5px solid var(--paper-line); border-bottom: 1.5px solid var(--paper-line); background: linear-gradient(100deg, transparent, #ffffff08 49%, transparent); }
 .measure:nth-child(4n) { border-right: 0; }
