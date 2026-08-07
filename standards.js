@@ -295,12 +295,18 @@
     const measure = elements.chart.querySelector(`[data-bar-index="${event.barIndex}"]`);
     if (!measure) return;
     const view = elements.chartScroll;
-    const margin = 14;
-    if (measure.offsetTop < view.scrollTop + margin) {
-      view.scrollTo({ top: Math.max(0, measure.offsetTop - margin), behavior: 'smooth' });
-    } else if (measure.offsetTop + measure.offsetHeight > view.scrollTop + view.clientHeight - margin) {
-      view.scrollTo({ top: measure.offsetTop + measure.offsetHeight - view.clientHeight + margin, behavior: 'smooth' });
-    }
+    const viewRect = view.getBoundingClientRect();
+    const measureRect = measure.getBoundingClientRect();
+    const visibleTop = viewRect.top + view.clientTop;
+    const visibleBottom = visibleTop + view.clientHeight;
+    const inset = 4;
+    let delta = 0;
+    if (measureRect.height > view.clientHeight - inset * 2) delta = measureRect.top - visibleTop - inset;
+    else if (measureRect.top < visibleTop + inset) delta = measureRect.top - visibleTop - inset;
+    else if (measureRect.bottom > visibleBottom - inset) delta = measureRect.bottom - visibleBottom + inset;
+    if (!delta) return;
+    const maxScroll = Math.max(0, view.scrollHeight - view.clientHeight);
+    view.scrollTop = Math.min(maxScroll, Math.max(0, view.scrollTop + delta));
   }
 
   function renderChart() {

@@ -26,7 +26,7 @@ if (!fs.existsSync(browserExecutable)) {
 }
 
 const root = path.resolve(__dirname, '..');
-const music = 'T44*A{A-7 B7 C^7 D7|G^7|C^7|F#h7}';
+const music = 'T44*A{A-7 B7 C^7 D7|G^7|C^7|F#h7|B7|E-7|A7|D^7|G7|C^7|F7|Bb^7|Eb^7|Ab^7|D7|G-7|C7|F^7|Bb7|Eb^7}';
 const fixture = `[url=irealb://Autumn%20Leaves=Kosma%20Joseph==Medium%20Swing=G-=1r34LbKcu7${encodeURIComponent(music)}===Jazz%20Fixture]Jazz Fixture[/url]`;
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 
@@ -126,8 +126,54 @@ const server = http.createServer((request, response) => {
     assert.ok(layout.targetHeight >= 44, `${width}px dense chord target is ${layout.targetHeight}px tall`);
   }
 
+  async function assertSelectedRowVisibility(width) {
+    await page.setViewportSize({ width, height: 844 });
+
+    async function selectAndMeasure(index, preScroll) {
+      return page.evaluate(({ targetIndex, scroll }) => {
+        const scroller = document.querySelector('#chartScroll');
+        scroller.scrollTop = scroll === 'bottom' ? scroller.scrollHeight : 0;
+        window.KeyerStandardsDebug.selectEvent(targetIndex, false);
+        const selected = document.querySelector('.measure.selected');
+        const viewRect = scroller.getBoundingClientRect();
+        const rowRect = selected.getBoundingClientRect();
+        const visibleTop = viewRect.top + scroller.clientTop;
+        const visibleBottom = visibleTop + scroller.clientHeight;
+        return {
+          barIndex: selected.dataset.barIndex,
+          topGap: rowRect.top - visibleTop,
+          bottomGap: visibleBottom - rowRect.bottom
+        };
+      }, { targetIndex: index, scroll: preScroll });
+    }
+
+    const eventCount = await page.evaluate(() => window.KeyerStandardsDebug.state.events.length);
+    const first = await selectAndMeasure(0, 'bottom');
+    assert.ok(first.topGap >= -1 && first.bottomGap >= -1, `${width}px first selected row is clipped: ${JSON.stringify(first)}`);
+    const last = await selectAndMeasure(eventCount - 1, 'top');
+    assert.ok(last.topGap >= -1 && last.bottomGap >= -1, `${width}px last selected row is clipped: ${JSON.stringify(last)}`);
+
+    const rapid = await page.evaluate(() => {
+      const debug = window.KeyerStandardsDebug;
+      debug.selectEvent(debug.state.events.length - 1, false);
+      debug.selectEvent(0, false);
+      debug.selectEvent(1, false);
+      debug.selectEvent(2, false);
+      const scroller = document.querySelector('#chartScroll');
+      const selected = document.querySelector('.measure.selected');
+      const viewRect = scroller.getBoundingClientRect();
+      const rowRect = selected.getBoundingClientRect();
+      const visibleTop = viewRect.top + scroller.clientTop;
+      const visibleBottom = visibleTop + scroller.clientHeight;
+      return { topGap: rowRect.top - visibleTop, bottomGap: visibleBottom - rowRect.bottom };
+    });
+    assert.ok(rapid.topGap >= -1 && rapid.bottomGap >= -1, `${width}px rapidly selected row is clipped: ${JSON.stringify(rapid)}`);
+  }
+
   await assertMobileLayout(390, 4);
   await assertMobileLayout(320, 4);
+  await assertSelectedRowVisibility(390);
+  await assertSelectedRowVisibility(320);
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
