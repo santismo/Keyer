@@ -506,6 +506,109 @@
     }));
   }
 
+  /**
+   * Fit a chord voicing to a keyboard range while leaving room below a melody.
+   *
+   * `melodyMidis` intentionally accepts either MIDI numbers or note-shaped
+   * objects with a `midi` value.  The card may fold an out-of-range melody
+   * note visually, but this helper uses its real register when it chooses the
+   * accompaniment register.  It never changes chord roles or pitch classes.
+   */
+  function fitVoicingForMelody(voicing, melodyMidis, low = 48, high = 72) {
+    const melody = (Array.isArray(melodyMidis) ? melodyMidis : [melodyMidis])
+      .map(note => note && typeof note === 'object' ? note.midi : note)
+      .filter(note => note != null && note !== '')
+      .map(Number)
+      .filter(Number.isFinite);
+    if (!melody.length) return fitVoicingToRange(voicing, low, high);
+
+    const notes = Array.isArray(voicing) ? voicing.filter(note => Number.isFinite(note?.midi)) : [];
+    const floor = Math.trunc(Number(low));
+    const ceiling = Math.trunc(Number(high));
+    if (!notes.length || !Number.isFinite(floor) || !Number.isFinite(ceiling) || ceiling < floor) return [];
+
+    const candidates = notes.map(note => {
+      const values = [];
+      for (let midi = floor; midi <= ceiling; midi += 1) {
+        if (mod(midi) === mod(note.pc ?? note.midi)) values.push(midi);
+      }
+      return values;
+    });
+    if (candidates.some(values => !values.length)) return [];
+
+    const bassIndex = Math.max(0, notes.findIndex(note => note.bass));
+    const targets = notes.map(note => {
+      let midi = note.midi;
+      while (midi < floor) midi += 12;
+      while (midi > ceiling) midi -= 12;
+      return midi;
+    });
+    const lowestMelody = Math.min(...melody);
+    // Three semitones is the preferred cushion. Two is still a useful
+    // separation for compact five-note extensions; one is the graceful
+    // last-resort when the melody sits directly above the required bass.
+    const bestByClearance = new Map([[3, null], [2, null], [1, null]]);
+    let bestCompact = null;
+
+    function visit(index, assigned, used) {
+      if (index < notes.length) {
+        candidates[index].forEach(midi => {
+          if (used.has(midi)) return;
+          assigned[index] = midi;
+          used.add(midi);
+          visit(index + 1, assigned, used);
+          used.delete(midi);
+        });
+        return;
+      }
+
+      const bassMidi = assigned[bassIndex];
+      if (assigned.some((midi, noteIndex) => noteIndex !== bassIndex && midi <= bassMidi)) return;
+
+      const topMidi = Math.max(...assigned);
+      // The Standards card is two octaves wide. Keep the sounding
+      // root-bass voicing compact enough that the same real keys can be shown
+      // on that card instead of silently using a different display inversion.
+      // Keep one semitone inside the literal two-octave edge. That guarantees
+      // there is a white-key-to-same-white-key display window containing all
+      // of the real sounding keys (a 24-semitone black-key endpoint span has
+      // no such 15-white/10-black window).
+      if (topMidi - bassMidi > 23) return;
+      let score = assigned.reduce((sum, midi, noteIndex) => sum + Math.abs(midi - targets[noteIndex]), 0);
+      score += (topMidi - Math.min(...assigned)) * .12;
+      score += (bassMidi - floor) * .08;
+      for (let left = 0; left < assigned.length; left += 1) {
+        for (let right = left + 1; right < assigned.length; right += 1) {
+          if (notes[left].midi < notes[right].midi && assigned[left] > assigned[right]) score += 1.25;
+        }
+      }
+
+      if (!bestCompact || topMidi < bestCompact.topMidi || (topMidi === bestCompact.topMidi && score < bestCompact.score)) {
+        bestCompact = { score, topMidi, midis: assigned.slice() };
+      }
+
+      [3, 2, 1].forEach(clearance => {
+        if (topMidi > lowestMelody - clearance) return;
+        const best = bestByClearance.get(clearance);
+        if (!best || score < best.score) bestByClearance.set(clearance, { score, midis: assigned.slice() });
+      });
+    }
+
+    visit(0, new Array(notes.length), new Set());
+    // Very low melodies can make any useful separation impossible (for
+    // example, a melody just one semitone above the required bass root). In
+    // that case keep the accompaniment compact and low rather than jumping to
+    // an unrelated high inversion that hides the melody and no longer fits
+    // the same two-octave display window.
+    const best = bestByClearance.get(3) || bestByClearance.get(2) || bestByClearance.get(1) || bestCompact;
+    if (!best) return fitVoicingToRange(voicing, low, high);
+    return notes.map((note, index) => ({
+      ...note,
+      midi: best.midis[index],
+      display: spelledMidiName(best.midis[index], note.spelling)
+    }));
+  }
+
   function resolvesToMinor(chord, nextChord) {
     if (!chord || !nextChord || chord.family !== 'dom') return false;
     return mod(chord.root + 5) === nextChord.root && ['min', 'minmaj', 'hdim', 'dim'].includes(nextChord.family);
@@ -659,6 +762,7 @@
     spellChordTones,
     makeVoicing,
     fitVoicingToRange,
+    fitVoicingForMelody,
     suggestScale,
     parseSongKey,
     inferSectionContext,

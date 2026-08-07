@@ -30,6 +30,68 @@ const music = 'T44*A{A-7 B7 C^7 D7|G^7|C^7|F#h7|B7|E-7|A7|D^7|G7|C^7|F7|Bb^7|Eb^
 const fixture = `[url=irealb://Autumn%20Leaves=Kosma%20Joseph==Medium%20Swing=G-=1r34LbKcu7${encodeURIComponent(music)}===Jazz%20Fixture]Jazz Fixture[/url]`;
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 
+function vlq(value) {
+  let buffer = value & 0x7f;
+  const bytes = [];
+  while ((value >>= 7)) {
+    buffer <<= 8;
+    buffer |= (value & 0x7f) | 0x80;
+  }
+  while (true) {
+    bytes.push(buffer & 0xff);
+    if (buffer & 0x80) buffer >>= 8;
+    else break;
+  }
+  return bytes;
+}
+
+function textBytes(value) { return Array.from(Buffer.from(value, 'utf8')); }
+function meta(delta, type, payload) { return [...vlq(delta), 0xff, type, ...vlq(payload.length), ...payload]; }
+function note(delta, status, midi, velocity) { return [...vlq(delta), status, midi, velocity]; }
+function track(events) {
+  const body = [...events.flat(), 0x00, 0xff, 0x2f, 0x00];
+  return [
+    ...textBytes('MTrk'),
+    (body.length >>> 24) & 0xff,
+    (body.length >>> 16) & 0xff,
+    (body.length >>> 8) & 0xff,
+    body.length & 0xff,
+    ...body,
+  ];
+}
+
+function melodyMidiFixture() {
+  const conductor = track([
+    meta(0, 0x03, textBytes('Autumn Leaves')),
+    meta(0, 0x51, [0x09, 0x27, 0xc0]), // 100 BPM
+    meta(0, 0x58, [4, 2, 24, 8]),
+    // The first marker is after a pickup. D7 deliberately lasts two full
+    // bars, so the marker chart must render a hold rather than N.C.
+    meta(960, 0x06, textBytes('Am7')),
+    meta(960, 0x06, textBytes('D7')),
+    meta(3840, 0x06, textBytes('Gmaj7')),
+  ]);
+  const melody = track([
+    meta(0, 0x03, textBytes('Melody (BB)')),
+    // C6 starts before the first marker and sustains across it.
+    note(840, 0x90, 84, 100), // C6, deliberately outside the C3–C5 card
+    note(720, 0x80, 84, 0),
+    note(0, 0x90, 81, 100),
+    note(240, 0x80, 81, 0),
+    note(360, 0x90, 79, 100),
+    note(720, 0x80, 79, 0),
+  ]);
+  return Buffer.from([
+    ...textBytes('MThd'),
+    0x00, 0x00, 0x00, 0x06,
+    0x00, 0x01,
+    0x00, 0x02,
+    0x01, 0xe0,
+    ...conductor,
+    ...melody,
+  ]);
+}
+
 const server = http.createServer((request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
   const requested = path.resolve(root, `.${pathname}`);
@@ -57,6 +119,16 @@ const server = http.createServer((request, response) => {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   await page.route(/(?:raw\.githubusercontent\.com|cdn\.jsdelivr\.net).*real(?:%20| )playlist\.txt/i, route => {
     route.fulfill({ status: 200, contentType: 'text/plain', body: fixture });
+  });
+  await page.route(/example-songs\.json/i, route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ songs: [{ name: 'Autumn Leaves.mid', size: 1234 }] })
+    });
+  });
+  await page.route(/example(?:%20| )midi(?:%20| )songs\/Autumn(?:%20| )Leaves\.mid/i, route => {
+    route.fulfill({ status: 200, contentType: 'audio/midi', body: melodyMidiFixture() });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}/standards.html`, { waitUntil: 'networkidle' });
   await page.waitForSelector('.chart-chord.active');
@@ -174,6 +246,134 @@ const server = http.createServer((request, response) => {
   await assertMobileLayout(320, 4);
   await assertSelectedRowVisibility(390);
   await assertSelectedRowVisibility(320);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForFunction(() => window.KeyerStandardsDebug.state.midiEntry !== null);
+  assert.match(await page.locator('#midiStatus').textContent(), /Miditar MIDI available/);
+  await page.locator('#toggleMelody').click();
+  await page.waitForFunction(() => (
+    window.KeyerStandardsDebug.state.chartSource === 'midi'
+    && window.KeyerStandardsDebug.state.melodyNotes.length > 0
+  ));
+  assert.equal(await page.locator('#chartSource').inputValue(), 'midi');
+  assert.equal(await page.locator('#melodyPanel').isVisible(), true);
+  assert.equal(await page.locator('#playMelody').isDisabled(), false);
+  assert.equal(await page.locator('#tempoValue').textContent(), '100 BPM');
+  assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="84"]').count(), 1);
+  assert.equal(await page.locator('.piano-key.melody-tone .melody-octave').textContent(), 'C6');
+  const midiSpans = await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const { state } = debug;
+    const firstChord = state.timeline.find(entry => entry.type === 'chord');
+    const crossingPickup = state.melodyNotes.find(note => (
+      note.startBeat < firstChord.startBeat && note.endBeat > firstChord.startBeat
+    ));
+    return {
+      firstTimeline: state.timeline.slice(0, 3).map(entry => ({ type: entry.type, start: entry.startBeat, end: entry.endBeat })),
+      ordered: state.timeline.every((entry, index, timeline) => (
+        !index || entry.startBeat >= timeline[index - 1].endBeat - .001
+      )),
+      holds: [...document.querySelectorAll('.chart-hold')].map(button => button.title),
+      crossingPickup: crossingPickup && {
+        start: crossingPickup.startBeat,
+        end: crossingPickup.endBeat,
+        duration: crossingPickup.durationBeats,
+        markerStart: firstChord.startBeat
+      }
+    };
+  });
+  assert.deepEqual(midiSpans.firstTimeline[0], { type: 'rest', start: 0, end: 2 }, 'Pickup should keep its real lead-in before the first marker');
+  assert.equal(midiSpans.ordered, true, 'MIDI marker spans must not create overlapping or zero-time rests');
+  assert.ok(midiSpans.holds.some(title => /Hold D7/.test(title)), 'A chord held over a barline should render a carry mark, not N.C.');
+  assert.ok(midiSpans.crossingPickup && midiSpans.crossingPickup.duration > midiSpans.crossingPickup.markerStart - midiSpans.crossingPickup.start, 'A pickup crossing a marker needs its full held duration');
+  const register = await page.evaluate(() => {
+    const event = window.KeyerStandardsDebug.state.events[window.KeyerStandardsDebug.state.activeIndex];
+    const melody = window.KeyerStandardsDebug.melodyNotesForEvent(event);
+    return {
+      topChord: Math.max(...window.KeyerStandardsDebug.state.displayVoicing.map(note => note.midi)),
+      lowestMelody: Math.min(...melody.map(note => note.midi))
+    };
+  });
+  assert.ok(register.topChord <= register.lowestMelody - 2, `Chord register (${register.topChord}) should sit under melody (${register.lowestMelody})`);
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    const overflow = await page.evaluate(() => ({
+      document: document.documentElement.scrollWidth - window.innerWidth,
+      chart: chartScroll.scrollWidth - chartScroll.clientWidth
+    }));
+    assert.ok(overflow.document <= 1, `${width}px melody controls overflow the page by ${overflow.document}px`);
+    assert.ok(overflow.chart <= 1, `${width}px MIDI chart overflows by ${overflow.chart}px`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  await page.locator('#melodySlider').evaluate(element => {
+    element.value = '1';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="81"]').count(), 1, 'Slider should move the actual melody note');
+  assert.ok(await page.locator('.piano-key.playing').count() >= 1, 'Scrubbing a melody note should audition it');
+
+  await page.locator('#playChart').click();
+  assert.equal(await page.locator('#playChart').textContent(), 'Stop chart');
+  assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), true);
+  assert.equal(await page.locator('.piano-key.melody-tone').count(), 0, 'Transport must wait for the real melody onset instead of previewing a future note');
+  await page.locator('#playChart').click();
+  assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), false);
+  await page.locator('#useChartTempo').click();
+  await page.locator('#tempoRange').evaluate(element => {
+    element.value = '86';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  assert.equal(await page.locator('#tempoValue').textContent(), '86 BPM');
+
+  const markerlessFallback = await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const markerlessMidi = { ...debug.state.midi, markers: [] };
+    debug.installMidiSource(markerlessMidi, { name: 'melody-only.mid', title: 'Melody only' });
+    return {
+      source: debug.state.chartSource,
+      midiChart: Boolean(debug.state.midiChart),
+      melodyVisible: debug.state.showMelody,
+      panelHidden: document.querySelector('#melodyPanel').hidden,
+      playMelodyDisabled: document.querySelector('#playMelody').disabled
+    };
+  });
+  assert.deepEqual(markerlessFallback, {
+    source: 'ireal',
+    midiChart: false,
+    melodyVisible: true,
+    panelHidden: false,
+    playMelodyDisabled: false
+  }, 'A melody-only MIDI should remain usable over the current iReal form');
+
+  const lowMelodyRegister = await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    debug.installMidiSource({
+      title: 'Low melody register',
+      ppq: 120,
+      durationTicks: 480,
+      markers: [{ type: 'marker', text: 'Ab', tick: 0 }],
+      tempos: [{ bpm: 100 }],
+      timeSignatures: [{ tick: 0, numerator: 4, denominator: 4 }],
+      tracks: [{
+        index: 0,
+        name: 'Melody',
+        notes: [{ midi: 45, tick: 0, endTick: 480, durationTicks: 480, channel: 0, trackIndex: 0 }]
+      }]
+    }, { name: 'low-register.mid', title: 'Low melody register' });
+    const { state } = debug;
+    return {
+      source: state.chartSource,
+      range: state.displayRange,
+      voicing: state.displayVoicing.map(note => note.midi),
+      melody: state.melodyNotes[0].midi,
+      pianoKeys: document.querySelectorAll('.piano-key').length
+    };
+  });
+  assert.equal(lowMelodyRegister.source, 'midi');
+  assert.equal(lowMelodyRegister.pianoKeys, 25, 'The shifted register remains a two-octave 15/10-key card');
+  assert.ok(Math.max(...lowMelodyRegister.voicing) < lowMelodyRegister.melody, 'Low melody notes shift the audible root-bass voicing underneath the melody');
+  assert.ok(lowMelodyRegister.voicing.every(midi => midi >= lowMelodyRegister.range.low && midi <= lowMelodyRegister.range.high), 'The shifted card shows the exact audible voicing');
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
