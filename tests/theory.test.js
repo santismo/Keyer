@@ -98,6 +98,17 @@ assert.equal(slash.length, 4);
 assert.equal(slash[0].pc, 7);
 assert.equal(slash[0].role, 'Bass');
 
+['C', 'Cmaj7', 'G13', 'Cmaj7/G', 'B7b9#5'].forEach(symbol => {
+  const source = Theory.makeVoicing(chord(symbol));
+  const fitted = Theory.fitVoicingToRange(source, 48, 72);
+  assert.equal(fitted.length, source.length, `${symbol} keeps every suggested finger`);
+  assert.equal(new Set(fitted.map(note => note.midi)).size, fitted.length, `${symbol} uses distinct keys`);
+  assert.ok(fitted.every(note => note.midi >= 48 && note.midi <= 72), `${symbol} fits the two-octave card`);
+  assert.deepEqual(fitted.map(note => note.pc), source.map(note => note.pc), `${symbol} preserves pitch classes`);
+  const bass = fitted.find(note => note.bass);
+  assert.equal(bass.midi, Math.min(...fitted.map(note => note.midi)), `${symbol} keeps bass lowest`);
+});
+
 assert.equal(Theory.suggestScale(chord('D-7'), {}).id, 'dorian');
 assert.equal(Theory.suggestScale(chord('G7#11'), {}).id, 'lydianDominant');
 assert.equal(Theory.suggestScale(chord('G7b5'), {}).id, 'lydianDominant');
