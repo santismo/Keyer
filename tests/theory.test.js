@@ -109,6 +109,71 @@ assert.equal(slash[0].role, 'Bass');
   assert.equal(bass.midi, Math.min(...fitted.map(note => note.midi)), `${symbol} keeps bass lowest`);
 });
 
+function assertMelodyAwareFit(source, fitted, label, low = 48, high = 72) {
+  assert.equal(fitted.length, source.length, `${label} keeps every suggested finger`);
+  assert.equal(new Set(fitted.map(note => note.midi)).size, fitted.length, `${label} uses distinct keys`);
+  assert.ok(fitted.every(note => note.midi >= low && note.midi <= high), `${label} fits the requested register`);
+  assert.deepEqual(fitted.map(note => note.pc), source.map(note => note.pc), `${label} preserves pitch classes`);
+  assert.deepEqual(fitted.map(note => note.role), source.map(note => note.role), `${label} preserves chord roles`);
+  const bass = fitted.find(note => note.bass);
+  assert.equal(bass.midi, Math.min(...fitted.map(note => note.midi)), `${label} keeps bass lowest`);
+}
+
+const alteredSource = Theory.makeVoicing(chord('B7b9#5'));
+const alteredUnderMelody = Theory.fitVoicingForMelody(alteredSource, [73], 48, 72);
+assertMelodyAwareFit(alteredSource, alteredUnderMelody, 'B7b9#5 below C♯5 melody');
+assert.ok(
+  Math.max(...alteredUnderMelody.map(note => note.midi)) <= 70,
+  'A sufficiently high melody leaves a three-semitone cushion above the voicing'
+);
+
+const gThirteenSource = Theory.makeVoicing(chord('G13'));
+const gThirteenUnderMelody = Theory.fitVoicingForMelody(gThirteenSource, [{ midi: 67 }], 48, 72);
+assertMelodyAwareFit(gThirteenSource, gThirteenUnderMelody, 'G13 below G4 melody');
+assert.equal(
+  Math.max(...gThirteenUnderMelody.map(note => note.midi)),
+  65,
+  'A compact extended voicing may use the available two-semitone melody cushion when three is impossible'
+);
+
+const ebMajorSource = Theory.makeVoicing(chord('Ebmaj7'));
+const ebMajorUnderLowMelody = Theory.fitVoicingForMelody(ebMajorSource, [58], 24, 72);
+assertMelodyAwareFit(ebMajorSource, ebMajorUnderLowMelody, 'E♭maj7 below B♭3 melody', 24, 72);
+assert.ok(
+  Math.max(...ebMajorUnderLowMelody.map(note => note.midi)) <= 55,
+  'A low melody shifts the root-bass voicing down instead of masking the melody'
+);
+assert.ok(
+  Math.max(...ebMajorUnderLowMelody.map(note => note.midi)) - Math.min(...ebMajorUnderLowMelody.map(note => note.midi)) <= 23,
+  'The melody-aware voicing stays compact enough for one two-octave keyboard window'
+);
+
+const abSource = Theory.makeVoicing(chord('Ab'));
+const abUnderVeryLowMelody = Theory.fitVoicingForMelody(abSource, [45], 24, 72);
+assertMelodyAwareFit(abSource, abUnderVeryLowMelody, 'A♭ under A2 melody', 24, 72);
+assert.equal(
+  Math.max(...abUnderVeryLowMelody.map(note => note.midi)),
+  44,
+  'A one-semitone melody cushion is preferable to an unrelated high inversion when no two-semitone cushion exists'
+);
+
+const cMajorSource = Theory.makeVoicing(chord('Cmaj7'));
+assert.deepEqual(
+  Theory.fitVoicingForMelody(cMajorSource, [], 48, 72),
+  Theory.fitVoicingToRange(cMajorSource, 48, 72),
+  'No melody keeps the established range-fitting result exactly'
+);
+assert.deepEqual(
+  Theory.fitVoicingForMelody(cMajorSource, null, 48, 72),
+  Theory.fitVoicingToRange(cMajorSource, 48, 72),
+  'A missing melody keeps the established range-fitting result exactly'
+);
+assert.deepEqual(
+  Theory.fitVoicingForMelody(cMajorSource, [40], 48, 72),
+  Theory.fitVoicingToRange(cMajorSource, 48, 72),
+  'An unworkably low melody falls back to the compact range-fitting result'
+);
+
 assert.equal(Theory.suggestScale(chord('D-7'), {}).id, 'dorian');
 assert.equal(Theory.suggestScale(chord('G7#11'), {}).id, 'lydianDominant');
 assert.equal(Theory.suggestScale(chord('G7b5'), {}).id, 'lydianDominant');

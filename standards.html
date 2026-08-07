@@ -71,12 +71,33 @@
             <button id="nextChord" type="button" aria-label="Next chord">›</button>
           </div>
 
-          <div class="piano" id="piano" role="group" aria-label="Two-octave piano showing the chord, scale, and suggested fingering"></div>
+          <div class="performance-toolbar" aria-label="Melody and chart playback">
+            <button class="performance-button" id="toggleMelody" type="button" aria-pressed="false">Show melody</button>
+            <button class="performance-button" id="loadMidi" type="button">MIDI source</button>
+            <button class="performance-button primary" id="playChart" type="button" aria-pressed="false">Play chart</button>
+          </div>
+          <div class="performance-options">
+            <label class="tempo-mode"><input id="useChartTempo" type="checkbox" checked> Chart tempo</label>
+            <label class="tempo-control" for="tempoRange"><span>Tempo <output id="tempoValue">120</output></span><input id="tempoRange" type="range" min="40" max="260" step="1" value="120" disabled></label>
+            <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
+          </div>
+          <div class="midi-source-line" id="midiSourceLine" aria-live="polite">
+            <span id="midiStatus">Looking for a matching Miditar MIDI…</span>
+            <label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label>
+          </div>
+          <div class="melody-panel" id="melodyPanel" hidden>
+            <div class="melody-panel-head"><span>Melody during this chord</span><output id="melodyReadout">—</output></div>
+            <input id="melodySlider" type="range" min="0" max="0" step="1" value="0" aria-label="Melody note during the selected chord" disabled>
+          </div>
+          <input id="midiFileInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
+
+          <div class="piano" id="piano" role="group" aria-label="Two-octave piano showing the chord, scale, suggested fingering, and optional melody"></div>
 
           <div class="color-legend" aria-label="Piano colors">
             <span><i class="root-swatch"></i>Root / bass</span>
             <span><i class="chord-swatch"></i>Chord</span>
             <span><i class="scale-swatch"></i>Scale</span>
+            <span class="melody-legend"><i class="melody-swatch"></i>Melody</span>
           </div>
         </aside>
       </div>
@@ -91,6 +112,7 @@
 
   <script src="jazz-theory.js"></script>
   <script src="ireal.js"></script>
+  <script src="miditar-midi.js"></script>
   <script src="standards.js"></script>
 </body>
 </html>
