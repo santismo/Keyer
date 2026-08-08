@@ -1578,7 +1578,44 @@
     return { notes: new Map(), center: previousCenter, score: Infinity, omitted };
   }
 
-  function guitarChordMelodyPlan(event, melodyNote = null) {
+  function guitarMelodyAnchorForEvent(event) {
+    if (!state.showMelody || !event) return null;
+    const notes = melodyNotesDuringEvent(event);
+    if (!notes.length) return null;
+    const timing = melodyTimingForEvent(event);
+    // A held pickup is the first sound at a chord change, so use it to pick
+    // the grip. Otherwise anchor to the chord's first new melody note. The
+    // slider may move through later notes without rebuilding this shape.
+    return notes.find(note => (
+      timing
+      && note.startBeat <= timing.startBeat + .0001
+      && note.endBeat > timing.startBeat + .0001
+    )) || notes[0];
+  }
+
+  function guitarPositionFromKey(key) {
+    if (!key) return null;
+    const [stringIndex, fret] = key.split(':').map(Number);
+    if (!Number.isInteger(stringIndex) || !Number.isInteger(fret) || !FRETBOARD_STRINGS[stringIndex]) return null;
+    return { stringIndex, fret, midi: FRETBOARD_STRINGS[stringIndex].midi + fret };
+  }
+
+  function guitarMelodyDisplayPosition(melodyNote, voicingByPosition) {
+    if (!Number.isFinite(Number(melodyNote?.midi))) return null;
+    const melodyPc = Theory.mod(melodyNote.midi);
+    // When the current melody is the note that chose this grip, keep it on
+    // that held top voice. For later notes, use an available string position so
+    // the chord diagram stays stable while only purple melody moves.
+    const anchorEntry = [...voicingByPosition.entries()].find(([, note]) => (
+      note.melody && Theory.mod(note.pc) === melodyPc
+    ));
+    if (anchorEntry) return guitarPositionFromKey(anchorEntry[0]);
+    const occupiedStrings = new Set([...voicingByPosition.keys()].map(key => Number(key.split(':')[0])));
+    const candidates = guitarSmartCandidates({ kind: 'melody', sourceMidi: Number(melodyNote.midi) });
+    return candidates.find(position => !occupiedStrings.has(position.stringIndex)) || candidates[0] || null;
+  }
+
+  function guitarChordMelodyPlan(event) {
     let previousCenter = null;
     let shape = null;
     const activeIndex = Math.max(0, state.activeIndex);
@@ -1588,9 +1625,7 @@
     for (let index = 0; index <= activeIndex; index += 1) {
       const planEvent = index === activeIndex ? event : state.events[index];
       if (!planEvent?.chord) continue;
-      const planMelody = index === activeIndex
-        ? melodyNote
-        : state.showMelody ? melodyNotesForEvent(planEvent)[0] || null : null;
+      const planMelody = guitarMelodyAnchorForEvent(planEvent);
       const planVoicing = state.showMelody
         ? soundingVoicingForMelody(Theory.makeVoicing(planEvent.chord), melodyNotesDuringEvent(planEvent))
         : Theory.makeVoicing(planEvent.chord);
@@ -1622,21 +1657,16 @@
       if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
     });
     const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
-    const chordMelody = guitarChordMelodyPlan(event, melodyNote);
+    const chordMelody = guitarChordMelodyPlan(event);
     const voicingByPosition = chordMelody.notes;
-    const melodyPositionEntry = [...voicingByPosition.entries()].find(([, note]) => note.melody) || null;
-    const melodyPositionKey = melodyPositionEntry?.[0] || '';
-    const melodyPosition = melodyPositionKey
-      ? (() => {
-          const [stringIndex, fret] = melodyPositionKey.split(':').map(Number);
-          return { stringIndex, fret, midi: FRETBOARD_STRINGS[stringIndex].midi + fret };
-        })()
-      : null;
+    const melodyPosition = guitarMelodyDisplayPosition(melodyNote, voicingByPosition);
+    const melodyPositionKey = fretboardPositionKey(melodyPosition);
     elements.fretboard.dataset.lowMidi = '40';
     elements.fretboard.dataset.highMidi = String(64 + FRETBOARD_MAX_FRET);
     elements.fretboard.dataset.rangeMode = 'fretboard';
     elements.fretboard.dataset.toneMode = toneMode;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
+    elements.fretboard.dataset.gripEventKey = melodyEventKey(event) || `${state.chartSource}:${state.activeIndex}`;
     elements.fretboard.dataset.arrangement = melodyNote ? 'chord-melody' : 'guitar-voicing';
     elements.fretboard.setAttribute('aria-label', melodyNote
       ? 'Guitar chord-melody fretboard from the open strings through the twelfth fret, with melody on top and chord tones below'
