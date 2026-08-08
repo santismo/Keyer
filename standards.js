@@ -4,6 +4,7 @@
   const Theory = window.KeyerJazzTheory;
   const IReal = window.KeyerIReal;
   const MiditarMidi = window.KeyerMiditarMidi;
+  const Reharm = window.KeyerStandardsReharm;
   const CATALOG_URLS = [
     'https://raw.githubusercontent.com/santismo/fakebot/main/real%20playlist.txt',
     'https://cdn.jsdelivr.net/gh/santismo/fakebot@main/real%20playlist.txt'
@@ -26,6 +27,8 @@
   const KEYBOARD_TONE_STORAGE_KEY = 'keyer-jazz-keyboard-tone-mode';
   const FRETBOARD_TONE_STORAGE_KEY = 'keyer-jazz-fretboard-tone-mode';
   const FRETBOARD_POSITION_STORAGE_KEY = 'keyer-jazz-fretboard-position';
+  const PIANO_VOICING_STORAGE_KEY = 'keyer-jazz-piano-voicing-style';
+  const REHARM_LEVEL_STORAGE_KEY = 'keyer-jazz-reharm-level';
   const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
   const DISPLAY_LOW = 48;
   const DISPLAY_HIGH = 72;
@@ -34,6 +37,10 @@
   const ACCOMPANIMENT_LOW = 24;
   const ACCOMPANIMENT_HIGH = 72;
   const DEFAULT_TEMPO = 120;
+  const PIANO_VOICING_STYLES = new Set([
+    'root-shell', 'shell', 'rootless', 'closed', 'spread',
+    'upper-structure', 'modern', 'cluster', 'avant-garde'
+  ]);
   const BLACK_PCS = new Set([1, 3, 6, 8, 10]);
   // Display high E first, just as a guitar is normally drawn from the
   // player's point of view. The neck starts in first position, then grows
@@ -74,6 +81,7 @@
     chart: document.querySelector('#chart'),
     chartScroll: document.querySelector('#chartScroll'),
     chartStatus: document.querySelector('#chartStatus'),
+    reharmLevel: document.querySelector('#reharmLevel'),
     sectionReadout: document.querySelector('#sectionReadout'),
     chordProgress: document.querySelector('#chordProgress'),
     toggleNoteNames: document.querySelector('#toggleNoteNames'),
@@ -97,6 +105,7 @@
     fretboard: document.querySelector('#fretboard'),
     keyboardRangeMode: document.querySelector('#keyboardRangeMode'),
     keyboardToneMode: document.querySelector('#keyboardToneMode'),
+    pianoVoicingStyle: document.querySelector('#pianoVoicingStyle'),
     fretboardToneMode: document.querySelector('#fretboardToneMode'),
     instrumentView: document.querySelector('#instrumentView'),
     studyCard: document.querySelector('.study-card'),
@@ -131,6 +140,9 @@
     keyboardToneMode: 'scale',
     fretboardToneMode: 'scale',
     fretboardPositionAnchor: null,
+    pianoVoicingStyle: 'root-shell',
+    reharmLevel: 0,
+    reharmCharts: new Map(),
     instrumentView: 'piano',
     // The full keyboard must remain stable while stepping through a chart.
     // It is rebuilt only when the selected chart/melody data changes.
@@ -1019,8 +1031,10 @@
             button.className = 'chart-hold';
             button.dataset.holdFor = item.holdForCellId || '';
             button.textContent = '—';
-            button.title = `Hold ${display}`;
-            button.setAttribute('aria-label', `Hold ${display} through bar ${bar.barIndex + 1}`);
+            button.title = item.reharm
+              ? `Hold ${display} · originally ${item.reharm.originalDisplay}`
+              : `Hold ${display}`;
+            button.setAttribute('aria-label', `Hold ${display}${item.reharm ? `, reharmonized from ${item.reharm.originalDisplay}` : ''} through bar ${bar.barIndex + 1}`);
             if (item.holdForCellId) button.addEventListener('click', () => selectCell(item.holdForCellId, true));
             stack.appendChild(button);
             chordWrap.appendChild(stack);
@@ -1029,8 +1043,15 @@
           button.className = 'chart-chord';
           button.dataset.cellId = cellId;
           button.textContent = item.optionalOnly ? `(${display})` : display;
-          button.setAttribute('aria-label', `${display}, bar ${bar.barIndex + 1}`);
-          button.title = display;
+          button.setAttribute('aria-label', `${display}${item.reharm ? `, reharmonized from ${item.reharm.originalDisplay} using ${item.reharm.ruleLabel}` : ''}, bar ${bar.barIndex + 1}`);
+          button.title = item.reharm
+            ? `${item.reharm.originalDisplay} → ${display} · ${item.reharm.ruleLabel}`
+            : display;
+          if (item.reharm) {
+            button.classList.add('reharmonized');
+            button.dataset.originalChord = item.reharm.originalDisplay;
+            button.dataset.reharmRule = item.reharm.ruleId;
+          }
           if (display.length > 6) button.classList.add('long-symbol');
           if (item.optionalOnly) button.classList.add('optional');
           if (!item.parsed) {
@@ -1097,6 +1118,20 @@
     return fitted.length === voicing.length ? fitted : voicing;
   }
 
+  function pianoVoicingForChord(chord, scale, notes = []) {
+    if (!chord) return [];
+    if (typeof Theory.makePianoVoicing !== 'function') {
+      return soundingVoicingForMelody(Theory.makeVoicing(chord), notes);
+    }
+    return Theory.makePianoVoicing(chord, {
+      style: validPianoVoicingStyle(state.pianoVoicingStyle),
+      scale,
+      melodyMidis: melodyMidiValues(notes),
+      low: ACCOMPANIMENT_LOW,
+      high: ACCOMPANIMENT_HIGH
+    });
+  }
+
   function eventChordVariants(event) {
     const variants = [event?.chord];
     (event?.item?.alternates || []).forEach(option => {
@@ -1122,7 +1157,7 @@
       return `${event.eventIndex}:${event.cellId}:${variants}:${timing?.startBeat ?? ''}:${timing?.endBeat ?? ''}`;
     }).join('|');
     const melody = state.melodyNotes.map(note => `${note.id}:${note.midi}:${note.startBeat}:${note.endBeat}`).join('|');
-    return `${state.chartSource}::${events}::${melody}`;
+    return `${state.chartSource}::${state.pianoVoicingStyle}::reharm-${state.reharmLevel}::${events}::${melody}`;
   }
 
   function snapFullKeyboardRange(midis) {
@@ -1157,7 +1192,8 @@
       // note crossing a marker can change the fitted accompaniment register.
       const eventMelody = melodyNotesDuringEvent(event);
       eventChordVariants(event).forEach(chord => {
-        const voicing = soundingVoicingForMelody(Theory.makeVoicing(chord), eventMelody);
+        const scale = scaleForEvent({ ...event, chord }, state.events[event.eventIndex + 1] || null);
+        const voicing = pianoVoicingForChord(chord, scale, eventMelody);
         const variantKey = `${event.eventIndex}:${chord.raw || chord.display}`;
         eventVoicings.set(variantKey, voicing);
         voicing.forEach(note => { if (Number.isFinite(note?.midi)) allMidis.push(note.midi); });
@@ -1193,6 +1229,18 @@
     const view = state.instrumentView === 'fretboard' && elements.fretboard ? 'fretboard' : 'piano';
     state.instrumentView = view;
     if (elements.instrumentView) elements.instrumentView.value = view;
+    if (elements.pianoVoicingStyle) {
+      elements.pianoVoicingStyle.value = validPianoVoicingStyle(state.pianoVoicingStyle);
+      elements.pianoVoicingStyle.disabled = view === 'fretboard';
+      elements.pianoVoicingStyle.setAttribute('aria-label', view === 'fretboard'
+        ? 'Piano voicing style, available in Keys view'
+        : 'Piano voicing style');
+    }
+    if (elements.reharmLevel) {
+      elements.reharmLevel.value = String(state.reharmLevel);
+      const definition = Reharm?.LEVELS?.[state.reharmLevel];
+      elements.reharmLevel.title = definition?.concepts?.join(' · ') || 'Use the original harmony';
+    }
     if (elements.piano) {
       elements.piano.hidden = view !== 'piano';
       elements.piano.dataset.instrumentView = view;
@@ -1243,6 +1291,10 @@
 
   function validToneMode(mode) {
     return ['scale', 'chord', 'voicing', 'none'].includes(mode) ? mode : 'scale';
+  }
+
+  function validPianoVoicingStyle(style) {
+    return PIANO_VOICING_STYLES.has(style) ? style : 'root-shell';
   }
 
   function splitMelodyRangeFor(melodyNote) {
@@ -1398,7 +1450,9 @@
 
   function renderPiano(chord, scale, voicing, melodyNote = null, melodyNotes = []) {
     const melodyMidis = melodyMidiValues(melodyNotes);
-    const soundingVoicing = soundingVoicingForMelody(voicing, melodyMidis);
+    const soundingVoicing = typeof Theory.makePianoVoicing === 'function'
+      ? voicing
+      : soundingVoicingForMelody(voicing, melodyMidis);
     const rangeMode = activeKeyboardRangeMode();
     const toneMode = validToneMode(state.keyboardToneMode);
     const fullSongRange = rangeMode === 'full' ? fullSongKeyboardData()?.range : null;
@@ -2369,9 +2423,9 @@
     const nextEvent = state.events[state.activeIndex + 1] || null;
     const section = pickup ? null : state.sections.get(event.sectionId);
     const scale = pickup ? null : scaleForEvent(event, nextEvent);
-    const voicing = pickup ? [] : Theory.makeVoicing(event.chord);
     const melodyNotes = melodyNotesForEvent(event);
     const melodyNotesOnCard = melodyNotesDuringEvent(event);
+    const voicing = pickup ? [] : pianoVoicingForChord(event.chord, scale, melodyNotesOnCard);
     if (state.activeMelodyNote && !melodyNotesOnCard.some(note => note.id === state.activeMelodyNote.id)) state.activeMelodyNote = null;
     const melodyNote = activeMelodyForEvent(event);
     state.scale = scale;
@@ -2382,6 +2436,11 @@
     elements.selectedChord.textContent = pickup
       ? 'Pickup'
       : `${event.optionalAlternate ? '(' : ''}${event.chord.display}${event.optionalAlternate ? ')' : ''}`;
+    elements.selectedChord.title = event.item?.reharm
+      ? `${event.item.reharm.originalDisplay} → ${event.chord.display} · ${event.item.reharm.ruleLabel}`
+      : pickup ? 'Melody pickup' : event.chord.display;
+    elements.selectedChord.dataset.originalChord = event.item?.reharm?.originalDisplay || '';
+    elements.selectedChord.dataset.reharmLevel = String(state.reharmLevel);
     elements.chordProgress.textContent = pickup ? `0 / ${chordTotal}` : `${chordPosition} / ${chordTotal}`;
     elements.sectionReadout.textContent = pickup ? 'MIDI · pickup' : displaySection(event.sectionLabel, section);
     if (pickup) {
@@ -2391,7 +2450,10 @@
       const parentSuffix = scale.sectionBased ? ` · ${Theory.contextName(section, state.preferFlats)} section` : '';
       const scaleRoot = scale.rootText ? Theory.displayNoteSpelling(scale.rootText) : Theory.noteName(scale.root, state.preferFlats);
       elements.scaleName.textContent = `${scaleRoot} ${scale.name}${parentSuffix}`;
-      elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}`;
+      const reharmStatus = state.reharmLevel
+        ? ` · Reharm ${state.reharmLevel}${event.item?.reharm ? ` · ${event.item.reharm.ruleLabel}` : ''}`
+        : '';
+      elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}${reharmStatus}`;
     }
     renderPiano(event.chord, scale, voicing, melodyNote, melodyNotesOnCard);
     renderFretboard(event, scale, melodyNote);
@@ -2429,8 +2491,81 @@
       durationBeats: built.durationBeats,
       sections: buildSectionContexts(bars, options.sourceKey ?? state.song?.key),
       sourceKey: options.sourceKey ?? state.song?.key ?? '',
-      tempoBpm: Number(options.tempoBpm) || null
+      tempoBpm: Number(options.tempoBpm) || null,
+      explicitTiming: Boolean(options.explicitTiming),
+      reharmLevel: Number(options.reharmLevel) || 0,
+      reharmChanged: Number(options.reharmChanged) || 0
     };
+  }
+
+  function invalidateDerivedHarmony() {
+    state.reharmCharts.clear();
+    state.guitarPlanCache = null;
+    state.fullSongKeyboard = { key: '', range: null, eventVoicings: new Map(), midis: [] };
+  }
+
+  function melodyPcsByCellForChart(chart, source) {
+    const result = new Map();
+    if (!chart || !state.midi || !state.melodyNotes.length || state.melodyOverlayChartId !== source) return result;
+    chart.events.forEach(event => {
+      if (!event?.chord) return;
+      const startBeat = Number(source === 'ireal' ? event.playbackStartBeat : event.sourceStartBeat);
+      const endBeat = Number(source === 'ireal' ? event.playbackEndBeat : event.sourceEndBeat);
+      if (!Number.isFinite(startBeat) || !Number.isFinite(endBeat) || endBeat <= startBeat) return;
+      const pcs = result.get(event.cellId) || new Set();
+      state.melodyNotes.forEach(note => {
+        const noteStart = Number(note.startBeat);
+        const noteEnd = Number(note.endBeat);
+        if (Number.isFinite(noteStart) && Number.isFinite(noteEnd)
+          && noteStart < endBeat - .0001 && noteEnd > startBeat + .0001) {
+          pcs.add(Theory.mod(note.midi));
+        }
+      });
+      if (pcs.size) result.set(event.cellId, pcs);
+    });
+    return new Map([...result].map(([cellId, pcs]) => [cellId, [...pcs]]));
+  }
+
+  function chartForSource(source) {
+    const base = source === 'midi' ? state.midiChart : state.irealChart;
+    const level = Reharm?.normalizeLevel?.(state.reharmLevel) ?? 0;
+    if (!base || !level || !Reharm) return base;
+    const melodyKey = state.melodyOverlayChartId === source
+      ? state.melodyNotes.map(note => `${note.id}:${note.midi}:${note.startBeat}:${note.endBeat}`).join('|')
+      : '';
+    const cached = state.reharmCharts.get(source);
+    if (cached?.base === base && cached.level === level && cached.melodyKey === melodyKey) return cached.chart;
+    const reharmonized = Reharm.reharmonizeBars(base.bars, {
+      level,
+      contexts: base.sections,
+      melodyPcsByCell: melodyPcsByCellForChart(base, source),
+      seed: `${state.song?.title || ''}:${state.song?.composer || ''}:${source}`
+    });
+    const chart = createChartData(`${base.id}:reharm-${level}`, reharmonized.bars, base.playbackOrder, {
+      explicitTiming: base.explicitTiming,
+      sourceKey: base.sourceKey,
+      tempoBpm: base.tempoBpm,
+      reharmLevel: level,
+      reharmChanged: reharmonized.changed
+    });
+    chart.reharmPlan = reharmonized.plan;
+    chart.originalChart = base;
+    state.reharmCharts.set(source, { base, level, melodyKey, chart });
+    return chart;
+  }
+
+  function currentOccurrenceSnapshot() {
+    const event = state.events[state.activeIndex];
+    return event ? { cellId: event.cellId, passIndex: event.passIndex, eventIndex: event.eventIndex } : null;
+  }
+
+  function occurrenceIndexForSnapshot(events, snapshot) {
+    if (!snapshot || !events.length) return 0;
+    const exact = events.findIndex(event => event.cellId === snapshot.cellId && event.passIndex === snapshot.passIndex);
+    if (exact >= 0) return exact;
+    const sameCell = events.findIndex(event => event.cellId === snapshot.cellId);
+    if (sameCell >= 0) return sameCell;
+    return Math.max(0, Math.min(events.length - 1, Number(snapshot.eventIndex) || 0));
   }
 
   function syncMidiSourceStatus() {
@@ -2460,7 +2595,7 @@
   }
 
   function activateChartSource(source, options = {}) {
-    const chart = source === 'midi' ? state.midiChart : state.irealChart;
+    const chart = chartForSource(source);
     if (!chart) return false;
     if (!options.transport) stopChartPlayback({ render: false });
     state.chartSource = source;
@@ -2471,10 +2606,12 @@
     state.timeline = chart.timeline;
     state.timelineByEventIndex = chart.timelineByEventIndex;
     state.sections = chart.sections;
-    state.activeIndex = 0;
+    state.activeIndex = occurrenceIndexForSnapshot(chart.events, options.preserveEvent);
     state.activeAlternateCellId = null;
     state.activeAlternateIndex = -1;
     state.splitMelodyRange = null;
+    state.guitarPlanCache = null;
+    state.fullSongKeyboard = { key: '', range: null, eventVoicings: new Map(), midis: [] };
     resetMelodySelection();
     if (!melodyMatchesChart(source)) state.showMelody = false;
     state.preferFlats = Theory.preferFlatsForKey(chart.sourceKey || state.song?.key);
@@ -2522,6 +2659,7 @@
     const bars = normalizeBars(song);
     if (!bars.length) return false;
     stopChartPlayback({ render: false });
+    invalidateDerivedHarmony();
     state.song = song;
     state.irealChart = createChartData('ireal', bars, song.playbackOrder, { sourceKey: song.key, tempoBpm: song.bpm });
     if (!state.irealChart.events.length) return false;
@@ -2699,6 +2837,7 @@
     state.midiEntry = entry || state.midiEntry;
     state.melodyTrack = melodyTrack;
     state.melodyNotes = melodyNotes;
+    invalidateDerivedHarmony();
     state.midiChart = chart?.bars?.length && chart.playbackOrder.length
       ? createChartData('midi', chart.bars, chart.playbackOrder, {
         explicitTiming: true,
@@ -3159,18 +3298,35 @@
     scheduleTransport(() => playTimelineEntry(timelineIndex + 1, session, secondsPerBeat), delayBeats * secondsPerBeat * 1000, session);
   }
 
+  function timelineIndexForSelection() {
+    const activeIndex = Number(state.activeIndex);
+    if (!Number.isInteger(activeIndex)) return state.timeline.findIndex(entry => entry.type === 'chord');
+    const directMatch = state.timeline.findIndex(entry => (
+      Number(entry?.eventIndex) === activeIndex
+      && (entry.type === 'chord' || entry.type === 'pickup')
+    ));
+    if (directMatch >= 0) return directMatch;
+    const mapped = state.timelineByEventIndex.get(activeIndex);
+    if (mapped) {
+      const byReference = state.timeline.indexOf(mapped);
+      if (byReference >= 0) return byReference;
+      const byIdentity = state.timeline.findIndex(entry => (
+        entry.id === mapped.id
+        && Number(entry.startBeat) === Number(mapped.startBeat)
+        && Number(entry.endBeat) === Number(mapped.endBeat)
+      ));
+      if (byIdentity >= 0) return byIdentity;
+    }
+    return state.timeline.findIndex(entry => entry.type === 'chord');
+  }
+
   function startChartPlayback() {
     if (!state.timeline.length) return;
     if (state.transport.playing) {
       stopChartPlayback();
       return;
     }
-    const activeEntry = state.timelineByEventIndex.get(state.activeIndex);
-    let startIndex = activeEntry ? state.timeline.findIndex(entry => entry.id === activeEntry.id) : state.timeline.findIndex(entry => entry.type === 'chord');
-    if (melodyMatchesChart() && state.activeIndex === 0 && activeEntry) {
-      const firstChordIndex = state.timeline.findIndex(entry => entry.type === 'chord');
-      if (firstChordIndex >= 0 && state.timeline.slice(0, firstChordIndex).some(entry => entry.type === 'rest')) startIndex = 0;
-    }
+    let startIndex = timelineIndexForSelection();
     if (startIndex < 0) return;
     if (state.transport.playMelody && melodyMatchesChart()) state.showMelody = true;
     state.activeMelodyNote = null;
@@ -3246,6 +3402,23 @@
     state.keyboardRangeMode = selected === 'full' && !fullSongKeyboardData()?.range ? 'compact' : selected;
     try { localStorage.setItem(keyboardRangeStorageKey(), state.keyboardRangeMode); } catch (_) {}
     renderStudy({ keepVisible: false });
+  });
+  elements.pianoVoicingStyle?.addEventListener('change', () => {
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    state.pianoVoicingStyle = validPianoVoicingStyle(elements.pianoVoicingStyle.value);
+    state.fullSongKeyboard = { key: '', range: null, eventVoicings: new Map(), midis: [] };
+    try { localStorage.setItem(PIANO_VOICING_STORAGE_KEY, state.pianoVoicingStyle); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
+  elements.reharmLevel?.addEventListener('change', () => {
+    const level = Reharm?.normalizeLevel?.(elements.reharmLevel.value) ?? 0;
+    if (level === state.reharmLevel) return;
+    const preserveEvent = currentOccurrenceSnapshot();
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    state.reharmLevel = level;
+    try { localStorage.setItem(REHARM_LEVEL_STORAGE_KEY, String(level)); } catch (_) {}
+    invalidateDerivedHarmony();
+    activateChartSource(state.chartSource, { transport: true, preserveEvent });
   });
   elements.keyboardToneMode?.addEventListener('change', () => {
     state.keyboardToneMode = validToneMode(elements.keyboardToneMode.value);
@@ -3398,6 +3571,8 @@
   } catch (_) {}
   try { state.keyboardToneMode = validToneMode(localStorage.getItem(KEYBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try { state.fretboardToneMode = validToneMode(localStorage.getItem(FRETBOARD_TONE_STORAGE_KEY)); } catch (_) {}
+  try { state.pianoVoicingStyle = validPianoVoicingStyle(localStorage.getItem(PIANO_VOICING_STORAGE_KEY)); } catch (_) {}
+  try { state.reharmLevel = Reharm?.normalizeLevel?.(localStorage.getItem(REHARM_LEVEL_STORAGE_KEY)) ?? 0; } catch (_) {}
   try { state.fretboardPositionAnchor = validFretboardPositionAnchor(localStorage.getItem(FRETBOARD_POSITION_STORAGE_KEY)); } catch (_) {}
   try {
     const savedView = localStorage.getItem(INSTRUMENT_VIEW_STORAGE_KEY);
@@ -3424,6 +3599,7 @@
     navigateChord,
     fullSongKeyboardData,
     snapFullKeyboardRange,
+    timelineIndexForSelection,
     fretboardPositionForMidi,
     validFretboardPositionAnchor,
     activeKeyboardRangeMode
