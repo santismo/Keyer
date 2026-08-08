@@ -62,6 +62,9 @@
             <button class="note-label-toggle" id="toggleNoteNames" type="button" aria-label="Hide note names on piano keys" aria-pressed="true">Names: On</button>
             <span id="chordProgress">1 / 1</span>
           </div>
+
+          <div class="piano" id="piano" role="group" aria-label="Two-octave piano showing the chord, scale, suggested fingering, and optional melody"></div>
+
           <div class="chord-navigator">
             <button id="previousChord" type="button" aria-label="Previous chord">‹</button>
             <div class="chord-identity" aria-live="polite" aria-atomic="true">
@@ -90,8 +93,6 @@
             <input id="melodySlider" type="range" min="0" max="0" step="1" value="0" aria-label="Melody note during the selected chord" disabled>
           </div>
           <input id="midiFileInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
-
-          <div class="piano" id="piano" role="group" aria-label="Two-octave piano showing the chord, scale, suggested fingering, and optional melody"></div>
 
           <div class="color-legend" aria-label="Piano colors">
             <span><i class="root-swatch"></i>Root / bass</span>

@@ -247,6 +247,36 @@ const server = http.createServer((request, response) => {
   await assertSelectedRowVisibility(390);
   await assertSelectedRowVisibility(320);
 
+  async function assertCompactPracticeLoop(width) {
+    await page.setViewportSize({ width, height: 844 });
+    const layout = await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      const rect = selector => document.querySelector(selector).getBoundingClientRect();
+      const chart = rect('.chart-panel');
+      const piano = rect('#piano');
+      const navigator = rect('.chord-navigator');
+      return {
+        chartBottom: chart.bottom,
+        pianoTop: piano.top,
+        pianoBottom: piano.bottom,
+        navigatorTop: navigator.top,
+        navigatorBottom: navigator.bottom,
+        viewportHeight: window.innerHeight
+      };
+    });
+    assert.ok(
+      layout.pianoTop >= layout.chartBottom - 1 && layout.pianoTop - layout.chartBottom <= 48,
+      `${width}px piano should sit immediately below the chart: ${JSON.stringify(layout)}`
+    );
+    assert.ok(
+      layout.navigatorTop >= layout.pianoBottom - 1 && layout.navigatorBottom <= layout.viewportHeight + 1,
+      `${width}px keyboard navigation should share the visible practice view: ${JSON.stringify(layout)}`
+    );
+  }
+
+  await assertCompactPracticeLoop(390);
+  await assertCompactPracticeLoop(320);
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => window.KeyerStandardsDebug.state.midiEntry !== null);
   assert.match(await page.locator('#midiStatus').textContent(), /Miditar MIDI available/);
@@ -312,6 +342,98 @@ const server = http.createServer((request, response) => {
   });
   assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="81"]').count(), 1, 'Slider should move the actual melody note');
   assert.ok(await page.locator('.piano-key.playing').count() >= 1, 'Scrubbing a melody note should audition it');
+
+  // This must be a native pointer drag instead of a synthetic `input` event:
+  // a range lives inside the swipeable study card, and a rightward drag used
+  // to bubble up as a card swipe and select the previous chart event.
+  await page.locator('#melodySlider').evaluate(element => {
+    element.value = '0';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.locator('#melodySlider').scrollIntoViewIfNeeded();
+  const activeIndexBeforeSliderDrag = await page.evaluate(() => window.KeyerStandardsDebug.state.activeIndex);
+  const sliderBox = await page.locator('#melodySlider').boundingBox();
+  assert.ok(sliderBox, 'Melody slider should have a visible pointer target');
+  await page.mouse.move(sliderBox.x + 6, sliderBox.y + sliderBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(sliderBox.x + sliderBox.width - 6, sliderBox.y + sliderBox.height / 2, { steps: 8 });
+  await page.mouse.up();
+  assert.equal(
+    await page.evaluate(() => window.KeyerStandardsDebug.state.activeIndex),
+    activeIndexBeforeSliderDrag,
+    'Dragging the melody slider must not change the active chord or bar'
+  );
+  // Headless Chromium does not consistently move a native range thumb via
+  // raw mouse coordinates. Verify its input behavior separately with the
+  // native keyboard interaction, while preserving the real pointer-drag
+  // assertion above for the swipe regression.
+  await page.locator('#melodySlider').evaluate(element => {
+    element.value = '0';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.locator('#melodySlider').focus();
+  await page.keyboard.press('ArrowRight');
+  const sliderKeyboardResult = await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    value: Number(document.querySelector('#melodySlider').value),
+    max: Number(document.querySelector('#melodySlider').max),
+    melodyMidi: document.querySelector('#piano').dataset.melodyMidi
+  }));
+  assert.equal(sliderKeyboardResult.value, sliderKeyboardResult.max, 'Native keyboard range input should reach the later melody note');
+  assert.equal(sliderKeyboardResult.melodyMidi, '81', 'Native keyboard range input should show the later melody note');
+  assert.equal(sliderKeyboardResult.activeIndex, activeIndexBeforeSliderDrag, 'Range keyboard input must not change the active chord or bar');
+
+  // With MIDI markers selected, the chord arrows become a phrase navigator:
+  // one note at a time inside a chord, then the next harmony's downbeat.
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Play this chord and first melody note');
+  await page.locator('#nextChord').click();
+  const firstMidiArrow = await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  }));
+  assert.deepEqual(firstMidiArrow, { activeIndex: 0, melodyMidi: 84, cursor: 0 }, 'First MIDI arrow should sound the chord downbeat with its first melody note');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next melody note');
+  await page.locator('#nextChord').click();
+  const secondMidiArrow = await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  }));
+  assert.deepEqual(secondMidiArrow, { activeIndex: 0, melodyMidi: 81, cursor: 1 }, 'Second MIDI arrow should advance within the same chord');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord and first melody note');
+  await page.locator('#nextChord').click();
+  const nextChordMidiArrow = await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  }));
+  assert.deepEqual(nextChordMidiArrow, { activeIndex: 1, melodyMidi: 79, cursor: 0 }, 'Only after the final note should MIDI navigation enter the next chord');
+  await page.locator('#previousChord').click();
+  const reverseMidiArrow = await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  }));
+  assert.deepEqual(reverseMidiArrow, { activeIndex: 0, melodyMidi: 81, cursor: 1 }, 'Previous MIDI arrow should return to the prior chord’s last melody note');
+  await page.locator('#previousChord').click();
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  })), { activeIndex: 0, melodyMidi: 84, cursor: 0 }, 'Previous MIDI arrow should continue note-by-note inside a chord');
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(2, false));
+  assert.equal(await page.locator('#previousChord').getAttribute('aria-label'), 'Previous chord');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Play this chord');
+  await page.locator('#nextChord').click();
+  assert.equal(
+    await page.evaluate(() => window.KeyerStandardsDebug.state.activeIndex),
+    2,
+    'The first MIDI arrow on a chord under a melody rest should sound that chord instead of skipping it'
+  );
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord');
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
 
   await page.locator('#playChart').click();
   assert.equal(await page.locator('#playChart').textContent(), 'Stop chart');
