@@ -25,6 +25,7 @@
   const INSTRUMENT_VIEW_STORAGE_KEY = 'keyer-jazz-instrument-view';
   const KEYBOARD_TONE_STORAGE_KEY = 'keyer-jazz-keyboard-tone-mode';
   const FRETBOARD_TONE_STORAGE_KEY = 'keyer-jazz-fretboard-tone-mode';
+  const FRETBOARD_POSITION_STORAGE_KEY = 'keyer-jazz-fretboard-position';
   const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
   const DISPLAY_LOW = 48;
   const DISPLAY_HIGH = 72;
@@ -45,6 +46,7 @@
     { label: 'A', name: 'A', midi: 45 },
     { label: 'E', name: 'low E', midi: 40 }
   ];
+  const FRETBOARD_MIDI_MAX_FRET = 127 - FRETBOARD_STRINGS[0].midi;
   // This is the normal, compact first-position board. Do not use it directly
   // for a rendered/solved neck: fretboardMaxFret() keeps a high melody in its
   // written register instead of folding it down an octave.
@@ -80,10 +82,6 @@
     midiStatus: document.querySelector('#midiStatus'),
     chartSourceLabel: document.querySelector('#chartSourceLabel'),
     chartSource: document.querySelector('#chartSource'),
-    melodyPanel: document.querySelector('#melodyPanel'),
-    melodyWheel: document.querySelector('#melodyWheel'),
-    melodySlider: document.querySelector('#melodySlider'),
-    melodyReadout: document.querySelector('#melodyReadout'),
     playChart: document.querySelector('#playChart'),
     useChartTempo: document.querySelector('#useChartTempo'),
     tempoRange: document.querySelector('#tempoRange'),
@@ -123,10 +121,12 @@
     songAvailabilityFilter: 'all',
     voicing: [],
     displayVoicing: [],
+    fretboardVoicing: [],
     displayRange: { low: DISPLAY_LOW, high: DISPLAY_HIGH },
     keyboardRangeMode: document.body.classList.contains('desktop-mode') ? 'wide' : 'compact',
     keyboardToneMode: 'scale',
     fretboardToneMode: 'scale',
+    fretboardPositionAnchor: null,
     instrumentView: 'piano',
     // The full keyboard must remain stable while stepping through a chart.
     // It is rebuilt only when the selected chart/melody data changes.
@@ -146,7 +146,7 @@
     melodyOverlayChartId: null,
     showMelody: false,
     melodyCursor: 0,
-    // The slider is tied to an occurrence, not just an index. A repeated
+    // The melody cursor is tied to an occurrence, not just an index. A repeated
     // chord can have a different melody phrase each time through the form.
     melodyCursorEventKey: '',
     melodyNavigationEventKey: '',
@@ -171,35 +171,35 @@
   const pressedCounts = {
     chord: new Map(),
     melody: new Map(),
-    fretboard: new Map()
+    fretboard: new Map(),
+    fretboardChord: new Map()
   };
   const deferredFullKeyboardTaps = new Map();
   let swipe = null;
-  let melodyWheelDrag = null;
-  let melodyWheelScrollRemainder = 0;
-  let melodyWheelRollPosition = null;
-  let melodyWheelPathKey = '';
-  let melodyWheelScrollActive = false;
-  let melodyWheelInstantFrame = 0;
-  let melodyWheelScrollSettleTimer = null;
-  // The encoder's surface is allowed to travel in real pixels. The musical
-  // cursor only moves at these detents, which avoids making a new card/bar
-  // render feel like the physical wheel was rebuilt under the finger.
-  const MELODY_WHEEL_NOTCH_PIXELS = 28;
-
   const safeText = value => String(value == null ? '' : value).trim();
+
+  function validFretboardPositionAnchor(value) {
+    if (value == null || value === '') return null;
+    const fret = Number(value);
+    return Number.isSafeInteger(fret) && fret >= 0 && fret <= FRETBOARD_MIDI_MAX_FRET ? fret : null;
+  }
 
   function fretboardMaxFret() {
     // Keep the geometry stable for the whole selected song. Recomputing from
-    // only the current note would make the neck jump as the wheel or player
+    // only the current note would make the neck jump as the arrows or player
     // moves through a phrase.
     const highStringMidi = FRETBOARD_STRINGS[0].midi;
     const highestMelodyMidi = state.melodyNotes.reduce((highest, note) => {
       const midi = Number(note?.midi);
       return Number.isFinite(midi) ? Math.max(highest, midi) : highest;
     }, -Infinity);
-    if (!Number.isFinite(highestMelodyMidi)) return FRETBOARD_MAX_FRET;
-    return Math.max(FRETBOARD_MAX_FRET, Math.ceil(highestMelodyMidi - highStringMidi));
+    const melodyFret = Number.isFinite(highestMelodyMidi)
+      ? Math.ceil(highestMelodyMidi - highStringMidi)
+      : FRETBOARD_MAX_FRET;
+    const anchoredFret = Number.isInteger(state.fretboardPositionAnchor)
+      ? state.fretboardPositionAnchor + FRETBOARD_MAX_FRETTED_SPAN
+      : FRETBOARD_MAX_FRET;
+    return Math.min(FRETBOARD_MIDI_MAX_FRET, Math.max(FRETBOARD_MAX_FRET, melodyFret, anchoredFret));
   }
 
   function fretboardMarkerFrets(maxFret = fretboardMaxFret()) {
@@ -610,7 +610,7 @@
     const firstMarkerTick = Math.max(0, Number(markers[0].tick) || 0);
     // Own a pickup by its onset, just like every later chord event. A note
     // held over the first marker remains audible/visible there, but is not a
-    // slider step of the first harmony.
+    // navigation step of the first harmony.
     const pickupNotes = (melodyNotes || []).filter(note => (
       Number(note?.tick) >= 0 && Number(note?.tick) < firstMarkerTick
     ));
@@ -808,7 +808,7 @@
     if (!melodyMatchesChart() || !event || !state.melodyNotes.length) return [];
     const timing = melodyTimingForEvent(event);
     if (!timing) return [];
-    // The slider and manual arrows own notes by their onset. A lead-in has a
+    // The manual arrows own notes by their onset. A lead-in has a
     // dedicated zero/pickup event, so its notes never become steps of the
     // first marked chord. A note held across a marker remains visually and
     // audibly present through that transition via melodyNotesDuringEvent().
@@ -856,14 +856,14 @@
     const notes = melodyNotesForEvent(event);
     if (state.activeMelodyNote && notes.some(note => note.id === state.activeMelodyNote.id)) return state.activeMelodyNote;
     // During transport, retain a sounding note when it crosses a chord
-    // marker. It remains visible, but it is deliberately not a slider step
+    // marker. It remains visible, but it is deliberately not a navigation step
     // for the later chord.
     if (state.transport.playing && state.activeMelodyNote && melodyNoteOverlapsEvent(state.activeMelodyNote, event)) return state.activeMelodyNote;
     if (!notes.length) return null;
     const index = melodyCursorIndex(event, notes);
     // In transport mode the melody marker should move only when that note is
     // actually sounding. Manual study still defaults to the first note so the
-    // slider is immediately useful.
+    // melody arrows are immediately useful.
     if (state.transport.playing) return null;
     return notes[index];
   }
@@ -1559,14 +1559,19 @@
     return [...choices];
   }
 
-  function guitarSmartCandidates(voice) {
+  function guitarSmartCandidates(voice, positionAnchor = state.fretboardPositionAnchor) {
     const target = Number(voice?.sourceMidi ?? voice?.midi);
+    const anchor = validFretboardPositionAnchor(positionAnchor);
     const lowest = FRETBOARD_STRINGS[FRETBOARD_STRINGS.length - 1].midi;
     const maxFret = fretboardMaxFret();
     const highest = FRETBOARD_STRINGS[0].midi + maxFret;
     const literalMelody = voice?.kind === 'melody' && target >= lowest && target <= highest;
     const candidates = guitarMidiChoices(voice)
       .flatMap(midi => fretboardCandidatesForMidi(midi, { maxFret }).filter(position => !literalMelody || position.midi === midi))
+      // A chosen fret is a floor for the accompaniment hand position, never
+      // for the purple melody. The melody remains at its literal MIDI/fret
+      // even when it passes below the learner's selected chord position.
+      .filter(position => voice?.kind === 'melody' || anchor == null || position.fret >= anchor)
       .filter((position, index, all) => all.findIndex(item => fretboardPositionKey(item) === fretboardPositionKey(position)) === index);
     const candidateScore = position => {
       const octaveDistance = Math.abs(position.midi - target) / 12;
@@ -1577,9 +1582,11 @@
         return octaveDistance * 1.35 + position.stringIndex * .78 + (position.fret === 0 ? 2.6 : 0) + highFret;
       }
       if (voice.kind === 'bass') {
-        return octaveDistance * .25 + Math.max(0, 3 - position.stringIndex) * 1.1 + highFret * .35;
+        const anchorDistance = anchor == null ? 0 : Math.abs(position.fret - anchor) * 1.7;
+        return octaveDistance * .25 + Math.max(0, 3 - position.stringIndex) * 1.1 + highFret * .35 + anchorDistance;
       }
-      return octaveDistance * .58 + Math.max(0, 2 - position.stringIndex) * .36 + highFret;
+      const anchorDistance = anchor == null ? 0 : Math.abs(position.fret - anchor) * 1.7;
+      return octaveDistance * .58 + Math.max(0, 2 - position.stringIndex) * .36 + highFret + anchorDistance;
     };
     return candidates
       .sort((left, right) => candidateScore(left) - candidateScore(right) || left.fret - right.fret || left.stringIndex - right.stringIndex)
@@ -1592,7 +1599,7 @@
     return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
   }
 
-  function scoreGuitarChordMelodyShape(selected, previousCenter = null) {
+  function scoreGuitarChordMelodyShape(selected, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
     if (!selected.length) return Infinity;
     const strings = selected.map(item => item.position.stringIndex);
     if (new Set(strings).size !== strings.length) return Infinity;
@@ -1611,7 +1618,22 @@
     const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
     if (span > FRETBOARD_MAX_FRETTED_SPAN) return Infinity;
     const center = guitarShapeCenter(selected);
-    const motion = previousCenter == null ? Math.abs(center - 5) * .22 : Math.abs(center - previousCenter) * 1.3;
+    const anchor = validFretboardPositionAnchor(positionAnchor);
+    const accompanimentPositions = selected
+      .filter(item => item.voice.kind !== 'melody')
+      .map(item => item.position);
+    if (anchor != null && accompanimentPositions.some(position => position.fret < anchor)) return Infinity;
+    const accompanimentFrets = accompanimentPositions.map(position => position.fret);
+    const chordFloor = accompanimentFrets.length ? Math.min(...accompanimentFrets) : anchor;
+    const chordCenter = accompanimentFrets.length
+      ? accompanimentFrets.reduce((sum, value) => sum + value, 0) / accompanimentFrets.length
+      : anchor;
+    const anchorPenalty = anchor == null || chordFloor == null
+      ? 0
+      : Math.abs(chordFloor - anchor) * 4 + Math.abs(chordCenter - (anchor + 1.75)) * .65;
+    const motion = previousCenter == null
+      ? Math.abs(center - 5) * .22
+      : Math.abs(center - previousCenter) * (anchor == null ? 1.3 : .35);
     const stringsSpread = Math.max(...strings) - Math.min(...strings);
     const octaveShift = selected.reduce((sum, item) => {
       const weight = item.voice.kind === 'melody' ? 1.35 : item.voice.kind === 'bass' ? .25 : .58;
@@ -1624,16 +1646,16 @@
     }, 0);
     const melodyStringPenalty = melody ? melody.position.stringIndex * 1.25 : 0;
     const melodyFretPenalty = melody && melody.position.fret > 0 ? Math.max(0, Math.abs(melody.position.fret - center) - 2) * 1.35 : 0;
-    return motion + span * 1.7 + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty;
+    return motion + anchorPenalty + span * 1.7 + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty;
   }
 
-  function chooseGuitarChordMelodyShape(voices, previousCenter = null) {
-    const candidateSets = voices.map(guitarSmartCandidates);
+  function chooseGuitarChordMelodyShape(voices, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
+    const candidateSets = voices.map(voice => guitarSmartCandidates(voice, positionAnchor));
     if (!voices.length || candidateSets.some(candidates => !candidates.length)) return null;
     let best = null;
     const visit = (index, selected) => {
       if (index === voices.length) {
-        const score = scoreGuitarChordMelodyShape(selected, previousCenter);
+        const score = scoreGuitarChordMelodyShape(selected, previousCenter, positionAnchor);
         if (!best || score < best.score) best = { score, selected: selected.slice() };
         return;
       }
@@ -1648,11 +1670,11 @@
     return best;
   }
 
-  function guitarChordMelodyShape(chord, voicing, melodyNote = null, previousCenter = null) {
+  function guitarChordMelodyShape(chord, voicing, melodyNote = null, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
     let voices = guitarChordMelodyVoices(chord, voicing, melodyNote);
     const omitted = [];
     while (voices.length) {
-      const shape = chooseGuitarChordMelodyShape(voices, previousCenter);
+      const shape = chooseGuitarChordMelodyShape(voices, previousCenter, positionAnchor);
       if (shape) {
         const notes = new Map(shape.selected.map(({ voice, position }) => [fretboardPositionKey(position), {
           ...voice,
@@ -1747,7 +1769,8 @@
   }
 
   function guitarChordMelodyPlan(event) {
-    let previousCenter = null;
+    const positionAnchor = validFretboardPositionAnchor(state.fretboardPositionAnchor);
+    let previousCenter = positionAnchor == null ? null : positionAnchor + 1.75;
     let shape = null;
     const activeIndex = Math.max(0, state.activeIndex);
     // Build the hand path in form order. This is intentionally separate from
@@ -1761,7 +1784,7 @@
       const planVoicing = state.showMelody
         ? soundingVoicingForMelody(Theory.makeVoicing(planEvent.chord), planMelodyNotes)
         : Theory.makeVoicing(planEvent.chord);
-      shape = guitarChordMelodyShape(planEvent.chord, planVoicing, planMelody, previousCenter);
+      shape = guitarChordMelodyShape(planEvent.chord, planVoicing, planMelody, previousCenter, positionAnchor);
       if (Number.isFinite(shape.center)) previousCenter = shape.center;
     }
     return shape || { notes: new Map(), center: null, score: Infinity, omitted: [] };
@@ -1791,6 +1814,19 @@
     const chordSpellingByPc = new Map((chord?.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
     const chordMelody = chord ? guitarChordMelodyPlan(event) : { notes: new Map(), center: null };
     const voicingByPosition = chordMelody.notes;
+    // Frets must sound the exact physical grip that is drawn. Keep melody out
+    // of this accompaniment list because it is auditioned/scheduled as its
+    // own purple voice. An empty anchored result intentionally remains silent
+    // rather than falling back to the unrelated piano-register suggestion.
+    state.fretboardVoicing = [...voicingByPosition.values()]
+      .filter(note => !note.melody && note.kind !== 'melody')
+      .map(note => ({
+        ...note,
+        midi: Number(note.displayMidi ?? note.midi),
+        displayMidi: Number(note.displayMidi ?? note.midi)
+      }))
+      .filter(note => Number.isFinite(note.midi))
+      .sort((left, right) => left.midi - right.midi);
     const maxFret = fretboardMaxFret();
     const columnCount = maxFret + 1;
     const extendedNeck = maxFret > FRETBOARD_MAX_FRET;
@@ -1805,6 +1841,9 @@
     elements.fretboard.dataset.rangeMode = 'fretboard';
     elements.fretboard.dataset.toneMode = toneMode;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
+    elements.fretboard.dataset.positionAnchor = state.fretboardPositionAnchor == null
+      ? ''
+      : String(state.fretboardPositionAnchor);
     elements.fretboard.dataset.gripEventKey = melodyEventKey(event) || `${state.chartSource}:${state.activeIndex}`;
     elements.fretboard.dataset.arrangement = event?.kind === 'pickup'
       ? 'melody-pickup'
@@ -1815,14 +1854,35 @@
     // mobile document itself.
     elements.fretboard.style.setProperty('--fretboard-min-width', `${columnCount * 27}px`);
     elements.fretboard.setAttribute('aria-colcount', String(columnCount));
+    const positionDescription = state.fretboardPositionAnchor == null
+      ? 'automatic chord position'
+      : `chord position anchored at fret ${state.fretboardPositionAnchor}`;
     elements.fretboard.setAttribute('aria-label', event?.kind === 'pickup'
       ? `Guitar fretboard from the open strings through fret ${maxFret}, showing the melody pickup only`
       : melodyNote
-      ? `Guitar chord-melody fretboard from the open strings through fret ${maxFret}, with melody on top and chord tones below`
-      : `Guitar fretboard from the open strings through fret ${maxFret}, showing chord, scale, and compact voicing`);
+      ? `Guitar chord-melody fretboard from the open strings through fret ${maxFret}, with melody on top and chord tones below, ${positionDescription}`
+      : `Guitar fretboard from the open strings through fret ${maxFret}, showing chord, scale, and compact voicing, ${positionDescription}`);
 
     const board = document.createElement('div');
     board.className = 'fretboard-grid';
+    const positionSelector = document.createElement('div');
+    positionSelector.className = 'fret-position-selector';
+    positionSelector.setAttribute('role', 'toolbar');
+    positionSelector.setAttribute('aria-label', 'Choose the lowest fret for chord shapes');
+    for (let fret = 0; fret <= maxFret; fret += 1) {
+      const positionButton = document.createElement('button');
+      const selected = state.fretboardPositionAnchor === fret;
+      positionButton.type = 'button';
+      positionButton.className = 'fret-position-button';
+      positionButton.dataset.fret = String(fret);
+      positionButton.textContent = String(fret);
+      positionButton.setAttribute('aria-pressed', String(selected));
+      positionButton.setAttribute('aria-label', selected
+        ? `Fret ${fret} is the chord position; press again for automatic positioning`
+        : `Use fret ${fret} as the lowest chord position`);
+      positionSelector.appendChild(positionButton);
+    }
+    board.appendChild(positionSelector);
     FRETBOARD_STRINGS.forEach((string, stringIndex) => {
       const row = document.createElement('div');
       row.className = 'fretboard-string';
@@ -1904,6 +1964,10 @@
       if (!position) return;
       elements.fretboard.querySelector(`[data-string="${position.stringIndex}"][data-fret="${position.fret}"]`)?.classList.add('playing');
     });
+    pressedCounts.fretboardChord.forEach((count, midi) => {
+      if (!count) return;
+      fretboardPressedCell(midi, 'fretboard-chord')?.classList.add('playing');
+    });
     keepFretboardMelodyVisible(melodyPosition, { extendedNeck });
   }
 
@@ -1941,171 +2005,6 @@
     return alternate?.parsed ? { ...baseEvent, chord: alternate.parsed, optionalAlternate: true } : baseEvent;
   }
 
-  // Unlike the old per-chord range, the wheel owns one ordered path through
-  // the song's melody. Every entry still remembers its harmony occurrence so
-  // rolling past a barline selects the appropriate card before painting the
-  // next melody note. This is especially important for the zero/pickup event
-  // which is intentionally separate from the first downbeat chord.
-  function melodyWheelEntries() {
-    if (!melodyMatchesChart() || !state.melodyNotes.length || !state.events.length) return [];
-    return state.melodyNotes.reduce((entries, note) => {
-      const eventIndex = eventIndexForMelodyNote(note);
-      const event = state.events[eventIndex];
-      if (!event || !melodyNotesForEvent(event).some(candidate => candidate.id === note.id)) return entries;
-      entries.push({ note, eventIndex });
-      return entries;
-    }, []);
-  }
-
-  function melodyWheelIndex(entries, event, notes, melodyNote) {
-    if (!entries.length) return -1;
-    const selectedId = melodyNote?.id || state.activeMelodyNote?.id;
-    const selectedIndex = selectedId ? entries.findIndex(entry => entry.note.id === selectedId) : -1;
-    if (selectedIndex >= 0) return selectedIndex;
-
-    const localCursor = melodyCursorIndex(event, notes);
-    const localNote = notes[localCursor];
-    const localIndex = localNote ? entries.findIndex(entry => entry.note.id === localNote.id) : -1;
-    if (localIndex >= 0) return localIndex;
-
-    // A chord can begin under a melodic rest. Point the wheel at the first
-    // note after it rather than disabling a control which can keep moving
-    // smoothly into the next melodic bar.
-    const timing = melodyTimingForEvent(event);
-    if (timing) {
-      const following = entries.findIndex(entry => entry.note.startBeat >= timing.startBeat - .0001);
-      if (following >= 0) return following;
-      const previous = entries.length - 1;
-      if (previous >= 0) return previous;
-    }
-    return 0;
-  }
-
-  function melodyWheelContext(entry) {
-    const event = entry && state.events[entry.eventIndex];
-    if (!event) return '';
-    if (event.kind === 'pickup') return 'pickup';
-    return `${event.chord?.display || 'chord'} · bar ${event.barIndex + 1}`;
-  }
-
-  function melodyWheelPathSignature(entries) {
-    const first = entries[0]?.note;
-    const last = entries[entries.length - 1]?.note;
-    return [
-      state.chartSource,
-      entries.length,
-      first?.id || first?.startBeat || '',
-      last?.id || last?.startBeat || ''
-    ].join('|');
-  }
-
-  function melodyWheelRestPosition(index) {
-    return Math.max(0, Number(index) || 0) * MELODY_WHEEL_NOTCH_PIXELS;
-  }
-
-  function paintMelodyWheelRoll(position, { rolling = false, instant = false } = {}) {
-    if (!elements.melodyWheel) return;
-    melodyWheelRollPosition = Number.isFinite(Number(position)) ? Number(position) : 0;
-    if (melodyWheelInstantFrame) window.cancelAnimationFrame(melodyWheelInstantFrame);
-    elements.melodyWheel.dataset.rolling = String(rolling);
-    elements.melodyWheel.dataset.instant = String(instant);
-    elements.melodyWheel.style.setProperty('--melody-wheel-roll', `${melodyWheelRollPosition}px`);
-    if (instant) {
-      melodyWheelInstantFrame = window.requestAnimationFrame(() => {
-        melodyWheelInstantFrame = 0;
-        if (elements.melodyWheel && elements.melodyWheel.dataset.rolling !== 'true') {
-          elements.melodyWheel.dataset.instant = 'false';
-        }
-      });
-    }
-  }
-
-  function resetMelodyWheelVisual() {
-    if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
-    if (melodyWheelInstantFrame) window.cancelAnimationFrame(melodyWheelInstantFrame);
-    melodyWheelScrollSettleTimer = null;
-    melodyWheelInstantFrame = 0;
-    melodyWheelRollPosition = null;
-    melodyWheelPathKey = '';
-    melodyWheelScrollActive = false;
-    if (!elements.melodyWheel) return;
-    elements.melodyWheel.style.removeProperty('--melody-wheel-roll');
-    elements.melodyWheel.dataset.rolling = 'false';
-    elements.melodyWheel.dataset.instant = 'false';
-    elements.melodyWheel.dataset.disabled = 'true';
-  }
-
-  function settleMelodyWheelVisual() {
-    if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
-    melodyWheelScrollSettleTimer = null;
-    melodyWheelScrollActive = false;
-    if (melodyWheelDrag || !elements.melodySlider || elements.melodySlider.disabled) return;
-    paintMelodyWheelRoll(melodyWheelRestPosition(elements.melodySlider.value));
-  }
-
-  function scheduleMelodyWheelSettle() {
-    if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
-    melodyWheelScrollActive = true;
-    melodyWheelScrollSettleTimer = window.setTimeout(settleMelodyWheelVisual, 96);
-  }
-
-  function syncMelodyWheelVisual(entries, index) {
-    const active = entries[index] || null;
-    if (elements.melodyWheel) elements.melodyWheel.dataset.disabled = String(!active);
-    if (!active) {
-      resetMelodyWheelVisual();
-      return;
-    }
-    const pathChanged = melodyWheelPathKey !== melodyWheelPathSignature(entries);
-    melodyWheelPathKey = melodyWheelPathSignature(entries);
-    const restPosition = melodyWheelRestPosition(index);
-    // A song/source swap can legitimately reset the encoder. Normal bar and
-    // chord renders must never do this: the continuous reel remains where
-    // the finger/trackpad left it until it settles on its next detent.
-    if (pathChanged || !Number.isFinite(melodyWheelRollPosition)) {
-      paintMelodyWheelRoll(restPosition, { instant: true });
-      return;
-    }
-    if (melodyWheelDrag || melodyWheelScrollActive) return;
-    paintMelodyWheelRoll(restPosition);
-  }
-
-  function selectMelodyWheelIndex(index, { audition = true } = {}) {
-    const entries = melodyWheelEntries();
-    if (!entries.length || !state.showMelody) return false;
-    const cursor = Math.max(0, Math.min(entries.length - 1, Number(index) || 0));
-    const target = entries[cursor];
-    if (!target) return false;
-    if (state.transport.playing) stopChartPlayback({ render: false });
-
-    if (state.activeIndex !== target.eventIndex || state.activeAlternateCellId) {
-      state.activeIndex = target.eventIndex;
-      state.activeAlternateCellId = null;
-      state.activeAlternateIndex = -1;
-      resetMelodySelection();
-    }
-    const event = activeChartEvent();
-    const notes = melodyNotesForEvent(event);
-    const localIndex = notes.findIndex(note => note.id === target.note.id);
-    if (localIndex < 0) return false;
-    selectMelodyNote(event, notes, localIndex, { navigated: true });
-    renderStudy();
-    if (audition) previewMelodyNote(target.note);
-    return true;
-  }
-
-  function stepMelodyWheel(step) {
-    const entries = melodyWheelEntries();
-    if (!entries.length) return false;
-    const event = activeChartEvent();
-    const notes = melodyNotesForEvent(event);
-    const current = melodyWheelIndex(entries, event, notes, activeMelodyForEvent(event));
-    if (current < 0) return false;
-    const target = Math.max(0, Math.min(entries.length - 1, current + Math.trunc(step)));
-    if (target === current) return false;
-    return selectMelodyWheelIndex(target);
-  }
-
   function syncMelodyControls(event, notes, melodyNote) {
     const ready = Boolean(state.midi && state.melodyNotes.length);
     const melodyMatchesActiveChart = melodyMatchesChart();
@@ -2119,51 +2018,6 @@
     elements.chartSourceLabel.hidden = !state.midiChart;
     if (state.midiChart) elements.chartSource.value = state.chartSource;
 
-    const visible = state.showMelody && melodyMatchesActiveChart;
-    elements.melodyPanel.hidden = !visible;
-    elements.melodySlider.dataset.melodySource = visible ? state.chartSource : '';
-    if (!visible) {
-      melodyWheelDrag = null;
-      melodyWheelScrollRemainder = 0;
-      elements.melodySlider.disabled = true;
-      syncMelodyWheelVisual([], -1);
-      syncMelodyNavigationLabels(event, notes);
-      return;
-    }
-    const entries = melodyWheelEntries();
-    if (!entries.length) {
-      elements.melodyReadout.textContent = 'No melody notes in this chart';
-      elements.melodySlider.min = '0';
-      elements.melodySlider.max = '0';
-      elements.melodySlider.value = '0';
-      elements.melodySlider.disabled = true;
-      elements.melodySlider.setAttribute('aria-valuemin', '0');
-      elements.melodySlider.setAttribute('aria-valuemax', '0');
-      elements.melodySlider.setAttribute('aria-valuenow', '0');
-      elements.melodySlider.setAttribute('aria-valuetext', 'No melody notes in this chart');
-      melodyWheelScrollRemainder = 0;
-      syncMelodyWheelVisual([], -1);
-      syncMelodyNavigationLabels(event, notes);
-      return;
-    }
-    const index = melodyWheelIndex(entries, event, notes, melodyNote);
-    const selectedEntry = entries[index];
-    const selected = selectedEntry?.note || null;
-    const localIndex = selected ? notes.findIndex(note => note.id === selected.id) : -1;
-    if (localIndex >= 0) {
-      state.melodyCursor = localIndex;
-      state.melodyCursorEventKey = melodyEventKey(event);
-    }
-    elements.melodySlider.min = '0';
-    elements.melodySlider.max = String(entries.length - 1);
-    elements.melodySlider.value = String(index);
-    elements.melodySlider.disabled = false;
-    elements.melodySlider.setAttribute('aria-valuemin', '0');
-    elements.melodySlider.setAttribute('aria-valuemax', String(entries.length - 1));
-    elements.melodySlider.setAttribute('aria-valuenow', String(index));
-    elements.melodySlider.setAttribute('aria-valuetext', `${melodyLabel(selected)} · ${melodyWheelContext(selectedEntry)} · note ${index + 1} of ${entries.length}`);
-    elements.melodyReadout.textContent = `${melodyLabel(selected)} · ${melodyWheelContext(selectedEntry)} · ${index + 1} / ${entries.length}`;
-    syncMelodyWheelVisual(entries, index);
     syncMelodyNavigationLabels(event, notes);
   }
 
@@ -2640,15 +2494,24 @@
     if (visual === 'chord') return ['chord', 'fretboard'];
     if (visual === 'melody') return ['melody', 'fretboard'];
     if (visual === 'fretboard') return ['fretboard'];
+    if (visual === 'fretboard-chord') return ['fretboardChord'];
     return ['chord', 'melody', 'fretboard'];
   }
 
   function fretboardPressedCell(midi, visual) {
     const pitchClass = Theory.mod(midi);
-    const selector = visual === 'chord' ? '.fretboard-cell.voicing' : visual === 'melody' ? '.fretboard-cell.melody-tone' : '.fretboard-cell';
-    const shapedCell = [...(elements.fretboard?.querySelectorAll(selector) || [])]
-      .find(cell => Theory.mod(Number(cell.dataset.midi)) === pitchClass);
+    const selector = visual === 'fretboard-chord'
+      ? '.fretboard-cell.voicing:not(.melody-tone)'
+      : visual === 'chord'
+      ? '.fretboard-cell.voicing'
+      : visual === 'melody'
+      ? '.fretboard-cell.melody-tone'
+      : '.fretboard-cell';
+    const candidates = [...(elements.fretboard?.querySelectorAll(selector) || [])];
+    const shapedCell = candidates.find(cell => Number(cell.dataset.midi) === Number(midi))
+      || (visual === 'fretboard-chord' ? null : candidates.find(cell => Theory.mod(Number(cell.dataset.midi)) === pitchClass));
     if (shapedCell) return shapedCell;
+    if (visual === 'fretboard-chord') return null;
     const position = fretboardPositionForMidi(midi);
     return position
       ? elements.fretboard?.querySelector(`[data-string="${position.stringIndex}"][data-fret="${position.fret}"]`)
@@ -2736,14 +2599,24 @@
     voicing.forEach((note, index) => startVoice(`${prefix}-${index}`, note.midi, duration, note.midi, visual));
   }
 
-  function playCurrentVoicing(duration = 1.35) {
-    const voicing = state.displayVoicing.length ? state.displayVoicing : state.voicing;
-    if (!voicing.length) return;
-    playVoicing(voicing, duration, 'preview');
+  function currentChordPlayback() {
+    if (state.instrumentView === 'fretboard') {
+      return { voicing: state.fretboardVoicing, visual: 'fretboard-chord' };
+    }
+    return {
+      voicing: state.displayVoicing.length ? state.displayVoicing : state.voicing,
+      visual: 'chord'
+    };
   }
 
-  function midiMelodyNavigationEnabled() {
-    return state.chartSource === 'midi' && state.showMelody && melodyMatchesChart('midi');
+  function playCurrentVoicing(duration = 1.35, prefix = 'preview') {
+    const { voicing, visual } = currentChordPlayback();
+    if (!voicing.length) return;
+    playVoicing(voicing, duration, prefix, visual);
+  }
+
+  function melodyNavigationEnabled() {
+    return state.showMelody && state.melodyNotes.length > 0 && melodyMatchesChart();
   }
 
   function setChordNavigationLabel(element, label) {
@@ -2752,7 +2625,7 @@
   }
 
   function syncMelodyNavigationLabels(event, suppliedNotes = null) {
-    if (!midiMelodyNavigationEnabled()) {
+    if (!melodyNavigationEnabled()) {
       setChordNavigationLabel(elements.previousChord, 'Previous chord');
       setChordNavigationLabel(elements.nextChord, 'Next chord');
       return;
@@ -2801,7 +2674,7 @@
     return true;
   }
 
-  function selectMidiMelodyEvent(index, direction) {
+  function selectMelodyNavigationEvent(index, direction) {
     selectEvent(index, false);
     const event = activeChartEvent();
     const notes = melodyNotesForEvent(event);
@@ -2821,7 +2694,7 @@
   function navigateChord(direction) {
     const step = Number(direction) < 0 ? -1 : 1;
     if (!state.events.length) return;
-    if (!midiMelodyNavigationEnabled()) {
+    if (!melodyNavigationEnabled()) {
       selectEvent(state.activeIndex + step, true);
       return;
     }
@@ -2834,7 +2707,7 @@
     const eventKey = melodyEventKey(event);
     const cursor = melodyCursorIndex(event, notes);
 
-    // The first forward press from a newly selected MIDI chord is its
+    // The first forward press from a newly selected chord is its
     // downbeat, not a skipped preview. Once that note has sounded, arrows
     // advance or rewind one melody note at a time inside the same chord.
     if (step > 0 && state.melodyNavigationEventKey !== eventKey) {
@@ -2855,65 +2728,7 @@
       auditionManualMelodyStep(event, notes, nextCursor);
       return;
     }
-    selectMidiMelodyEvent(state.activeIndex + step, step);
-  }
-
-  function desktopMelodyNavigationEnabled() {
-    return document.body.classList.contains('desktop-mode') && state.showMelody && melodyMatchesChart();
-  }
-
-  function eventIndexForMelodyNote(note) {
-    const ownedByEvent = state.events.findIndex(event => melodyNotesForEvent(event).some(candidate => candidate.id === note.id));
-    if (ownedByEvent >= 0) return ownedByEvent;
-    const timedEvent = state.events.findIndex(event => {
-      const timing = melodyTimingForEvent(event);
-      return timing && note.startBeat >= timing.startBeat - .0001 && note.startBeat < timing.endBeat - .0001;
-    });
-    return timedEvent >= 0 ? timedEvent : 0;
-  }
-
-  function initialDesktopMelodyIndex(direction) {
-    const event = activeChartEvent();
-    const notes = melodyNotesForEvent(event);
-    if (notes.length) {
-      const target = direction > 0 ? notes[0] : notes[notes.length - 1];
-      return state.melodyNotes.findIndex(note => note.id === target.id);
-    }
-    const timing = melodyTimingForEvent(event);
-    if (!timing) return direction > 0 ? 0 : state.melodyNotes.length - 1;
-    if (direction > 0) {
-      const index = state.melodyNotes.findIndex(note => note.startBeat >= timing.endBeat - .0001);
-      return index >= 0 ? index : 0;
-    }
-    for (let index = state.melodyNotes.length - 1; index >= 0; index -= 1) {
-      if (state.melodyNotes[index].startBeat < timing.startBeat - .0001) return index;
-    }
-    return state.melodyNotes.length - 1;
-  }
-
-  function navigateDesktopMelody(direction) {
-    if (!desktopMelodyNavigationEnabled() || !state.melodyNotes.length) {
-      navigateChord(direction);
-      return;
-    }
-    const step = Number(direction) < 0 ? -1 : 1;
-    if (state.transport.playing) stopChartPlayback({ render: false });
-    const current = state.activeMelodyNote
-      ? state.melodyNotes.findIndex(note => note.id === state.activeMelodyNote.id)
-      : -1;
-    const index = current >= 0
-      ? Theory.mod(current + step, state.melodyNotes.length)
-      : initialDesktopMelodyIndex(step);
-    const note = state.melodyNotes[index];
-    const eventIndex = eventIndexForMelodyNote(note);
-    selectEvent(eventIndex, false);
-    const event = activeChartEvent();
-    const notes = melodyNotesForEvent(event);
-    const localIndex = notes.findIndex(candidate => candidate.id === note.id);
-    if (localIndex < 0) return;
-    selectMelodyNote(event, notes, localIndex, { navigated: true });
-    renderStudy();
-    previewMelodyNote(note);
+    selectMelodyNavigationEvent(state.activeIndex + step, step);
   }
 
   function clearTransportTimers() {
@@ -2990,7 +2805,7 @@
       if (event) {
         if (entry.type === 'chord') {
           const duration = Math.max(.06, entry.durationBeats * secondsPerBeat * .92);
-          playVoicing(state.displayVoicing.length ? state.displayVoicing : state.voicing, duration, `chart-chord-${entry.id}`);
+          playCurrentVoicing(duration, `chart-chord-${entry.id}`);
         }
         scheduleMelodyForSegment(entry, secondsPerBeat, session);
       }
@@ -3116,127 +2931,6 @@
     if (elements.chartSource.value === state.chartSource) return;
     activateChartSource(elements.chartSource.value);
   });
-  elements.melodySlider.addEventListener('input', () => {
-    // The wheel's value is the song-wide melody index, not the local index
-    // inside whichever chord happened to be rendered when the drag began.
-    // This lets one gesture move continuously through pickup and later bars.
-    if (elements.melodySlider.disabled || elements.melodySlider.dataset.melodySource !== state.chartSource) return;
-    selectMelodyWheelIndex(Number(elements.melodySlider.value));
-  });
-
-  function bindMelodyWheel() {
-    const slider = elements.melodySlider;
-    const surface = elements.melodyWheel?.querySelector('.melody-wheel-surface');
-    if (!slider || !surface) return;
-    const axisThreshold = 6;
-
-    const beginHorizontalMelodyWheelDrag = drag => {
-      if (!drag || drag.started) return;
-      drag.axis = 'horizontal';
-      drag.started = true;
-      slider.focus({ preventScroll: true });
-      try { surface.setPointerCapture(drag.pointerId); } catch (_) {}
-      paintMelodyWheelRoll(
-        Number.isFinite(melodyWheelRollPosition)
-          ? melodyWheelRollPosition
-          : melodyWheelRestPosition(slider.value),
-        { rolling: true }
-      );
-    };
-
-    surface.addEventListener('pointerdown', event => {
-      if (slider.disabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
-      melodyWheelDrag = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        lastX: event.clientX,
-        lastY: event.clientY,
-        x: event.clientX,
-        y: event.clientY,
-        remainder: 0,
-        moved: false,
-        axis: event.pointerType === 'mouse' ? 'horizontal' : null
-      };
-      // A mouse is already a deliberate encoder interaction. Touch/pen waits
-      // for a horizontal intention so the page can still scroll vertically.
-      if (melodyWheelDrag.axis === 'horizontal') beginHorizontalMelodyWheelDrag(melodyWheelDrag);
-    });
-    surface.addEventListener('pointermove', event => {
-      const drag = melodyWheelDrag;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      drag.lastX = event.clientX;
-      drag.lastY = event.clientY;
-      if (!drag.axis) {
-        const totalX = event.clientX - drag.startX;
-        const totalY = event.clientY - drag.startY;
-        if (Math.max(Math.abs(totalX), Math.abs(totalY)) < axisThreshold) return;
-        if (Math.abs(totalY) > Math.abs(totalX) * 1.15) {
-          drag.axis = 'vertical';
-          return;
-        }
-        beginHorizontalMelodyWheelDrag(drag);
-      }
-      if (drag.axis !== 'horizontal') return;
-      const delta = event.clientX - drag.x;
-      drag.x = event.clientX;
-      drag.y = event.clientY;
-      if (!delta) return;
-      if (Math.abs(delta) >= 2) drag.moved = true;
-      // Paint every fractional pixel, then keep the musical action quantized
-      // to detents. It feels like a wheel rolling rather than a range thumb.
-      paintMelodyWheelRoll((melodyWheelRollPosition || 0) + delta, { rolling: true });
-      drag.remainder += delta;
-      const steps = Math.trunc(drag.remainder / MELODY_WHEEL_NOTCH_PIXELS);
-      if (steps) {
-        if (stepMelodyWheel(steps)) drag.remainder -= steps * MELODY_WHEEL_NOTCH_PIXELS;
-        else drag.remainder = 0;
-      }
-      event.preventDefault();
-    });
-    const finishMelodyWheelDrag = event => {
-      if (!melodyWheelDrag || melodyWheelDrag.pointerId !== event.pointerId) return;
-      const wasHorizontal = melodyWheelDrag.axis === 'horizontal';
-      melodyWheelDrag = null;
-      if (surface.hasPointerCapture?.(event.pointerId)) surface.releasePointerCapture(event.pointerId);
-      if (wasHorizontal) {
-        event.preventDefault?.();
-        window.requestAnimationFrame(settleMelodyWheelVisual);
-      }
-    };
-    surface.addEventListener('pointerup', finishMelodyWheelDrag);
-    surface.addEventListener('pointercancel', finishMelodyWheelDrag);
-    surface.addEventListener('lostpointercapture', finishMelodyWheelDrag);
-    surface.addEventListener('wheel', event => {
-      if (slider.disabled) return;
-      // Let ordinary vertical mouse-wheel / trackpad scrolling pass through
-      // to the page. A horizontal trackpad gesture (or Shift + wheel) rolls
-      // the encoder just like a left/right drag.
-      const delta = event.shiftKey ? event.deltaY : event.deltaX;
-      if (!delta) return;
-      const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? 160 : 1;
-      const pixelDelta = delta * unit;
-      // Keep the physical reel tied to the actual trackpad/wheel travel.
-      // Music advances only after a full detent, so a light scroll feels
-      // continuous without prematurely changing the note.
-      melodyWheelScrollActive = true;
-      paintMelodyWheelRoll(
-        (Number.isFinite(melodyWheelRollPosition)
-          ? melodyWheelRollPosition
-          : melodyWheelRestPosition(slider.value)) + pixelDelta,
-        { rolling: true }
-      );
-      melodyWheelScrollRemainder += pixelDelta;
-      const steps = Math.trunc(melodyWheelScrollRemainder / MELODY_WHEEL_NOTCH_PIXELS);
-      if (steps) {
-        if (stepMelodyWheel(steps)) melodyWheelScrollRemainder -= steps * MELODY_WHEEL_NOTCH_PIXELS;
-        else melodyWheelScrollRemainder = 0;
-      }
-      scheduleMelodyWheelSettle();
-      event.preventDefault();
-    }, { passive: false });
-  }
-  bindMelodyWheel();
   elements.playChart.addEventListener('click', startChartPlayback);
   elements.useChartTempo.addEventListener('change', () => {
     const resume = state.transport.playing;
@@ -3306,12 +3000,29 @@
   bindInstrumentSurface(elements.piano);
   bindInstrumentSurface(elements.melodyPiano);
   bindInstrumentSurface(elements.fretboard);
+  elements.fretboard?.addEventListener('click', event => {
+    const button = event.target.closest('.fret-position-button[data-fret]');
+    if (!button || !elements.fretboard.contains(button)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const fret = validFretboardPositionAnchor(button.dataset.fret);
+    if (fret == null) return;
+    state.fretboardPositionAnchor = state.fretboardPositionAnchor === fret ? null : fret;
+    try {
+      if (state.fretboardPositionAnchor == null) localStorage.removeItem(FRETBOARD_POSITION_STORAGE_KEY);
+      else localStorage.setItem(FRETBOARD_POSITION_STORAGE_KEY, String(state.fretboardPositionAnchor));
+    } catch (_) {}
+    renderStudy({ keepVisible: false });
+    window.requestAnimationFrame(() => {
+      const visibleFret = Math.min(fret, fretboardMaxFret());
+      const renderedButton = elements.fretboard?.querySelector(`.fret-position-button[data-fret="${visibleFret}"]`);
+      renderedButton?.focus({ preventScroll: true });
+      keepFretboardCellVisible(renderedButton);
+    });
+  });
 
   elements.studyCard.addEventListener('pointerdown', event => {
-    // The horizontal melody wheel is an encoder, not a card swipe. Keep the
-    // explicit wheel selector here as well as its input so a pointer landing
-    // on its visual shell can never select the prior chord/bar.
-    if (event.target.closest('button, input, select, textarea, label, a, [contenteditable], .melody-wheel, .piano, .fretboard, .instrument-stage')) {
+    if (event.target.closest('button, input, select, textarea, label, a, [contenteditable], .piano, .fretboard, .instrument-stage')) {
       swipe = null;
       return;
     }
@@ -3328,8 +3039,8 @@
 
   document.addEventListener('keydown', event => {
     if (event.target.closest('input, a, select, textarea, [contenteditable]')) return;
-    if (event.key === 'ArrowLeft') { event.preventDefault(); desktopMelodyNavigationEnabled() ? navigateDesktopMelody(-1) : navigateChord(-1); }
-    if (event.key === 'ArrowRight') { event.preventDefault(); desktopMelodyNavigationEnabled() ? navigateDesktopMelody(1) : navigateChord(1); }
+    if (event.key === 'ArrowLeft') { event.preventDefault(); navigateChord(-1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); navigateChord(1); }
     if (event.key === ' ') { event.preventDefault(); playCurrentVoicing(); }
   });
   // `touch-action: manipulation` handles current mobile browsers without
@@ -3351,6 +3062,7 @@
   } catch (_) {}
   try { state.keyboardToneMode = validToneMode(localStorage.getItem(KEYBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try { state.fretboardToneMode = validToneMode(localStorage.getItem(FRETBOARD_TONE_STORAGE_KEY)); } catch (_) {}
+  try { state.fretboardPositionAnchor = validFretboardPositionAnchor(localStorage.getItem(FRETBOARD_POSITION_STORAGE_KEY)); } catch (_) {}
   try {
     const savedView = localStorage.getItem(INSTRUMENT_VIEW_STORAGE_KEY);
     if (savedView === 'fretboard' || savedView === 'piano') state.instrumentView = savedView;
@@ -3377,6 +3089,7 @@
     fullSongKeyboardData,
     snapFullKeyboardRange,
     fretboardPositionForMidi,
+    validFretboardPositionAnchor,
     activeKeyboardRangeMode
   };
   loadCatalog();

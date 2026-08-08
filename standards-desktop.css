@@ -9,7 +9,9 @@
 .desktop-mode .keyboard-stack[data-range-mode="split"] .piano { height: clamp(135px, 15vw, 185px); }
 .desktop-mode .piano:is([data-range-mode="full"], [data-range-mode="wide"]) { height: clamp(180px, 22vw, 270px); }
 .desktop-mode .fretboard { height: clamp(240px, 29vw, 370px); min-height: 240px; }
-.desktop-mode .fretboard-grid { padding: 26px 8px 8px; }
+.desktop-mode .fretboard-grid { padding: 38px 8px 8px; }
+.desktop-mode .fret-position-selector { right: 8px; left: 8px; height: 34px; }
+.desktop-mode .fret-position-button { min-height: 34px; font-size: .7rem; }
 .desktop-mode .fretboard-note { width: min(48px, 76%); height: min(48px, 76%); font-size: clamp(.61rem, 1.1vw, .9rem); }
 .desktop-mode .fretboard-role { min-width: 16px; height: 16px; font-size: .48rem; }
 .desktop-mode .chord-navigator { min-height: 94px; }
