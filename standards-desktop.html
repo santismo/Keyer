@@ -31,13 +31,13 @@
         </div>
         <div class="library-actions"><button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button><button class="random-standard-button performance-button primary library-play-button" id="playChart" type="button" aria-label="Play the current chart" aria-pressed="false" disabled>Play chart</button></div>
       </div>
-      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span><select id="songAvailabilityFilter" aria-label="Filter standards by melody availability"><option value="all">All standards</option><option value="melody">With MIDI melody</option><option value="chords">Chord charts only</option></select></label>
+      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span><select id="songAvailabilityFilter" aria-label="Choose a standards bank"><option value="all">All standards</option><option value="favorites">Favorites</option><option value="melody">With MIDI melody</option><option value="chords">Chord charts only</option></select></label>
       <p class="library-status" id="libraryStatus" role="status">Loading jazz standards…</p>
     </section>
 
     <section class="lesson" id="lesson" hidden>
       <header class="song-heading">
-        <div><h2 id="songTitle">Jazz standard</h2><p id="songComposer"></p></div>
+        <div class="song-heading-title"><div><h2 id="songTitle">Jazz standard</h2><p id="songComposer"></p></div><button class="favorite-song-button" id="favoriteSong" type="button" aria-pressed="false" aria-label="Add this standard to favorites" title="Add to favorites">☆</button></div>
         <div class="song-meta" id="songMeta"></div>
       </header>
 
