@@ -289,6 +289,24 @@ const server = http.createServer((request, response) => {
   assert.equal(await page.locator('#melodyPanel').isVisible(), true);
   assert.equal(await page.locator('#playMelody').isDisabled(), false);
   assert.equal(await page.locator('#tempoValue').textContent(), '100 BPM');
+  const melodySliderPlacement = await page.evaluate(() => {
+    const identity = document.querySelector('.chord-identity');
+    const selectedChord = document.querySelector('#selectedChord');
+    const panel = document.querySelector('#melodyPanel');
+    const slider = document.querySelector('#melodySlider');
+    const chordBounds = selectedChord.getBoundingClientRect();
+    const sliderBounds = slider.getBoundingClientRect();
+    return {
+      panelInIdentity: identity.contains(panel),
+      sliderInIdentity: identity.contains(slider),
+      afterChord: sliderBounds.top >= chordBounds.bottom - 1
+    };
+  });
+  assert.deepEqual(melodySliderPlacement, {
+    panelInIdentity: true,
+    sliderInIdentity: true,
+    afterChord: true
+  }, 'The melody slider should sit directly below the selected chord readout.');
   assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="84"]').count(), 1);
   assert.equal(await page.locator('.piano-key.melody-tone .melody-octave').textContent(), 'C6');
   const midiSpans = await page.evaluate(() => {
@@ -414,9 +432,17 @@ const server = http.createServer((request, response) => {
     const melodyNote = melody?.querySelector('.fretboard-note');
     const voicing = [...board.querySelectorAll('.fretboard-cell.voicing')];
     const frettedVoicing = voicing.map(cell => Number(cell.dataset.fret)).filter(fret => fret > 0);
+    const voices = voicing.map(cell => ({
+      string: Number(cell.dataset.string),
+      fret: Number(cell.dataset.fret),
+      midi: Number(cell.dataset.midi),
+      melody: cell.classList.contains('melody-tone'),
+      bass: cell.classList.contains('bass')
+    }));
     return {
       hidden: board.hidden,
       pianoHidden: document.querySelector('#piano').hidden,
+      arrangement: board.dataset.arrangement,
       rowCount: rows.length,
       cellCount: board.querySelectorAll('.fretboard-cell').length,
       openMidis,
@@ -424,6 +450,10 @@ const server = http.createServer((request, response) => {
       melodyMidi: melody?.dataset.melodyMidi,
       melodyBadge: melody?.querySelector('.melody-octave')?.textContent || '',
       melodyColor: melodyNote ? getComputedStyle(melodyNote).backgroundColor : '',
+      melodyIsVoicing: melody?.classList.contains('voicing') || false,
+      melodyString: Number(melody?.dataset.string),
+      melodyPhysicalMidi: Number(melody?.dataset.midi),
+      voices,
       voicingStrings: voicing.map(cell => Number(cell.dataset.string)),
       fretSpan: frettedVoicing.length ? Math.max(...frettedVoicing) - Math.min(...frettedVoicing) : 0,
       documentOverflow: document.documentElement.scrollWidth - window.innerWidth
@@ -431,6 +461,7 @@ const server = http.createServer((request, response) => {
   });
   assert.equal(fretboard.hidden, false);
   assert.equal(fretboard.pianoHidden, true);
+  assert.equal(fretboard.arrangement, 'chord-melody');
   assert.equal(fretboard.rowCount, 6);
   assert.equal(fretboard.cellCount, 78, 'Six strings with open through fret 12 should give 78 cells');
   assert.deepEqual(fretboard.openMidis, [64, 59, 55, 50, 45, 40]);
@@ -438,6 +469,17 @@ const server = http.createServer((request, response) => {
   assert.equal(fretboard.melodyMidi, '84');
   assert.equal(fretboard.melodyBadge, 'C6', 'A melody beyond the fixed guitar octave should retain its real octave label');
   assert.equal(fretboard.melodyColor, 'rgb(165, 102, 255)', 'The fretboard melody marker should be purple');
+  assert.equal(fretboard.melodyIsVoicing, true, 'The melody should be one of the held notes in the guitar chord-melody shape');
+  assert.ok(fretboard.melodyString <= 2, `The melody should prefer one of the top three guitar strings, got string ${fretboard.melodyString}`);
+  assert.ok(
+    fretboard.voices.filter(voice => !voice.melody).every(voice => voice.midi <= fretboard.melodyPhysicalMidi),
+    `Chord accompaniment must stay under the displayed melody: ${JSON.stringify(fretboard.voices)}`
+  );
+  const orderedGuitarVoices = fretboard.voices.slice().sort((left, right) => left.string - right.string);
+  assert.ok(
+    orderedGuitarVoices.every((voice, index) => !index || voice.midi <= orderedGuitarVoices[index - 1].midi),
+    `A chord-melody shape must not cross voices between strings: ${JSON.stringify(orderedGuitarVoices)}`
+  );
   assert.equal(new Set(fretboard.voicingStrings).size, fretboard.voicingStrings.length, 'A displayed guitar voicing must not put two held notes on one string');
   assert.ok(fretboard.fretSpan <= 5, `A displayed guitar voicing should stay within a practical fret stretch, got ${fretboard.fretSpan}`);
   assert.ok(fretboard.documentOverflow <= 1, 'The fixed 12-fret board must fit the mobile document');
@@ -607,6 +649,32 @@ const server = http.createServer((request, response) => {
   assert.equal(lowMelodyRegister.pianoKeys, 25, 'The shifted register remains a two-octave 15/10-key card');
   assert.ok(Math.max(...lowMelodyRegister.voicing) < lowMelodyRegister.melody, 'Low melody notes shift the audible root-bass voicing underneath the melody');
   assert.ok(lowMelodyRegister.voicing.every(midi => midi >= lowMelodyRegister.range.low && midi <= lowMelodyRegister.range.high), 'The shifted card shows the exact audible voicing');
+
+  // Chord-melody planning must also lift a genuinely low source melody into
+  // a playable top voice instead of leaving it below the accompaniment.
+  await page.locator('#instrumentView').selectOption('fretboard');
+  const lowMelodyFretboard = await page.evaluate(() => {
+    const board = document.querySelector('#fretboard');
+    const melody = board.querySelector('.fretboard-cell.melody-tone');
+    const voices = [...board.querySelectorAll('.fretboard-cell.voicing')].map(cell => ({
+      midi: Number(cell.dataset.midi),
+      melody: cell.classList.contains('melody-tone')
+    }));
+    return {
+      midi: melody?.dataset.melodyMidi,
+      string: Number(melody?.dataset.string),
+      physicalMidi: Number(melody?.dataset.midi),
+      badge: melody?.querySelector('.melody-octave')?.textContent || '',
+      held: melody?.classList.contains('voicing') || false,
+      accompanimentUnderMelody: voices.filter(voice => !voice.melody).every(voice => voice.midi <= Number(melody?.dataset.midi))
+    };
+  });
+  assert.equal(lowMelodyFretboard.midi, '45');
+  assert.ok(lowMelodyFretboard.string <= 2, 'A low MIDI melody should octave-fit onto a top guitar string for chord melody');
+  assert.ok(lowMelodyFretboard.physicalMidi > 45, 'The guitar display should raise an unplayable low melody octave');
+  assert.equal(lowMelodyFretboard.badge, 'A2', 'The lifted guitar melody must retain its true source octave');
+  assert.equal(lowMelodyFretboard.held, true, 'The lifted melody should stay part of the held chord-melody shape');
+  assert.equal(lowMelodyFretboard.accompanimentUnderMelody, true, 'The guitar accompaniment should remain underneath a lifted melody');
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();

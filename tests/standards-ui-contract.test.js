@@ -11,6 +11,48 @@ const js = fs.readFileSync(path.join(root, 'standards.js'), 'utf8');
 const desktopHtml = fs.readFileSync(path.join(root, 'standards-desktop.html'), 'utf8');
 const desktopCss = fs.readFileSync(path.join(root, 'standards-desktop.css'), 'utf8');
 
+function ancestorsForElementId(markup, id) {
+  const tags = /<\/?([a-z][\w:-]*)(?:\s[^<>]*)?>/gi;
+  const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  const idExpression = new RegExp(`\\bid=(["'])${id}\\1`);
+  const stack = [];
+  let tag;
+
+  while ((tag = tags.exec(markup))) {
+    const source = tag[0];
+    const tagName = tag[1].toLowerCase();
+    if (source.startsWith('</')) {
+      for (let index = stack.length - 1; index >= 0; index -= 1) {
+        const open = stack.pop();
+        if (open.tagName === tagName) break;
+      }
+      continue;
+    }
+
+    if (idExpression.test(source)) return stack.slice();
+    if (!voidTags.has(tagName) && !source.endsWith('/>')) stack.push({ tagName, source });
+  }
+
+  throw new Error(`Could not find #${id} in standards markup`);
+}
+
+function assertMelodySliderLivesWithChordIdentity(markup, label) {
+  const sliderAncestors = ancestorsForElementId(markup, 'melodySlider');
+  assert.ok(
+    sliderAncestors.some(ancestor => /\bchord-identity\b/.test(ancestor.source)),
+    `${label} melody slider should live directly inside the selected chord identity`
+  );
+  assert.ok(
+    sliderAncestors.some(ancestor => /\bmelody-panel\b/.test(ancestor.source)),
+    `${label} melody slider should remain grouped in its melody panel`
+  );
+  assert.ok(
+    markup.indexOf('id="selectedChord"') < markup.indexOf('id="scaleName"')
+      && markup.indexOf('id="scaleName"') < markup.indexOf('id="melodySlider"'),
+    `${label} melody slider should follow the current chord and scale readout`
+  );
+}
+
 assert.doesNotMatch(html, /id="(?:voicingNotes|scaleNotes|playVoicing)"/);
 assert.match(html, /id="toggleNoteNames"/);
 assert.match(html, /id="toggleMelody"/);
@@ -19,6 +61,7 @@ assert.match(html, /id="songAvailabilityFilter"/);
 assert.doesNotMatch(html, /id="loadMidi"/);
 assert.doesNotMatch(html, /id="midiFileInput"/);
 assert.match(html, /id="melodySlider"/);
+assertMelodySliderLivesWithChordIdentity(html, 'Phone');
 assert.match(html, /id="playChart"/);
 assert.match(html, /id="tempoRange"/);
 assert.match(html, /id="chartSource"/);
@@ -76,7 +119,7 @@ assert.match(js, /const literalRegister = rangeMode === 'full';/);
 assert.match(js, /function renderKeyboardSurface\(/);
 assert.match(js, /function splitMelodyRangeFor\(/);
 assert.match(js, /function navigateDesktopMelody\(/);
-assert.match(js, /function guitarVoicingPositions\(/);
+assert.match(js, /function guitarChordMelodyShape\(/);
 assert.match(js, /function visualTargets\(/);
 assert.doesNotMatch(js, /function oneOctaveRangeForVoicing\(/);
 assert.match(js, /state\.keyboardToneMode/);
@@ -111,6 +154,7 @@ assert.match(desktopHtml, /href="standards-desktop\.css"/);
 assert.match(desktopHtml, /id="keyboardRangeMode"/);
 assert.match(desktopHtml, /id="songAvailabilityFilter"/);
 assert.doesNotMatch(desktopHtml, /id="loadMidi"/);
+assertMelodySliderLivesWithChordIdentity(desktopHtml, 'Desktop');
 assert.match(desktopCss, /\.desktop-mode \.workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 assert.match(desktopCss, /\.desktop-mode \.fretboard\s*\{[^}]*min-height:\s*240px/);
 
