@@ -450,7 +450,6 @@ const server = http.createServer((request, response) => {
       melodyMidi: melody?.dataset.melodyMidi,
       melodyBadge: melody?.querySelector('.melody-octave')?.textContent || '',
       melodyColor: melodyNote ? getComputedStyle(melodyNote).backgroundColor : '',
-      melodyIsVoicing: melody?.classList.contains('voicing') || false,
       melodyString: Number(melody?.dataset.string),
       melodyPhysicalMidi: Number(melody?.dataset.midi),
       voices,
@@ -469,7 +468,6 @@ const server = http.createServer((request, response) => {
   assert.equal(fretboard.melodyMidi, '84');
   assert.equal(fretboard.melodyBadge, 'C6', 'A melody beyond the fixed guitar octave should retain its real octave label');
   assert.equal(fretboard.melodyColor, 'rgb(165, 102, 255)', 'The fretboard melody marker should be purple');
-  assert.equal(fretboard.melodyIsVoicing, true, 'The melody should be one of the held notes in the guitar chord-melody shape');
   assert.ok(fretboard.melodyString <= 2, `The melody should prefer one of the top three guitar strings, got string ${fretboard.melodyString}`);
   assert.ok(
     fretboard.voices.filter(voice => !voice.melody).every(voice => voice.midi <= fretboard.melodyPhysicalMidi),
@@ -483,6 +481,64 @@ const server = http.createServer((request, response) => {
   assert.equal(new Set(fretboard.voicingStrings).size, fretboard.voicingStrings.length, 'A displayed guitar voicing must not put two held notes on one string');
   assert.ok(fretboard.fretSpan <= 5, `A displayed guitar voicing should stay within a practical fret stretch, got ${fretboard.fretSpan}`);
   assert.ok(fretboard.documentOverflow <= 1, 'The fixed 12-fret board must fit the mobile document');
+
+  // A chord-melody grip is chosen for the chord occurrence, not revoiced for
+  // every note the learner scrubs through. The purple marker is free to move
+  // through that held harmony, but the fretted chord should stay put until a
+  // new chart chord is selected.
+  async function guitarChordMelodySnapshot() {
+    return page.evaluate(() => {
+      const board = document.querySelector('#fretboard');
+      const heldGrip = [...board.querySelectorAll('.fretboard-cell.chord-melody-tone')]
+        .map(cell => ({
+          string: Number(cell.dataset.string),
+          fret: Number(cell.dataset.fret),
+          midi: Number(cell.dataset.midi),
+          role: cell.querySelector('.fretboard-role')?.textContent || ''
+        }))
+        .sort((left, right) => left.string - right.string || left.fret - right.fret);
+      const melody = [...board.querySelectorAll('.fretboard-cell.melody-tone')].map(cell => ({
+        string: Number(cell.dataset.string),
+        fret: Number(cell.dataset.fret),
+        midi: Number(cell.dataset.midi),
+        sourceMidi: Number(cell.dataset.melodyMidi)
+      }));
+      return {
+        activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+        chord: document.querySelector('#selectedChord').textContent,
+        slider: Number(document.querySelector('#melodySlider').value),
+        heldGrip,
+        melody
+      };
+    });
+  }
+
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
+  const firstMelodyGrip = await guitarChordMelodySnapshot();
+  await page.locator('#melodySlider').evaluate(element => {
+    element.value = '1';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const laterMelodyGrip = await guitarChordMelodySnapshot();
+  assert.equal(firstMelodyGrip.slider, 0, 'The first chord-melody snapshot should start at its first melody note');
+  assert.equal(laterMelodyGrip.slider, 1, 'The second chord-melody snapshot should advance within the same chord');
+  assert.equal(laterMelodyGrip.activeIndex, firstMelodyGrip.activeIndex, 'Melody scrubbing must stay on the same chart chord');
+  assert.equal(laterMelodyGrip.chord, firstMelodyGrip.chord, 'Melody scrubbing must not replace the current chord');
+  assert.equal(firstMelodyGrip.melody.length, 1, 'A chord-melody grip should have one purple melody marker');
+  assert.equal(laterMelodyGrip.melody.length, 1, 'Only one purple melody marker should move at a time');
+  assert.notDeepEqual(laterMelodyGrip.melody[0], firstMelodyGrip.melody[0], 'The purple melody marker should follow the newly selected melody note');
+  assert.deepEqual(
+    laterMelodyGrip.heldGrip,
+    firstMelodyGrip.heldGrip,
+    'Advancing melody notes inside one chord must keep the chosen guitar chord grip fixed'
+  );
+
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
+  const nextChordGrip = await guitarChordMelodySnapshot();
+  assert.notEqual(nextChordGrip.activeIndex, laterMelodyGrip.activeIndex, 'Selecting the next harmony should leave the prior chord occurrence');
+  assert.notEqual(nextChordGrip.chord, laterMelodyGrip.chord, 'The next chart event should be a different chord');
+  assert.notDeepEqual(nextChordGrip.heldGrip, firstMelodyGrip.heldGrip, 'A new chord should receive its own playable chord-melody grip');
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
 
   // Return the rest of the MIDI interaction regressions to their default
   // compact piano surface.
@@ -665,7 +721,6 @@ const server = http.createServer((request, response) => {
       string: Number(melody?.dataset.string),
       physicalMidi: Number(melody?.dataset.midi),
       badge: melody?.querySelector('.melody-octave')?.textContent || '',
-      held: melody?.classList.contains('voicing') || false,
       accompanimentUnderMelody: voices.filter(voice => !voice.melody).every(voice => voice.midi <= Number(melody?.dataset.midi))
     };
   });
@@ -673,7 +728,6 @@ const server = http.createServer((request, response) => {
   assert.ok(lowMelodyFretboard.string <= 2, 'A low MIDI melody should octave-fit onto a top guitar string for chord melody');
   assert.ok(lowMelodyFretboard.physicalMidi > 45, 'The guitar display should raise an unplayable low melody octave');
   assert.equal(lowMelodyFretboard.badge, 'A2', 'The lifted guitar melody must retain its true source octave');
-  assert.equal(lowMelodyFretboard.held, true, 'The lifted melody should stay part of the held chord-melody shape');
   assert.equal(lowMelodyFretboard.accompanimentUnderMelody, true, 'The guitar accompaniment should remain underneath a lifted melody');
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
