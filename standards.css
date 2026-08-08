@@ -122,9 +122,11 @@ input[type="search"]::placeholder { color: #7f8999; }
 .keyboard-stack[data-range-mode="split"] .instrument-pane-label { display: block; }
 .keyboard-stack[data-range-mode="split"] .melody-keyboard-pane { border-top: 1px solid var(--line); }
 .keyboard-stack[data-range-mode="split"] .piano { height: 98px; }
-.chord-navigator { display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; align-items: stretch; min-height: 80px; border-bottom: 1px solid var(--line); }
-.chord-navigator > button { color: var(--muted); background: transparent; border: 0; font-size: 2.2rem; }
-.chord-navigator > button:hover { color: var(--ink); background: #ffffff08; }
+.chord-navigator { display: grid; grid-template-columns: 58px minmax(0, 1fr) 58px; align-items: stretch; min-height: 80px; border-bottom: 1px solid var(--line); }
+.chord-navigator > button { min-width: 44px; min-height: 44px; margin: 8px 5px; padding: 0; color: var(--gold); background: linear-gradient(180deg, #283448, #17202d); border: 1px solid #53647c; border-radius: 11px; box-shadow: inset 0 1px #ffffff18, 0 2px 5px #0006; font: 850 2.2rem/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+.chord-navigator > button:hover { color: #ffe4a0; background: linear-gradient(180deg, #334258, #1d2938); border-color: #7487a2; }
+.chord-navigator > button:active { translate: 0 1px; background: #121a25; box-shadow: inset 0 2px 5px #0008; }
+.chord-navigator > button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 .chord-identity { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: stretch; align-content: center; padding: 7px 0; text-align: center; }
 .chord-identity > strong { justify-self: center; min-width: 0; max-width: 100%; overflow: hidden; color: var(--gold); font: 900 clamp(1.85rem, 5vw, 2.7rem)/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.1em; text-overflow: ellipsis; white-space: nowrap; }
 .chord-identity > span { justify-self: center; min-width: 0; max-width: 100%; margin-top: 7px; overflow: hidden; color: var(--blue); font-size: .68rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
@@ -150,35 +152,6 @@ input[type="search"]::placeholder { color: #7f8999; }
 .midi-source-line > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .midi-source-line label { display: inline-flex; align-items: center; gap: 4px; color: var(--green); white-space: nowrap; }
 .midi-source-line select { max-width: 105px; min-height: 22px; color: var(--ink); background: #1b2432; border: 1px solid #3b4b60; border-radius: 5px; font: inherit; }
-.melody-panel { padding: 7px 11px 9px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, #4b1c7a55, transparent); }
-.melody-panel input { width: 100%; margin: 7px 0 0; accent-color: var(--melody-tone); }
-.melody-panel input:disabled { opacity: .55; }
-.melody-wheel { --melody-wheel-roll: 0px; position: relative; display: block; box-sizing: border-box; width: 100%; height: 43px; min-height: 43px; max-height: 43px; margin-top: 1px; overflow: hidden; isolation: isolate; border: 1px solid #8d65ba; border-radius: 999px; background: linear-gradient(180deg, #17101f, #31203e 47%, #130d1a); box-shadow: inset 0 1px #ffffff24, inset 0 -7px 10px #050309b8, 0 2px 6px #0005; touch-action: pan-y; }
-.melody-wheel::before { content: ""; position: absolute; z-index: 0; inset: 3px 6px; border: 1px solid #d7bdff38; border-radius: inherit; background: linear-gradient(90deg, #140e1e, transparent 9%, transparent 91%, #140e1e); pointer-events: none; }
-.melody-wheel::after { content: ""; position: absolute; z-index: 3; top: 3px; bottom: 3px; left: 50%; width: 2px; translate: -50% 0; border-radius: 99px; background: #f2e5ff; box-shadow: 0 0 0 1px #251133, 0 0 9px #dcb6ffbb; pointer-events: none; }
-.melody-wheel-drum { position: absolute; z-index: 1; inset: 5px 11px; overflow: hidden; border: 1px solid #a77adb; border-radius: inherit; background: linear-gradient(180deg, #c89cff 0%, #7743ab 17%, #3c2057 49%, #693c96 81%, #bb8af2 100%); box-shadow: inset 0 1px #fff8, inset 0 -5px 7px #1e0d2dbb; pointer-events: none; }
-.melody-wheel-tread { position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, #ffffff31 0 1px, transparent 1px 7px, #170b2788 7px 9px, transparent 9px 20px), repeating-linear-gradient(90deg, transparent 0 4px, #f1d8ff3d 4px 5px, transparent 5px 13px); background-size: 20px 100%, 29px 100%; background-position: var(--melody-wheel-roll) 0, var(--melody-wheel-roll) 0; transition: background-position 190ms cubic-bezier(.16, .88, .22, 1); will-change: background-position; pointer-events: none; }
-.melody-wheel-drum::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, #fff4 0%, transparent 24%, transparent 70%, #16091f73 100%), radial-gradient(ellipse at 50% 50%, transparent 47%, #1208184d 100%); pointer-events: none; }
-.melody-wheel-drum::after { content: ""; position: absolute; z-index: 2; inset: 0; background: linear-gradient(90deg, #160c20cc, transparent 14%, transparent 86%, #160c20cc); pointer-events: none; }
-.melody-wheel-pointer { position: absolute; z-index: 4; top: 0; bottom: 0; left: 50%; width: 18px; translate: -50% 0; pointer-events: none; }
-.melody-wheel-pointer::before, .melody-wheel-pointer::after { content: ""; position: absolute; left: 50%; width: 0; height: 0; translate: -50% 0; border-inline: 5px solid transparent; }
-.melody-wheel-pointer::before { top: 1px; border-top: 6px solid #f2e5ff; filter: drop-shadow(0 1px #2a163b); }
-.melody-wheel-pointer::after { bottom: 1px; border-bottom: 6px solid #f2e5ff; filter: drop-shadow(0 -1px #2a163b); }
-.melody-wheel[data-rolling="true"] .melody-wheel-tread { transition: none; }
-.melody-wheel[data-instant="true"] .melody-wheel-tread { transition: none; }
-.melody-wheel[data-disabled="true"] { filter: grayscale(.72); opacity: .57; }
-.melody-wheel-input { position: absolute; z-index: 5; inset: 0; width: 100%; height: 100%; margin: 0 !important; appearance: none; -webkit-appearance: none; opacity: .001; pointer-events: none; }
-.melody-wheel-surface { position: absolute; z-index: 6; inset: 0; cursor: grab; touch-action: pan-y; }
-.melody-wheel[data-rolling="true"] .melody-wheel-surface { cursor: grabbing; }
-.melody-wheel-input::-webkit-slider-runnable-track { height: 100%; background: transparent; }
-.melody-wheel-input::-webkit-slider-thumb { width: 1px; height: 1px; appearance: none; -webkit-appearance: none; opacity: 0; }
-.melody-wheel-input::-moz-range-track { height: 100%; background: transparent; }
-.melody-wheel-input::-moz-range-thumb { width: 1px; height: 1px; border: 0; opacity: 0; }
-.melody-wheel:has(.melody-wheel-input:focus-visible) { outline: 3px solid var(--gold); outline-offset: 3px; }
-/* Keep melody scrubbing glued to the chord it belongs to instead of making
-   the learner look down through the transport controls for it. */
-.chord-identity .chord-melody-panel { box-sizing: border-box; width: 100%; max-width: 330px; justify-self: center; margin: 7px auto 0; padding: 5px 8px; border: 0; border-top: 1px solid #6b4b9a80; border-radius: 7px; background: linear-gradient(90deg, transparent, #4b1c7a55, transparent); }
-.chord-identity .melody-panel > input:not(.melody-wheel-input) { margin-top: 4px; }
 .piano { position: relative; width: 100%; height: 106px; overflow: hidden; background: #07090d; border: 0; border-bottom: 1px solid #596474; border-radius: 0; touch-action: none; }
 .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) { width: max(100%, var(--full-keyboard-width, 100%)); min-width: var(--full-keyboard-width, 100%); height: clamp(100px, 30vw, 126px); min-height: 100px; }
 .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]), .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) .piano-key { touch-action: manipulation; }
@@ -212,10 +185,17 @@ input[type="search"]::placeholder { color: #7f8999; }
 /* A compact, playable first-position guitar view. When a song's written MIDI
    melody reaches beyond fret 12, the renderer adds real frets and the existing
    instrument stage scrolls sideways instead of squeezing the guitar smaller. */
-.fretboard { --fretboard-column-count: 13; --fretboard-min-width: 351px; position: relative; width: 100%; min-width: 0; max-width: 100%; height: clamp(126px, 37vw, 158px); min-height: 126px; overflow: hidden; color: #dce3ef; background: linear-gradient(180deg, #2b211b 0%, #15100e 100%); border-bottom: 1px solid #765f50; isolation: isolate; touch-action: manipulation; }
+.fretboard { --fretboard-column-count: 13; --fretboard-min-width: 351px; position: relative; width: 100%; min-width: 0; max-width: 100%; height: clamp(138px, 39vw, 170px); min-height: 138px; overflow: hidden; color: #dce3ef; background: linear-gradient(180deg, #2b211b 0%, #15100e 100%); border-bottom: 1px solid #765f50; isolation: isolate; touch-action: manipulation; }
 .fretboard[data-extended="true"] { width: var(--fretboard-min-width); min-width: 100%; max-width: none; }
 .fretboard::before { content: ""; position: absolute; z-index: 0; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 15px, #ffffff05 16px 17px); opacity: .45; pointer-events: none; }
-.fretboard-grid { position: relative; z-index: 1; width: 100%; min-width: 0; height: 100%; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); padding: 17px 3px 4px; }
+.fretboard-grid { position: relative; z-index: 1; width: 100%; min-width: 0; height: 100%; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); padding: 32px 3px 4px; }
+.fret-position-selector { position: absolute; z-index: 7; top: 2px; right: 3px; left: 3px; height: 28px; display: grid; grid-template-columns: repeat(var(--fretboard-column-count, 13), minmax(0, 1fr)); align-items: stretch; touch-action: manipulation; }
+.fret-position-button { min-width: 0; min-height: 28px; margin: 0; padding: 0; appearance: none; color: #c7d0dc; background: #111722e8; border: 0; border-right: 1px solid #4b586a; border-radius: 0; font: 850 clamp(.44rem, 1.65vw, .59rem)/1 ui-monospace, SFMono-Regular, Menlo, monospace; touch-action: manipulation; }
+.fret-position-button:first-child { border-radius: 5px 0 0 5px; }
+.fret-position-button:last-child { border-right: 0; border-radius: 0 5px 5px 0; }
+.fret-position-button:hover { color: #fff; background: #273346; }
+.fret-position-button[aria-pressed="true"] { z-index: 1; color: #211807; background: var(--gold); box-shadow: inset 0 0 0 1px #fff0b7, 0 0 7px #ffd36e80; }
+.fret-position-button:focus-visible { z-index: 2; outline: 2px solid #fff; outline-offset: -2px; }
 .fretboard-string { position: relative; min-width: 0; display: grid; grid-template-columns: repeat(var(--fretboard-column-count, 13), minmax(0, 1fr)); align-items: stretch; }
 .fretboard-string::before { content: ""; position: absolute; z-index: 0; top: 50%; right: 0; left: 0; height: 1px; translate: 0 -50%; background: linear-gradient(90deg, #aa9172, #e5cf9e 48%, #92775a); box-shadow: 0 1px #0009; pointer-events: none; }
 .fretboard-string-label { position: absolute; z-index: 6; top: 50%; left: 1px; translate: 0 -50%; min-width: 9px; padding: 1px; color: #2c190f; text-align: center; text-shadow: none; background: #e7d6b4; border: 1px solid #92775a; border-radius: 3px; font: 900 .4rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; }
@@ -287,12 +267,11 @@ input[type="search"]::placeholder { color: #7f8999; }
   .dense-measure .measure-chords { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(44px, 1fr)); }
   .dense-measure .chord-stack { min-height: 44px; }
   .piano { height: 106px; }
-  .chord-navigator { grid-template-columns: 46px minmax(0, 1fr) 46px; min-height: 70px; }
+  .chord-navigator { grid-template-columns: 52px minmax(0, 1fr) 52px; min-height: 70px; }
   .performance-toolbar { padding-inline: 7px; gap: 5px; }
   .performance-button { min-height: 40px; font-size: .58rem; }
   .performance-options { padding-inline: 9px; }
   .midi-source-line { padding-inline: 9px; }
-  .melody-panel { padding-inline: 9px; }
 }
 
 @media (max-width: 379px) {
@@ -308,5 +287,4 @@ input[type="search"]::placeholder { color: #7f8999; }
 @media (prefers-reduced-motion: reduce) {
   .chart-scroll { scroll-behavior: auto; }
   .piano-key { transition: none; }
-  .melody-wheel-tread { transition: none; }
 }

@@ -11,48 +11,6 @@ const js = fs.readFileSync(path.join(root, 'standards.js'), 'utf8');
 const desktopHtml = fs.readFileSync(path.join(root, 'standards-desktop.html'), 'utf8');
 const desktopCss = fs.readFileSync(path.join(root, 'standards-desktop.css'), 'utf8');
 
-function ancestorsForElementId(markup, id) {
-  const tags = /<\/?([a-z][\w:-]*)(?:\s[^<>]*)?>/gi;
-  const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
-  const idExpression = new RegExp(`\\bid=(["'])${id}\\1`);
-  const stack = [];
-  let tag;
-
-  while ((tag = tags.exec(markup))) {
-    const source = tag[0];
-    const tagName = tag[1].toLowerCase();
-    if (source.startsWith('</')) {
-      for (let index = stack.length - 1; index >= 0; index -= 1) {
-        const open = stack.pop();
-        if (open.tagName === tagName) break;
-      }
-      continue;
-    }
-
-    if (idExpression.test(source)) return stack.slice();
-    if (!voidTags.has(tagName) && !source.endsWith('/>')) stack.push({ tagName, source });
-  }
-
-  throw new Error(`Could not find #${id} in standards markup`);
-}
-
-function assertMelodySliderLivesWithChordIdentity(markup, label) {
-  const sliderAncestors = ancestorsForElementId(markup, 'melodySlider');
-  assert.ok(
-    sliderAncestors.some(ancestor => /\bchord-identity\b/.test(ancestor.source)),
-    `${label} melody slider should live directly inside the selected chord identity`
-  );
-  assert.ok(
-    sliderAncestors.some(ancestor => /\bmelody-panel\b/.test(ancestor.source)),
-    `${label} melody slider should remain grouped in its melody panel`
-  );
-  assert.ok(
-    markup.indexOf('id="selectedChord"') < markup.indexOf('id="scaleName"')
-      && markup.indexOf('id="scaleName"') < markup.indexOf('id="melodySlider"'),
-    `${label} melody slider should follow the current chord and scale readout`
-  );
-}
-
 assert.doesNotMatch(html, /id="(?:voicingNotes|scaleNotes|playVoicing)"/);
 assert.match(html, /id="toggleNoteNames"/);
 assert.match(html, /id="toggleMelody"/);
@@ -60,15 +18,9 @@ assert.match(html, /id="randomSong"[^>]*>Random<\/button>/);
 assert.match(html, /id="songAvailabilityFilter"/);
 assert.doesNotMatch(html, /id="loadMidi"/);
 assert.doesNotMatch(html, /id="midiFileInput"/);
-assert.match(html, /id="melodySlider"/);
-assert.match(html, /id="melodyWheel"/);
-assert.match(html, /id="melodyWheelLabel"[^>]*>Melody wheel/);
-assert.match(html, /<output class="sr-only" id="melodyReadout"/);
-assert.match(html, /class="melody-wheel-drum"/);
-assert.match(html, /class="melody-wheel-tread"/);
-assert.match(html, /class="melody-wheel-surface"/);
-assert.doesNotMatch(html, /melody-wheel-note|melody-wheel-previous|melody-wheel-current|melody-wheel-next/);
-assertMelodySliderLivesWithChordIdentity(html, 'Phone');
+assert.doesNotMatch(html, /melodySlider|melodyWheel|melody-wheel|melodyReadout|melody-panel/);
+assert.match(html, /id="previousChord"/);
+assert.match(html, /id="nextChord"/);
 assert.match(html, /id="playChart"/);
 assert.match(html, /id="tempoRange"/);
 assert.match(html, /id="chartSource"/);
@@ -102,10 +54,8 @@ assert.match(css, /--root-tone:\s*#ffd36e/);
 assert.match(css, /--chord-tone:\s*#ff5964/);
 assert.match(css, /--scale-tone:\s*#4aa8ff/);
 assert.match(css, /--melody-tone:\s*#a566ff/);
-assert.match(css, /\.melody-wheel\s*\{/);
-assert.match(css, /\.melody-wheel-surface\s*\{[^}]*touch-action:\s*pan-y/);
-assert.match(css, /\.melody-wheel-tread\s*\{[^}]*background-position:\s*var\(--melody-wheel-roll\)/);
-assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.melody-wheel-tread\s*\{[^}]*transition:\s*none/);
+assert.doesNotMatch(css, /melody-wheel|melody-panel/);
+assert.match(css, /\.chord-navigator > button\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px[^}]*border:\s*1px solid/);
 assert.match(css, /html, body\s*\{[^}]*touch-action:\s*manipulation/);
 assert.match(css, /\.instrument-stage\s*\{[^}]*overflow-x:\s*auto/);
 assert.match(css, /\.piano:is\(\[data-range-mode="full"\]/);
@@ -114,7 +64,9 @@ assert.match(css, /\.fretboard-grid\s*\{[^}]*grid-template-rows:\s*repeat\(6/);
 assert.match(css, /\.fretboard\[data-extended="true"\]\s*\{[^}]*width:\s*var\(--fretboard-min-width\)/);
 assert.match(css, /\.fretboard-string\s*\{[^}]*grid-template-columns:\s*repeat\(var\(--fretboard-column-count,\s*13\)/);
 assert.match(css, /\.fretboard-position-markers/);
-assert.doesNotMatch(css, /\.fretboard-fret-label/);
+assert.match(css, /\.fret-position-selector\s*\{[^}]*grid-template-columns:\s*repeat\(var\(--fretboard-column-count/);
+assert.match(css, /\.fret-position-button\s*\{[^}]*min-height:\s*28px/);
+assert.match(css, /\.fret-position-button\[aria-pressed="true"\]/);
 assert.match(css, /\.library-filter/);
 assert.match(css, /\.piano-key\.white\.melody-tone,\s*\.piano-key\.black\.melody-tone\s*\{[^}]*background:\s*var\(--melody-tone\)/);
 
@@ -133,18 +85,24 @@ assert.match(js, /state\.keyboardRangeMode === 'full'/);
 assert.match(js, /const literalRegister = rangeMode === 'full';/);
 assert.match(js, /function renderKeyboardSurface\(/);
 assert.match(js, /function splitMelodyRangeFor\(/);
-assert.match(js, /function navigateDesktopMelody\(/);
-assert.match(js, /function melodyWheelEntries\(/);
-assert.match(js, /function selectMelodyWheelIndex\(/);
-assert.match(js, /function bindMelodyWheel\(/);
-assert.match(js, /function paintMelodyWheelRoll\(/);
-assert.match(js, /function settleMelodyWheelVisual\(/);
+assert.match(js, /function navigateChord\(/);
+assert.doesNotMatch(js, /melodyWheel|melodySlider|MELODY_WHEEL/);
 assert.match(js, /function guitarChordMelodyShape\(/);
+assert.match(js, /FRETBOARD_POSITION_STORAGE_KEY/);
+assert.match(js, /state\.fretboardPositionAnchor/);
+assert.match(js, /position\.fret >= anchor/);
+assert.match(js, /voice\?\.kind === 'melody' \|\| anchor == null \|\| position\.fret >= anchor/);
+assert.match(js, /positionButton\.className = 'fret-position-button'/);
+assert.match(js, /positionButton\.setAttribute\('aria-pressed'/);
+assert.match(js, /for \(let fret = 0; fret <= maxFret; fret \+= 1\)/);
+assert.match(js, /state\.fretboardPositionAnchor === fret \? null : fret/);
+assert.match(js, /localStorage\.removeItem\(FRETBOARD_POSITION_STORAGE_KEY\)/);
 assert.match(js, /function visualTargets\(/);
 assert.doesNotMatch(js, /function oneOctaveRangeForVoicing\(/);
 assert.match(js, /state\.keyboardToneMode/);
 assert.match(js, /state\.fretboardToneMode/);
-assert.match(js, /const voicing = state\.displayVoicing\.length \? state\.displayVoicing : state\.voicing;/);
+assert.match(js, /voicing: state\.displayVoicing\.length \? state\.displayVoicing : state\.voicing/);
+assert.match(js, /voicing: state\.fretboardVoicing, visual: 'fretboard-chord'/);
 assert.match(js, /measure\.getBoundingClientRect\(\)/);
 assert.match(js, /view\.getBoundingClientRect\(\)/);
 assert.doesNotMatch(js, /measure\.offsetTop/);
@@ -174,11 +132,10 @@ assert.match(desktopHtml, /href="standards-desktop\.css"/);
 assert.match(desktopHtml, /id="keyboardRangeMode"/);
 assert.match(desktopHtml, /id="songAvailabilityFilter"/);
 assert.doesNotMatch(desktopHtml, /id="loadMidi"/);
-assert.match(desktopHtml, /id="melodyWheel"/);
-assert.match(desktopHtml, /id="melodyWheelLabel"[^>]*>Melody wheel/);
-assert.match(desktopHtml, /class="melody-wheel-tread"/);
-assert.doesNotMatch(desktopHtml, /melody-wheel-note|melody-wheel-previous|melody-wheel-current|melody-wheel-next/);
-assertMelodySliderLivesWithChordIdentity(desktopHtml, 'Desktop');
+assert.doesNotMatch(desktopHtml, /melodySlider|melodyWheel|melody-wheel|melodyReadout|melody-panel/);
+assert.match(desktopHtml, /id="previousChord"/);
+assert.match(desktopHtml, /id="nextChord"/);
+assert.doesNotMatch(desktopCss, /melody-wheel|melody-panel/);
 assert.match(desktopCss, /\.desktop-mode \.workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 assert.match(desktopCss, /\.desktop-mode \.fretboard\s*\{[^}]*min-height:\s*240px/);
 

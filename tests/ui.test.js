@@ -78,7 +78,7 @@ function melodyMidiFixture() {
     note(720, 0x80, 84, 0),
     note(0, 0x90, 81, 100),
     note(240, 0x80, 81, 0),
-    // A second Am7 note keeps the within-chord slider/grip regression
+    // A second Am7 note keeps the within-chord arrow/grip regression
     // meaningful now that the C6 lead-in belongs to its own pickup event.
     note(0, 0x90, 83, 100),
     note(120, 0x80, 83, 0),
@@ -290,98 +290,31 @@ const server = http.createServer((request, response) => {
     && window.KeyerStandardsDebug.state.melodyNotes.length > 0
   ));
   assert.equal(await page.locator('#chartSource').inputValue(), 'midi');
-  assert.equal(await page.locator('#melodyPanel').isVisible(), true);
   assert.equal(await page.locator('#playMelody').isDisabled(), false);
   assert.equal(await page.locator('#tempoValue').textContent(), '100 BPM');
-  const melodySliderPlacement = await page.evaluate(() => {
-    const identity = document.querySelector('.chord-identity');
-    const selectedChord = document.querySelector('#selectedChord');
-    const panel = document.querySelector('#melodyPanel');
-    const slider = document.querySelector('#melodySlider');
-    const chordBounds = selectedChord.getBoundingClientRect();
-    const sliderBounds = slider.getBoundingClientRect();
-    return {
-      panelInIdentity: identity.contains(panel),
-      sliderInIdentity: identity.contains(slider),
-      afterChord: sliderBounds.top >= chordBounds.bottom - 1
-    };
-  });
-  assert.deepEqual(melodySliderPlacement, {
-    panelInIdentity: true,
-    sliderInIdentity: true,
-    afterChord: true
-  }, 'The melody slider should sit directly below the selected chord readout.');
-  const melodyWheelChrome = await page.evaluate(() => {
-    const wheel = document.querySelector('#melodyWheel');
-    const readout = document.querySelector('#melodyReadout');
-    return {
-      visibleText: wheel.textContent.trim(),
-      oldTextLabels: wheel.querySelectorAll('.melody-wheel-note').length,
-      hasTread: Boolean(wheel.querySelector('.melody-wheel-tread')),
-      hasSurface: Boolean(wheel.querySelector('.melody-wheel-surface')),
-      readoutHidden: readout.classList.contains('sr-only'),
-      surfaceTouchAction: getComputedStyle(wheel.querySelector('.melody-wheel-surface')).touchAction
-    };
-  });
-  assert.deepEqual(melodyWheelChrome, {
-    visibleText: '',
-    oldTextLabels: 0,
-    hasTread: true,
-    hasSurface: true,
-    readoutHidden: true,
-    surfaceTouchAction: 'pan-y'
-  }, 'The melody wheel should be a text-free tactile encoder while retaining hidden accessible status.');
-  const melodyWheelSizing = await page.evaluate(() => {
-    const debug = window.KeyerStandardsDebug;
-    const label = document.querySelector('#selectedChord');
-    const wheel = document.querySelector('#melodyWheel');
-    const sizeFor = text => {
-      label.textContent = text;
-      const bounds = wheel.getBoundingClientRect();
-      return {
-        width: Math.round(bounds.width * 100) / 100,
-        height: Math.round(bounds.height * 100) / 100,
-        left: Math.round(bounds.left * 100) / 100
-      };
-    };
-    const shortChord = sizeFor('Cmaj7');
-    const extendedChord = sizeFor('F#7alt(#11,b13)');
-    debug.selectEvent(debug.state.activeIndex, false);
-    return { shortChord, extendedChord };
-  });
-  assert.deepEqual(
-    melodyWheelSizing.extendedChord,
-    melodyWheelSizing.shortChord,
-    'The wheel must keep one stable width and height across short and extended chord labels.'
+  assert.equal(
+    await page.locator('#melodyWheel, #melodySlider, #melodyReadout, .melody-wheel, .melody-panel').count(),
+    0,
+    'The reel and its hidden range/readout should be removed in favor of the two chord arrows.'
   );
-  const longMelodyWheelTexture = await page.evaluate(() => {
-    const wheel = document.querySelector('#melodyWheel');
-    const tread = wheel.querySelector('.melody-wheel-tread');
-    const bounds = element => {
-      const rect = element.getBoundingClientRect();
-      return {
-        left: Math.round(rect.left * 100) / 100,
-        right: Math.round(rect.right * 100) / 100,
-        width: Math.round(rect.width * 100) / 100
-      };
+  const chordArrowChrome = await page.evaluate(() => [...document.querySelectorAll('#previousChord, #nextChord')].map(button => {
+    const rect = button.getBoundingClientRect();
+    const style = getComputedStyle(button);
+    return {
+      width: rect.width,
+      height: rect.height,
+      backgroundColor: style.backgroundColor,
+      backgroundImage: style.backgroundImage,
+      borderWidth: Number.parseFloat(style.borderTopWidth),
+      borderRadius: Number.parseFloat(style.borderTopLeftRadius)
     };
-    const originalRoll = wheel.style.getPropertyValue('--melody-wheel-roll');
-    const originalRolling = wheel.dataset.rolling;
-    const before = bounds(tread);
-    wheel.dataset.rolling = 'true';
-    wheel.style.setProperty('--melody-wheel-roll', '2800px');
-    const after = bounds(tread);
-    const backgroundPosition = getComputedStyle(tread).backgroundPosition;
-    wheel.style.setProperty('--melody-wheel-roll', originalRoll);
-    wheel.dataset.rolling = originalRolling;
-    return { before, after, backgroundPosition };
+  }));
+  assert.equal(chordArrowChrome.length, 2);
+  chordArrowChrome.forEach((button, index) => {
+    assert.ok(button.width >= 44 && button.height >= 44, `Chord arrow ${index + 1} must be at least 44px square: ${JSON.stringify(button)}`);
+    assert.ok(button.borderWidth >= 1 && button.borderRadius > 0, `Chord arrow ${index + 1} needs a defined bordered button shape.`);
+    assert.ok(button.backgroundImage !== 'none' || button.backgroundColor !== 'rgba(0, 0, 0, 0)', `Chord arrow ${index + 1} needs a visible fill.`);
   });
-  assert.deepEqual(
-    longMelodyWheelTexture.after,
-    longMelodyWheelTexture.before,
-    'A long global melody path must keep its tread physically inside the fixed wheel viewport.'
-  );
-  assert.match(longMelodyWheelTexture.backgroundPosition, /2800px/, 'Long paths should roll the repeating texture itself instead of translating the finite tread out of view.');
   assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="84"]').count(), 1);
   assert.equal(await page.locator('.piano-key.melody-tone .melody-octave').textContent(), 'C6');
   const midiSpans = await page.evaluate(() => {
@@ -631,10 +564,75 @@ const server = http.createServer((request, response) => {
     captured: false
   }, 'An extended guitar neck must defer a drag to the horizontal stage instead of capturing it as a held fret.');
 
+  const fretPositionRail = await page.evaluate(() => {
+    const board = document.querySelector('#fretboard');
+    const buttons = [...board.querySelectorAll('.fret-position-button')];
+    return {
+      lastFret: Number(board.dataset.lastFret),
+      labels: buttons.map(button => button.textContent),
+      pressed: buttons.filter(button => button.getAttribute('aria-pressed') === 'true').length,
+      toolbarRole: board.querySelector('.fret-position-selector')?.getAttribute('role'),
+      toolbarLabel: board.querySelector('.fret-position-selector')?.getAttribute('aria-label')
+    };
+  });
+  assert.deepEqual(
+    fretPositionRail.labels,
+    Array.from({ length: fretPositionRail.lastFret + 1 }, (_, fret) => String(fret)),
+    'Every available fret from open string 0 through the dynamic neck end needs a numbered button.'
+  );
+  assert.equal(fretPositionRail.pressed, 0, 'Automatic guitar positioning starts with no fret locked.');
+  assert.equal(fretPositionRail.toolbarRole, 'toolbar');
+  assert.match(fretPositionRail.toolbarLabel, /lowest fret/i);
+
+  // The highest currently visible number is clickable. Selecting it extends
+  // the neck by a playable hand span, but that extra width remains confined to
+  // the instrument scroller rather than widening the phone page.
+  await page.locator(`.fret-position-button[data-fret="${fretPositionRail.lastFret}"]`).click();
+  await page.waitForTimeout(32);
+  const extendedPositionRail = await page.evaluate(() => {
+    const board = document.querySelector('#fretboard');
+    const stage = board.closest('.instrument-stage');
+    const selected = board.querySelector('.fret-position-button[aria-pressed="true"]');
+    const selectedRect = selected.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    return {
+      anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
+      boardAnchor: board.dataset.positionAnchor,
+      lastFret: Number(board.dataset.lastFret),
+      selectedFret: Number(selected?.dataset.fret),
+      selectedVisible: selectedRect.left >= stageRect.left - 1 && selectedRect.right <= stageRect.right + 1,
+      documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
+      stageOverflow: stage.scrollWidth - stage.clientWidth
+    };
+  });
+  assert.equal(extendedPositionRail.anchor, fretPositionRail.lastFret);
+  assert.equal(extendedPositionRail.boardAnchor, String(fretPositionRail.lastFret));
+  assert.equal(extendedPositionRail.selectedFret, fretPositionRail.lastFret);
+  assert.ok(extendedPositionRail.lastFret >= fretPositionRail.lastFret + 5, 'A high anchor needs enough additional frets to form a chord shape.');
+  assert.equal(extendedPositionRail.selectedVisible, true, 'The newly locked fret should remain visible after the neck rerenders.');
+  assert.ok(extendedPositionRail.documentOverflow <= 1, 'A high fret lock must not widen the mobile document.');
+  assert.ok(extendedPositionRail.stageOverflow > 1, 'A high fret lock should keep the expanded neck horizontally scrollable.');
+
+  const dynamicLastFret = extendedPositionRail.lastFret;
+  await page.evaluate(() => {
+    const stage = document.querySelector('#fretboard').closest('.instrument-stage');
+    stage.scrollLeft = stage.scrollWidth;
+  });
+  const dynamicLastButton = page.locator(`.fret-position-button[data-fret="${dynamicLastFret}"]`);
+  assert.equal(await dynamicLastButton.isEnabled(), true, 'The dynamically appended final fret should remain a real clickable button.');
+  await dynamicLastButton.click();
+  assert.equal(
+    await page.evaluate(() => window.KeyerStandardsDebug.state.fretboardPositionAnchor),
+    dynamicLastFret,
+    'Clicking a dynamically appended fret should replace the prior lock.'
+  );
+  await page.locator(`.fret-position-button[data-fret="${dynamicLastFret}"]`).click();
+  assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.fretboardPositionAnchor), null, 'Pressing the selected fret again restores automatic positioning.');
+
   // A chord-melody grip is chosen for the chord occurrence, not revoiced for
-  // every note the learner scrubs through. The purple marker is free to move
-  // through that held harmony, but the fretted chord should stay put until a
-  // new chart chord is selected.
+  // every note the learner steps through. The purple marker is free to move
+  // through that held harmony, but the fretted chord stays put until the next
+  // harmony. A selected fret floors and biases only the chord accompaniment.
   async function guitarChordMelodySnapshot() {
     return page.evaluate(() => {
       const board = document.querySelector('#fretboard');
@@ -646,6 +644,7 @@ const server = http.createServer((request, response) => {
           role: cell.querySelector('.fretboard-role')?.textContent || ''
         }))
         .sort((left, right) => left.string - right.string || left.fret - right.fret);
+      const accompaniment = heldGrip.filter(note => note.role !== 'M');
       const melody = [...board.querySelectorAll('.fretboard-cell.melody-tone')].map(cell => ({
         string: Number(cell.dataset.string),
         fret: Number(cell.dataset.fret),
@@ -655,8 +654,12 @@ const server = http.createServer((request, response) => {
       return {
         activeIndex: window.KeyerStandardsDebug.state.activeIndex,
         chord: document.querySelector('#selectedChord').textContent,
-        slider: Number(document.querySelector('#melodySlider').value),
+        cursor: window.KeyerStandardsDebug.state.melodyCursor,
+        anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
+        boardAnchor: board.dataset.positionAnchor,
+        pressedFrets: [...board.querySelectorAll('.fret-position-button[aria-pressed="true"]')].map(button => Number(button.dataset.fret)),
         heldGrip,
+        accompaniment,
         melody
       };
     });
@@ -664,16 +667,14 @@ const server = http.createServer((request, response) => {
 
   // Chord-melody work starts only at the first actual marker/downbeat.
   await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
+  await page.locator('#nextChord').click();
   const firstMelodyGrip = await guitarChordMelodySnapshot();
-  await page.locator('#melodySlider').evaluate(element => {
-    element.value = '2';
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+  await page.locator('#nextChord').click();
   const laterMelodyGrip = await guitarChordMelodySnapshot();
-  assert.equal(firstMelodyGrip.slider, 1, 'The song-wide melody wheel should start on Am7’s first note after the pickup.');
-  assert.equal(laterMelodyGrip.slider, 2, 'The song-wide melody wheel should advance to Am7’s second note.');
-  assert.equal(laterMelodyGrip.activeIndex, firstMelodyGrip.activeIndex, 'Melody scrubbing must stay on the same chart chord');
-  assert.equal(laterMelodyGrip.chord, firstMelodyGrip.chord, 'Melody scrubbing must not replace the current chord');
+  assert.equal(firstMelodyGrip.cursor, 0, 'The first forward-arrow press starts Am7 on its first melody note.');
+  assert.equal(laterMelodyGrip.cursor, 1, 'The next forward-arrow press advances to Am7’s second melody note.');
+  assert.equal(laterMelodyGrip.activeIndex, firstMelodyGrip.activeIndex, 'Melody stepping must stay on the same chart chord');
+  assert.equal(laterMelodyGrip.chord, firstMelodyGrip.chord, 'Melody stepping must not replace the current chord');
   assert.equal(firstMelodyGrip.melody.length, 1, 'A chord-melody grip should have one purple melody marker');
   assert.deepEqual(firstMelodyGrip.melody[0], {
     string: 0,
@@ -689,182 +690,53 @@ const server = http.createServer((request, response) => {
     'Advancing melody notes inside one chord must keep the chosen guitar chord grip fixed'
   );
 
-  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(2, false));
+  await page.locator('.fret-position-button[data-fret="10"]').click();
+  const anchoredLaterGrip = await guitarChordMelodySnapshot();
+  assert.deepEqual(anchoredLaterGrip.pressedFrets, [10], 'The selected fret should be the only visibly locked fret.');
+  assert.equal(anchoredLaterGrip.anchor, 10);
+  assert.equal(anchoredLaterGrip.boardAnchor, '10');
+  assert.ok(anchoredLaterGrip.accompaniment.length > 0, 'A fret lock must still yield an accompaniment grip.');
+  assert.ok(anchoredLaterGrip.accompaniment.every(note => note.fret >= 10), 'No chord voice may fall below the selected fret.');
+  assert.ok(Math.min(...anchoredLaterGrip.accompaniment.map(note => note.fret)) <= 15, 'The chord floor should remain near the selected fret.');
+
+  await page.locator('#previousChord').click();
+  const anchoredFirstGrip = await guitarChordMelodySnapshot();
+  assert.equal(anchoredFirstGrip.cursor, 0);
+  assert.equal(anchoredFirstGrip.anchor, 10, 'The fret lock should persist while stepping backward through melody notes.');
+  assert.deepEqual(anchoredFirstGrip.heldGrip, anchoredLaterGrip.heldGrip, 'Melody movement must not revoice an anchored chord grip.');
+  await page.locator('#nextChord').click();
+  await page.locator('#nextChord').click();
   const nextChordGrip = await guitarChordMelodySnapshot();
   assert.notEqual(nextChordGrip.activeIndex, laterMelodyGrip.activeIndex, 'Selecting the next harmony should leave the prior chord occurrence');
   assert.notEqual(nextChordGrip.chord, laterMelodyGrip.chord, 'The next chart event should be a different chord');
-  assert.notDeepEqual(nextChordGrip.heldGrip, firstMelodyGrip.heldGrip, 'A new chord should receive its own playable chord-melody grip');
+  assert.equal(nextChordGrip.anchor, 10, 'The fret lock should persist into the next chord.');
+  assert.deepEqual(nextChordGrip.pressedFrets, [10]);
+  assert.ok(nextChordGrip.accompaniment.length > 0 && nextChordGrip.accompaniment.every(note => note.fret >= 10), 'Every new chord should honor the selected fret floor.');
+  assert.notDeepEqual(nextChordGrip.heldGrip, anchoredFirstGrip.heldGrip, 'A new chord should receive its own playable chord-melody grip');
+
+  await page.locator('.fret-position-button[data-fret="10"]').click();
+  assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.fretboardPositionAnchor), null);
   await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
+  await page.locator('#nextChord').click();
+  const restoredAutomaticGrip = await guitarChordMelodySnapshot();
+  assert.deepEqual(restoredAutomaticGrip.pressedFrets, []);
+  assert.deepEqual(restoredAutomaticGrip.heldGrip, firstMelodyGrip.heldGrip, 'Deselecting a fret should restore the deterministic automatic voicing.');
+
+  await page.locator('.fret-position-button[data-fret="0"]').click();
+  const openPositionGrip = await guitarChordMelodySnapshot();
+  assert.equal(openPositionGrip.anchor, 0, 'Fret 0 must be selectable rather than treated as an empty value.');
+  assert.equal(openPositionGrip.boardAnchor, '0');
+  assert.deepEqual(openPositionGrip.pressedFrets, [0]);
+  assert.ok(openPositionGrip.accompaniment.length > 0);
+  assert.ok(Math.min(...openPositionGrip.accompaniment.map(note => note.fret)) <= 5, 'Fret 0 should bias the chord toward open/first position.');
+  await page.locator('.fret-position-button[data-fret="0"]').click();
+  assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.fretboardPositionAnchor), null);
 
   // Return the rest of the MIDI interaction regressions to their default
   // compact piano surface.
   await page.locator('#instrumentView').selectOption('piano');
   await page.locator('#keyboardRangeMode').selectOption('compact');
-
-  await page.locator('#melodySlider').evaluate(element => {
-    element.value = '2';
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-  assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="83"]').count(), 1, 'Slider should move the actual melody note');
-  assert.ok(await page.locator('.piano-key.playing').count() >= 1, 'Scrubbing a melody note should audition it');
-
-  // The melody wheel is song-wide. Moving from its pickup note into index 1
-  // must select the first marker chord, rather than putting both notes under
-  // that chord’s local slider.
-  await page.locator('#melodySlider').evaluate(element => {
-    element.value = '0';
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-  assert.deepEqual(await page.evaluate(() => ({
-    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
-    chord: document.querySelector('#selectedChord').textContent,
-    melody: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
-    slider: Number(document.querySelector('#melodySlider').value)
-  })), { activeIndex: 0, chord: 'Pickup', melody: 84, slider: 0 }, 'Wheel index zero must select and audition the separate pickup.');
-  await page.locator('#melodySlider').evaluate(element => {
-    element.value = '1';
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-  assert.deepEqual(await page.evaluate(() => ({
-    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
-    chord: document.querySelector('#selectedChord').textContent,
-    melody: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
-    slider: Number(document.querySelector('#melodySlider').value)
-  })), { activeIndex: 1, chord: 'Am7', melody: 81, slider: 1 }, 'Wheel index one must enter the first chord on its own first melody onset.');
-  await page.locator('#melodySlider').focus();
-  await page.keyboard.press('ArrowRight');
-  const sliderKeyboardResult = await page.evaluate(() => ({
-    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
-    value: Number(document.querySelector('#melodySlider').value),
-    max: Number(document.querySelector('#melodySlider').max),
-    melodyMidi: document.querySelector('#piano').dataset.melodyMidi
-  }));
-  assert.equal(sliderKeyboardResult.value, 2, 'Native keyboard range input should advance one note through the global melody wheel.');
-  assert.equal(sliderKeyboardResult.melodyMidi, '83', 'Native keyboard range input should show the later melody note');
-  assert.equal(sliderKeyboardResult.activeIndex, 1, 'The second Am7 melody note should stay in the first chord.');
-
-  const touchWheelAxisAndMotion = await page.evaluate(() => {
-    const wheel = document.querySelector('#melodyWheel');
-    const surface = wheel.querySelector('.melody-wheel-surface');
-    const slider = document.querySelector('#melodySlider');
-    const makePointer = (type, pointerId, clientX, clientY) => new PointerEvent(type, {
-      bubbles: true,
-      cancelable: true,
-      pointerId,
-      pointerType: 'touch',
-      clientX,
-      clientY,
-      button: 0
-    });
-    const before = Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'));
-    const beforeValue = Number(slider.value);
-    surface.dispatchEvent(makePointer('pointerdown', 81, 100, 100));
-    const fractionalMove = makePointer('pointermove', 81, 109, 100);
-    surface.dispatchEvent(fractionalMove);
-    const during = Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'));
-    const duringValue = Number(slider.value);
-    const detentMove = makePointer('pointermove', 81, 137, 100);
-    surface.dispatchEvent(detentMove);
-    const afterDetent = Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'));
-    const afterDetentValue = Number(slider.value);
-    surface.dispatchEvent(makePointer('pointerup', 81, 109, 100));
-
-    // Restore the preceding note before checking vertical scroll behavior.
-    slider.value = String(beforeValue);
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
-
-    surface.dispatchEvent(makePointer('pointerdown', 82, 100, 100));
-    const verticalMove = makePointer('pointermove', 82, 102, 132);
-    surface.dispatchEvent(verticalMove);
-    const verticalPrevented = verticalMove.defaultPrevented;
-    const afterVerticalValue = Number(slider.value);
-    surface.dispatchEvent(makePointer('pointerup', 82, 102, 132));
-    const verticalWheel = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 });
-    surface.dispatchEvent(verticalWheel);
-    return {
-      before,
-      during,
-      beforeValue,
-      duringValue,
-      afterDetent,
-      afterDetentValue,
-      fractionalPrevented: fractionalMove.defaultPrevented,
-      detentPrevented: detentMove.defaultPrevented,
-      verticalPrevented,
-      afterVerticalValue,
-      verticalWheelPrevented: verticalWheel.defaultPrevented
-    };
-  });
-  assert.ok(touchWheelAxisAndMotion.during > touchWheelAxisAndMotion.before, 'A fractional horizontal touch drag should visibly roll the tread before the next note detent.');
-  assert.equal(touchWheelAxisAndMotion.duringValue, touchWheelAxisAndMotion.beforeValue, 'A fractional drag must not advance the note until it crosses a detent.');
-  assert.ok(
-    touchWheelAxisAndMotion.afterDetent > touchWheelAxisAndMotion.during,
-    'Crossing a note detent should continue the reel forward instead of modulo-resetting its surface.'
-  );
-  assert.equal(touchWheelAxisAndMotion.afterDetentValue, touchWheelAxisAndMotion.beforeValue + 1, 'A full encoder detent should advance exactly one melody note.');
-  assert.equal(touchWheelAxisAndMotion.fractionalPrevented, true, 'Horizontal touch drags should be claimed by the melody encoder.');
-  assert.equal(touchWheelAxisAndMotion.detentPrevented, true, 'A continued horizontal drag should remain claimed by the melody encoder.');
-  assert.equal(touchWheelAxisAndMotion.verticalPrevented, false, 'Vertical touch drags over the melody wheel must remain available for page scrolling.');
-  assert.equal(touchWheelAxisAndMotion.afterVerticalValue, touchWheelAxisAndMotion.beforeValue, 'A vertical scroll gesture must not change the selected melody note.');
-  assert.equal(touchWheelAxisAndMotion.verticalWheelPrevented, false, 'An ordinary vertical mouse wheel should scroll the page instead of changing the melody.');
-
-  const horizontalWheelBoundary = await page.evaluate(() => {
-    const wheel = document.querySelector('#melodyWheel');
-    const surface = wheel.querySelector('.melody-wheel-surface');
-    const slider = document.querySelector('#melodySlider');
-    const before = {
-      activeIndex: window.KeyerStandardsDebug.state.activeIndex,
-      value: Number(slider.value),
-      roll: Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'))
-    };
-    const sidewaysWheel = new WheelEvent('wheel', {
-      bubbles: true,
-      cancelable: true,
-      deltaX: 32
-    });
-    surface.dispatchEvent(sidewaysWheel);
-    const crossed = {
-      activeIndex: window.KeyerStandardsDebug.state.activeIndex,
-      value: Number(slider.value),
-      roll: Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll')),
-      prevented: sidewaysWheel.defaultPrevented,
-      chord: document.querySelector('#selectedChord').textContent
-    };
-    slider.value = String(before.value);
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
-    return { before, crossed };
-  });
-  assert.equal(horizontalWheelBoundary.crossed.prevented, true, 'A horizontal trackpad/mouse-wheel gesture should be captured by the encoder.');
-  assert.equal(horizontalWheelBoundary.crossed.value, horizontalWheelBoundary.before.value + 1, 'One sideways wheel detent should advance exactly one melody note.');
-  assert.equal(horizontalWheelBoundary.crossed.activeIndex, 2, 'A sideways wheel should carry the global melody path through the next chord/bar.');
-  assert.equal(horizontalWheelBoundary.crossed.chord, 'D7', 'Crossing the boundary must select the next chord rather than restarting the wheel.');
-  assert.ok(
-    horizontalWheelBoundary.crossed.roll > horizontalWheelBoundary.before.roll,
-    'A boundary-crossing sideways wheel gesture should retain its forward physical roll instead of rebasing the tread.'
-  );
-  await page.waitForTimeout(120);
-
-  // The wheel surface itself is an encoder. A real rightward drag must cross
-  // the barline to D7, rather than bubbling into the study-card swipe handler
-  // and accidentally going backward to the pickup.
-  await page.locator('#melodySlider').scrollIntoViewIfNeeded();
-  const wheelBox = await page.locator('#melodySlider').boundingBox();
-  assert.ok(wheelBox, 'Melody wheel should have a visible pointer target.');
-  await page.mouse.move(wheelBox.x + wheelBox.width / 2, wheelBox.y + wheelBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(wheelBox.x + wheelBox.width - 6, wheelBox.y + wheelBox.height / 2, { steps: 5 });
-  await page.mouse.up();
-  assert.deepEqual(await page.evaluate(() => ({
-    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
-    slider: Number(document.querySelector('#melodySlider').value),
-    melody: document.querySelector('#piano').dataset.melodyMidi,
-    chord: document.querySelector('#selectedChord').textContent
-  })), {
-    activeIndex: 2,
-    slider: 3,
-    melody: '79',
-    chord: 'D7'
-  }, 'A rightward encoder drag should advance into the next chord, never back into the pickup.');
+  assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="81"]').count(), 1, 'The compact card should retain the current arrow-selected melody note.');
 
   // With MIDI markers selected, the chord arrows become a phrase navigator:
   // pickup notes first, then one note at a time inside each chord.
@@ -942,12 +814,12 @@ const server = http.createServer((request, response) => {
   const pickupTransition = await page.evaluate(() => ({
     chord: document.querySelector('#selectedChord').textContent,
     voicingCount: window.KeyerStandardsDebug.state.voicing.length,
-    sliderMelody: document.querySelector('#melodyReadout').textContent,
+    activeMelodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
     visibleMelody: document.querySelector('#piano').dataset.melodyMidi
   }));
   assert.equal(pickupTransition.chord, 'Am7');
   assert.ok(pickupTransition.voicingCount > 0, 'The first marker should start its chord accompaniment.');
-  assert.match(pickupTransition.sliderMelody, /^C6 · pickup · 1 \/ 4$/);
+  assert.equal(pickupTransition.activeMelodyMidi, 84, 'Transport should preserve the held pickup without relying on a reel readout.');
   assert.equal(pickupTransition.visibleMelody, '84', 'The held pickup should remain visible through the first chord marker.');
   await page.locator('#playChart').click();
   assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), false);
@@ -966,7 +838,6 @@ const server = http.createServer((request, response) => {
       source: debug.state.chartSource,
       midiChart: Boolean(debug.state.midiChart),
       melodyVisible: debug.state.showMelody,
-      panelHidden: document.querySelector('#melodyPanel').hidden,
       playMelodyDisabled: document.querySelector('#playMelody').disabled
     };
   });
@@ -974,7 +845,6 @@ const server = http.createServer((request, response) => {
     source: 'ireal',
     midiChart: false,
     melodyVisible: true,
-    panelHidden: false,
     playMelodyDisabled: false
   }, 'A melody-only MIDI should remain usable over the current iReal form');
 
@@ -1031,6 +901,39 @@ const server = http.createServer((request, response) => {
   assert.equal(lowMelodyFretboard.lastFret, 12, 'A song without a high melody should retain the compact first-position neck.');
   assert.equal(lowMelodyFretboard.cellCount, 78, 'The normal neck remains six strings by open-through-12 frets.');
   assert.equal(lowMelodyFretboard.extended, 'false');
+
+  await page.locator('.fret-position-button[data-fret="10"]').click();
+  const anchoredLowMelody = await page.evaluate(() => {
+    const board = document.querySelector('#fretboard');
+    const melody = board.querySelector('.fretboard-cell.melody-tone');
+    const accompaniment = [...board.querySelectorAll('.fretboard-cell.chord-melody-tone')]
+      .filter(cell => cell.querySelector('.fretboard-role')?.textContent !== 'M')
+      .map(cell => Number(cell.dataset.fret));
+    return {
+      anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
+      boardAnchor: board.dataset.positionAnchor,
+      melodyMidi: Number(melody?.dataset.melodyMidi),
+      physicalMidi: Number(melody?.dataset.midi),
+      melodyFret: Number(melody?.dataset.fret),
+      accompaniment,
+      documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
+      stageOverflow: board.closest('.instrument-stage').scrollWidth - board.closest('.instrument-stage').clientWidth
+    };
+  });
+  assert.equal(anchoredLowMelody.anchor, 10);
+  assert.equal(anchoredLowMelody.boardAnchor, '10');
+  assert.equal(anchoredLowMelody.melodyMidi, 45);
+  assert.equal(anchoredLowMelody.physicalMidi, 45, 'A fret lock must never octave-fold the literal melody register.');
+  assert.ok(anchoredLowMelody.melodyFret < 10, 'The purple melody may sit below the selected chord-position floor.');
+  assert.ok(anchoredLowMelody.accompaniment.every(fret => fret >= 10), 'Only chord accompaniment is constrained by the selected fret.');
+  assert.ok(anchoredLowMelody.documentOverflow <= 1, 'An anchored extended neck must stay inside the phone document.');
+  assert.ok(anchoredLowMelody.stageOverflow > 1, 'An anchored extended neck remains horizontally scrollable.');
+  await page.locator('.fret-position-button[data-fret="10"]').click();
+  assert.deepEqual(await page.evaluate(() => ({
+    anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
+    lastFret: Number(document.querySelector('#fretboard').dataset.lastFret),
+    pressed: document.querySelectorAll('.fret-position-button[aria-pressed="true"]').length
+  })), { anchor: null, lastFret: 12, pressed: 0 }, 'Deselecting the fret lock should return the compact neck to automatic logic.');
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
