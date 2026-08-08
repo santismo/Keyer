@@ -38,8 +38,9 @@
         </div>
       </div>
       <label class="library-filter" for="songAvailabilityFilter"><span>Show</span>
-        <select id="songAvailabilityFilter" aria-label="Filter standards by melody availability">
+        <select id="songAvailabilityFilter" aria-label="Choose a standards bank">
           <option value="all">All standards</option>
+          <option value="favorites">Favorites</option>
           <option value="melody">With MIDI melody</option>
           <option value="chords">Chord charts only</option>
         </select>
@@ -49,9 +50,12 @@
 
     <section class="lesson" id="lesson" hidden>
       <header class="song-heading">
-        <div>
-          <h2 id="songTitle">Jazz standard</h2>
-          <p id="songComposer"></p>
+        <div class="song-heading-title">
+          <div>
+            <h2 id="songTitle">Jazz standard</h2>
+            <p id="songComposer"></p>
+          </div>
+          <button class="favorite-song-button" id="favoriteSong" type="button" aria-pressed="false" aria-label="Add this standard to favorites" title="Add to favorites">☆</button>
         </div>
         <div class="song-meta" id="songMeta"></div>
       </header>
