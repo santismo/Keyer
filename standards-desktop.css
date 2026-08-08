@@ -16,9 +16,9 @@
 .desktop-mode .fretboard-role { min-width: 16px; height: 16px; font-size: .48rem; }
 .desktop-mode .chord-navigator { min-height: 94px; }
 .desktop-mode .display-options { grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 9px 12px; }
-.desktop-mode .piano-voicing-control { grid-column: auto; }
+.desktop-mode .piano-voicing-control, .desktop-mode .guitar-voicing-control { grid-column: auto; }
 
 @media (max-width: 900px) {
   .desktop-mode .display-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .desktop-mode .piano-voicing-control { grid-column: 1 / -1; }
+  .desktop-mode .piano-voicing-control, .desktop-mode .guitar-voicing-control { grid-column: 1 / -1; }
 }
