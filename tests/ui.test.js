@@ -428,6 +428,14 @@ const server = http.createServer((request, response) => {
   assert.equal(await page.locator('#chartSource').inputValue(), 'midi');
   assert.equal(await page.locator('#playMelody').isDisabled(), false);
   assert.equal(await page.locator('#tempoValue').textContent(), '100 BPM');
+  assert.equal(await page.evaluate(() => localStorage.getItem('keyer-jazz-show-melody')), 'on', 'Showing melody should be remembered as a learner preference.');
+  await page.locator('#randomSong').click();
+  assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.showMelody), true, 'Changing standards must not reset Show melody.');
+  await page.waitForFunction(() => (
+    window.KeyerStandardsDebug.state.showMelody
+    && window.KeyerStandardsDebug.state.chartSource === 'midi'
+    && window.KeyerStandardsDebug.state.melodyNotes.length > 0
+  ));
   const midiBeforeReharm = await page.evaluate(() => ({
     source: window.KeyerStandardsDebug.state.chartSource,
     melody: window.KeyerStandardsDebug.state.melodyNotes.map(note => [note.id, note.midi, note.startBeat, note.endBeat]),
@@ -657,6 +665,28 @@ const server = http.createServer((request, response) => {
   // The guitar view shows the pickup as melody only: it must not invent a
   // first-chord grip underneath the lead-in.
   await page.locator('#instrumentView').selectOption('fretboard');
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
+  const guitarStyles = ['chord-melody', 'shell', 'rootless', 'triads', 'drop-2', 'spread'];
+  for (const style of guitarStyles) {
+    await page.locator('#guitarVoicingStyle').selectOption(style);
+    const grip = await page.evaluate(() => {
+      const { state } = window.KeyerStandardsDebug;
+      return {
+        style: state.guitarVoicingStyle,
+        storage: localStorage.getItem('keyer-jazz-guitar-voicing-style'),
+        count: state.fretboardVoicing.length,
+        hasBass: state.fretboardVoicing.some(note => note.bass),
+        roles: state.fretboardVoicing.map(note => note.role)
+      };
+    });
+    assert.equal(grip.style, style);
+    assert.equal(grip.storage, style, `${style} should persist for guitar study.`);
+    assert.ok(grip.count >= 2 && grip.count <= 4, `${style} should retain a playable guitar shell.`);
+    if (style === 'shell') assert.ok(grip.count <= 3, 'Shell should not become a dense guitar grip.');
+    if (style === 'rootless') assert.equal(grip.hasBass, false, 'Rootless guitar voicings must omit the bass/root.');
+  }
+  await page.locator('#guitarVoicingStyle').selectOption('chord-melody');
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
   const fretboard = await page.evaluate(() => {
     const board = document.querySelector('#fretboard');
     const stage = document.querySelector('.instrument-stage');
