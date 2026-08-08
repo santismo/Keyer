@@ -74,7 +74,9 @@ input[type="search"]::placeholder { color: #7f8999; }
 .chart-panel, .study-card { min-width: 0; border-radius: 16px; overflow: hidden; }
 .panel-head { height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--line); }
 .panel-head h3 { margin: 0; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
-.panel-head span { color: var(--muted); font-size: .63rem; }
+.panel-head > #chartStatus { min-width: 0; margin-left: auto; overflow: hidden; color: var(--muted); font-size: .63rem; text-overflow: ellipsis; white-space: nowrap; }
+.reharm-control { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; color: var(--muted); font: 800 .56rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em; text-transform: uppercase; }
+.reharm-control select { max-width: 116px; min-height: 28px; padding: 0 20px 0 6px; color: var(--gold); background: #1b2432; border: 1px solid #53647c; border-radius: 7px; font: 850 .58rem ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
 .chart-scroll { height: min(69vh, 735px); overflow-x: hidden; overflow-y: auto; padding: 10px; background: #0b0e13; overscroll-behavior: contain; scroll-behavior: auto; }
 .realbook-chart { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; min-width: 0; max-width: 100%; overflow: hidden; color: var(--paper-ink); background: var(--paper); border: 1px solid #364154; border-radius: 5px; box-shadow: 0 10px 30px #0008, inset 0 0 40px #73809a0d; font-family: "Marker Felt", "Comic Sans MS", ui-rounded, system-ui, sans-serif; }
 .measure { position: relative; min-width: 0; min-height: 82px; padding: 18px 4px 7px; border-right: 1.5px solid var(--paper-line); border-bottom: 1.5px solid var(--paper-line); background: linear-gradient(100deg, transparent, #ffffff08 49%, transparent); }
@@ -104,6 +106,8 @@ input[type="search"]::placeholder { color: #7f8999; }
 .chart-chord.optional { color: #b6bfcd; font-style: italic; }
 .chart-chord:hover, .chart-hold:hover, .chart-alternate:hover, .chart-pickup:hover { background: #202b38; }
 .chart-chord.active, .chart-alternate.active, .chart-pickup.active { color: #080b10; background: var(--gold); box-shadow: inset 0 -3px 0 #9b7929; }
+.chart-chord.reharmonized::after { content: "•"; margin-left: 2px; color: #8de8d0; font: 950 .64em/1 ui-sans-serif, system-ui, sans-serif; }
+.chart-chord.reharmonized.active::after { color: #165948; }
 .chart-chord.unsupported::after { content: "?"; margin-left: 2px; color: #ff7b82; font: 900 .55em ui-sans-serif, sans-serif; }
 .empty-measure { width: 100%; height: 100%; display: grid; place-items: center; color: #8e98a8; font-size: 1.2rem; }
 .empty-measure.pickup-notes { padding-top: 10px; color: #726034; font: 800 clamp(.58rem, 1.8vw, .76rem)/1.25 ui-sans-serif, system-ui, sans-serif; text-align: center; }
@@ -135,6 +139,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .display-control select { width: 100%; min-width: 0; min-height: 30px; padding: 0 5px; color: var(--ink); background: #1b2432; border: 1px solid #3b4b60; border-radius: 7px; font: 800 .6rem ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
 .display-control select:disabled { opacity: .52; }
 .display-control:has(select:disabled) { opacity: .62; }
+.piano-voicing-control { grid-column: 1 / -1; }
 #keyboardRangeMode option[hidden] { display: none; }
 .performance-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 7px 9px 0; }
 .performance-button { min-width: 0; min-height: 38px; overflow: hidden; padding: 0 6px; color: var(--blue); text-overflow: ellipsis; white-space: nowrap; background: #1b2432; border: 1px solid #3b4b60; border-radius: 8px; font-size: .62rem; font-weight: 850; }
@@ -278,6 +283,9 @@ input[type="search"]::placeholder { color: #7f8999; }
 }
 
 @media (max-width: 379px) {
+  .panel-head > #chartStatus { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .panel-head { gap: 6px; padding-inline: 8px; }
+  .reharm-control { margin-left: auto; }
   .dense-measure .measure-chords { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: minmax(44px, 1fr); }
   .dense-measure[data-chord-count="3"] { min-height: 154px; }
   .dense-measure[data-chord-count="4"] { min-height: 198px; }

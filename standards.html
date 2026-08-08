@@ -58,6 +58,16 @@
           <div class="panel-head">
             <h3 id="chart-title">Chart</h3>
             <span id="chartStatus">Tap any chord</span>
+            <label class="reharm-control" for="reharmLevel"><span>Reharm</span>
+              <select id="reharmLevel" aria-label="Reharmonization amount">
+                <option value="0" selected>0 · Original</option>
+                <option value="1">1 · Color</option>
+                <option value="2">2 · Diatonic</option>
+                <option value="3">3 · Dominants</option>
+                <option value="4">4 · Borrowed</option>
+                <option value="5">5 · Advanced</option>
+              </select>
+            </label>
           </div>
           <div class="chart-scroll" id="chartScroll">
             <div class="realbook-chart" id="chart" aria-label="Clickable Real Book-style chord chart"></div>
@@ -109,6 +119,19 @@
                 <option value="full">Full song</option>
               </select>
             </label>
+            <label class="display-control piano-voicing-control" for="pianoVoicingStyle"><span>Voicing</span>
+              <select id="pianoVoicingStyle" aria-controls="piano">
+                <option value="root-shell" selected>Root + shell</option>
+                <option value="shell">Shell</option>
+                <option value="rootless">Rootless</option>
+                <option value="closed">Closed</option>
+                <option value="spread">Spread</option>
+                <option value="upper-structure">Upper structure</option>
+                <option value="modern">Modern</option>
+                <option value="cluster">Cluster</option>
+                <option value="avant-garde">Avant-garde</option>
+              </select>
+            </label>
             <label class="display-control" for="keyboardToneMode"><span>Keys</span>
               <select id="keyboardToneMode" aria-controls="piano melodyPiano">
                 <option value="scale" selected>Scale + chord</option>
@@ -158,6 +181,7 @@
   <script src="jazz-theory.js"></script>
   <script src="ireal.js"></script>
   <script src="miditar-midi.js"></script>
+  <script src="standards-reharm.js"></script>
   <script src="standards.js"></script>
 </body>
 </html>

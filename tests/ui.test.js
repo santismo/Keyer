@@ -173,6 +173,68 @@ const server = http.createServer((request, response) => {
   assert.equal(await page.locator('#toggleNoteNames').getAttribute('aria-pressed'), 'false');
   await page.locator('#toggleNoteNames').click();
 
+  const pianoStyles = ['root-shell', 'shell', 'rootless', 'closed', 'spread', 'upper-structure', 'modern', 'cluster', 'avant-garde'];
+  for (const style of pianoStyles) {
+    await page.locator('#pianoVoicingStyle').selectOption(style);
+    const grip = await page.evaluate(() => {
+      const { state } = window.KeyerStandardsDebug;
+      const midis = state.voicing.map(note => note.midi);
+      const upper = state.voicing.filter(note => !note.bass).map(note => note.midi);
+      return {
+        style: state.pianoVoicingStyle,
+        count: midis.length,
+        span: Math.max(...midis) - Math.min(...midis),
+        upperSpan: upper.length > 1 ? Math.max(...upper) - Math.min(...upper) : 0,
+        root: state.events[state.activeIndex]?.chord?.root,
+        pcs: state.voicing.map(note => note.pc),
+        storage: localStorage.getItem('keyer-jazz-piano-voicing-style')
+      };
+    });
+    assert.equal(grip.style, style);
+    assert.equal(grip.storage, style, `${style} should persist`);
+    assert.ok(grip.count >= 3 && grip.count <= 5, `${style} should use a practical number of fingers`);
+    assert.ok(grip.upperSpan <= (style === 'cluster' ? 7 : 12), `${style} upper chord hand should stay playable`);
+    if (!['spread', 'upper-structure', 'avant-garde'].includes(style)) {
+      assert.ok(grip.span <= (style === 'cluster' ? 7 : 12), `${style} should fit one simultaneous hand`);
+    }
+    if (['shell', 'rootless', 'modern', 'cluster'].includes(style)) {
+      assert.equal(grip.pcs.includes(grip.root), false, `${style} should not quietly add the harmonic root`);
+    }
+  }
+  await page.locator('#pianoVoicingStyle').selectOption('root-shell');
+
+  const originalHarmony = await page.evaluate(() => ({
+    labels: [...document.querySelectorAll('.chart-chord')].map(button => button.textContent),
+    activeCell: window.KeyerStandardsDebug.state.events[window.KeyerStandardsDebug.state.activeIndex].cellId,
+    timing: window.KeyerStandardsDebug.state.timeline.map(entry => [entry.type, entry.cellId || '', entry.startBeat, entry.endBeat])
+  }));
+  await page.locator('#reharmLevel').selectOption('5');
+  const advancedHarmony = await page.evaluate(() => ({
+    labels: [...document.querySelectorAll('.chart-chord')].map(button => button.textContent),
+    activeCell: window.KeyerStandardsDebug.state.events[window.KeyerStandardsDebug.state.activeIndex].cellId,
+    timing: window.KeyerStandardsDebug.state.timeline.map(entry => [entry.type, entry.cellId || '', entry.startBeat, entry.endBeat]),
+    changed: document.querySelectorAll('.chart-chord.reharmonized').length,
+    storage: localStorage.getItem('keyer-jazz-reharm-level')
+  }));
+  assert.ok(advancedHarmony.changed > 0, 'Advanced reharm should visibly alter eligible chart cells');
+  assert.notDeepEqual(advancedHarmony.labels, originalHarmony.labels);
+  assert.equal(advancedHarmony.activeCell, originalHarmony.activeCell, 'Changing reharm amount should preserve the selected occurrence');
+  assert.deepEqual(advancedHarmony.timing, originalHarmony.timing, 'Reharm must not move beats, bars, or pickup timing');
+  assert.equal(advancedHarmony.storage, '5');
+  await page.locator('#reharmLevel').selectOption('0');
+  assert.deepEqual(
+    await page.evaluate(() => [...document.querySelectorAll('.chart-chord')].map(button => button.textContent)),
+    originalHarmony.labels,
+    'Level zero must restore the exact source harmony'
+  );
+  await page.locator('#reharmLevel').selectOption('5');
+  assert.deepEqual(
+    await page.evaluate(() => [...document.querySelectorAll('.chart-chord')].map(button => button.textContent)),
+    advancedHarmony.labels,
+    'Selecting the same reharm level again must be deterministic'
+  );
+  await page.locator('#reharmLevel').selectOption('0');
+
   const before = await page.locator('#chordProgress').textContent();
   await page.locator('#nextChord').click();
   const after = await page.locator('#chordProgress').textContent();
@@ -326,6 +388,43 @@ const server = http.createServer((request, response) => {
   assert.equal(await page.locator('#chartSource').inputValue(), 'midi');
   assert.equal(await page.locator('#playMelody').isDisabled(), false);
   assert.equal(await page.locator('#tempoValue').textContent(), '100 BPM');
+  const midiBeforeReharm = await page.evaluate(() => ({
+    source: window.KeyerStandardsDebug.state.chartSource,
+    melody: window.KeyerStandardsDebug.state.melodyNotes.map(note => [note.id, note.midi, note.startBeat, note.endBeat]),
+    timeline: window.KeyerStandardsDebug.state.timeline.map(entry => [entry.type, entry.cellId || '', entry.startBeat, entry.endBeat])
+  }));
+  await page.locator('#reharmLevel').selectOption('3');
+  const midiAfterReharm = await page.evaluate(() => ({
+    source: window.KeyerStandardsDebug.state.chartSource,
+    melody: window.KeyerStandardsDebug.state.melodyNotes.map(note => [note.id, note.midi, note.startBeat, note.endBeat]),
+    timeline: window.KeyerStandardsDebug.state.timeline.map(entry => [entry.type, entry.cellId || '', entry.startBeat, entry.endBeat]),
+    changed: document.querySelectorAll('.chart-chord.reharmonized').length,
+    pickup: window.KeyerStandardsDebug.state.events[0]?.kind
+  }));
+  assert.equal(midiAfterReharm.source, 'midi', 'Reharm should retain the MIDI-marker chart source');
+  assert.ok(midiAfterReharm.changed > 0, 'MIDI marker harmony should support reharmonization');
+  assert.deepEqual(midiAfterReharm.melody, midiBeforeReharm.melody, 'Reharm must preserve the literal MIDI melody');
+  assert.deepEqual(midiAfterReharm.timeline, midiBeforeReharm.timeline, 'Reharm must preserve MIDI marker and pickup timing');
+  assert.equal(midiAfterReharm.pickup, 'pickup');
+  assert.deepEqual(await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const Theory = window.KeyerJazzTheory;
+    return debug.state.events.flatMap((event, index) => {
+      if (!event?.item?.reharm || !event.chord) return [];
+      const start = Number(event.sourceStartBeat);
+      const end = Number(event.sourceEndBeat);
+      const overlap = debug.state.melodyNotes.filter(note => note.startBeat < end - .0001 && note.endBeat > start + .0001);
+      if (!overlap.length) return [];
+      const scale = Theory.suggestScale(event.chord, { nextChord: debug.state.events[index + 1]?.chord });
+      const allowed = new Set([...(scale?.pcs || []), ...Theory.chordPitchClasses(event.chord)].map(pc => Theory.mod(pc)));
+      return overlap.filter(note => !allowed.has(Theory.mod(note.midi))).map(note => ({
+        cellId: event.cellId,
+        chord: event.chord.display,
+        melodyMidi: note.midi
+      }));
+    });
+  }), [], 'Reharm must protect melody notes that sustain across a chord marker, not only new onsets.');
+  await page.locator('#reharmLevel').selectOption('0');
   assert.equal(
     await page.locator('#melodyWheel, #melodySlider, #melodyReadout, .melody-wheel, .melody-panel').count(),
     0,
@@ -837,6 +936,29 @@ const server = http.createServer((request, response) => {
   assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord');
   await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
 
+  const leadingRestSelection = await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const state = debug.state;
+    const saved = {
+      activeIndex: state.activeIndex,
+      timeline: state.timeline,
+      timelineByEventIndex: state.timelineByEventIndex
+    };
+    const selectedChord = { id: 'selected-first-chord', type: 'chord', eventIndex: 0, startBeat: 2, endBeat: 6 };
+    state.activeIndex = 0;
+    state.timeline = [
+      { id: 'leading-silence', type: 'rest', startBeat: 0, endBeat: 2 },
+      selectedChord
+    ];
+    state.timelineByEventIndex = new Map([[0, selectedChord]]);
+    const resolved = debug.timelineIndexForSelection();
+    state.activeIndex = saved.activeIndex;
+    state.timeline = saved.timeline;
+    state.timelineByEventIndex = saved.timelineByEventIndex;
+    return resolved;
+  });
+  assert.equal(leadingRestSelection, 1, 'Selecting the first chord must skip unrelated leading silence when Play starts.');
+
   await page.locator('#playChart').click();
   assert.equal(await page.locator('#playChart').textContent(), 'Stop chart');
   assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), true);
@@ -857,6 +979,32 @@ const server = http.createServer((request, response) => {
   assert.equal(pickupTransition.visibleMelody, '84', 'The held pickup should remain visible through the first chord marker.');
   await page.locator('#playChart').click();
   assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), false);
+
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
+  await page.locator('#playChart').click();
+  await page.waitForFunction(() => (
+    window.KeyerStandardsDebug.state.transport.playing
+    && window.KeyerStandardsDebug.state.activeIndex === 1
+  ), undefined, { timeout: 1200 });
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    chord: document.querySelector('#selectedChord').textContent,
+    voicingCount: window.KeyerStandardsDebug.state.voicing.length
+  })), { activeIndex: 1, chord: 'Am7', voicingCount: 4 }, 'Play should start directly from the selected first chord.');
+  await page.locator('#playChart').click();
+
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(3, false));
+  await page.locator('#playChart').click();
+  await page.waitForFunction(() => (
+    window.KeyerStandardsDebug.state.transport.playing
+    && window.KeyerStandardsDebug.state.activeIndex === 3
+  ), undefined, { timeout: 1200 });
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    chord: document.querySelector('#selectedChord').textContent
+  })), { activeIndex: 3, chord: 'Gmaj7' }, 'Play should also start from later selected MIDI markers without jumping away.');
+  await page.locator('#playChart').click();
+
   await page.locator('#useChartTempo').click();
   await page.locator('#tempoRange').evaluate(element => {
     element.value = '86';
