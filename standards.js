@@ -46,6 +46,8 @@
     { label: 'E', name: 'low E', midi: 40 }
   ];
   const FRETBOARD_MAX_FRET = 12;
+  const FRETBOARD_MAX_FRETTED_SPAN = 5;
+  const FRETBOARD_CANDIDATES_PER_VOICE = 8;
   const MODE_NAMES = {
     major: ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'],
     minor: ['Aeolian', 'Locrian', 'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian']
@@ -1328,6 +1330,10 @@
         label: state.showMelody ? 'Melody' : 'Melody (enable melody to show a note)'
       });
     } else {
+      // A hidden split pane must not retain an old purple key: it is neither
+      // audible nor part of the active compact/wide card, and leaving it in
+      // the DOM confuses both assistive technology and visual state queries.
+      if (elements.melodyPiano) elements.melodyPiano.replaceChildren();
       renderKeyboardSurface(elements.piano, chord, scale, {
         range: baseRange,
         rangeMode,
@@ -1368,53 +1374,239 @@
     return position ? `${position.stringIndex}:${position.fret}` : '';
   }
 
-  function guitarVoicingPositions(voicing) {
-    const notes = (voicing || [])
+  function guitarVoiceKind(note) {
+    if (note?.kind === 'melody') return 'melody';
+    if (note?.bass) return 'bass';
+    const role = safeText(note?.role);
+    if (/^(?:3|♭3|4|7|♭7)$/.test(role)) return 'guide';
+    if (role === '5') return 'fifth';
+    return 'color';
+  }
+
+  function guitarVoiceDropPriority(voice) {
+    if (voice.kind === 'melody') return -1;
+    if (voice.kind === 'fifth') return 5;
+    if (voice.kind === 'color') return 4;
+    if (voice.kind === 'guide') return 3;
+    return 1; // A root/bass is useful, but a compact shell beats no shape.
+  }
+
+  function guitarChordMelodyVoices(chord, voicing, melodyNote = null) {
+    const voices = [];
+    const usedPitchClasses = new Set();
+    const source = (voicing || [])
       .filter(note => Number.isFinite(Number(note?.midi)))
       .slice()
       .sort((left, right) => Number(left.midi) - Number(right.midi));
-    if (!notes.length || notes.length > FRETBOARD_STRINGS.length) return new Map();
+    const melodyPc = Number.isFinite(Number(melodyNote?.midi)) ? Theory.mod(melodyNote.midi) : null;
 
-    const candidateLists = notes.map(note => fretboardCandidatesForMidi(note.midi, { preferLowString: Boolean(note.bass) }));
-    if (candidateLists.some(candidates => !candidates.length)) return new Map();
+    source.forEach(note => {
+      const pc = Theory.mod(note.pc == null ? note.midi : note.pc);
+      // The melody is the top note in a chord-melody shape. Do not duplicate
+      // it as an unrelated chord dot when it already supplies that harmony.
+      if (!note.bass && melodyPc != null && pc === melodyPc) return;
+      if (!note.bass && usedPitchClasses.has(pc)) return;
+      usedPitchClasses.add(pc);
+      voices.push({
+        ...note,
+        pc,
+        kind: guitarVoiceKind(note),
+        sourceMidi: Number(note.midi),
+        role: note.bass && chord?.slash != null && chord.slash !== chord.root ? 'Bass' : note.role || 'R'
+      });
+    });
 
+    if (melodyPc != null) {
+      voices.push({
+        midi: Number(melodyNote.midi),
+        sourceMidi: Number(melodyNote.midi),
+        pc: melodyPc,
+        role: 'M',
+        spelling: Theory.noteName(melodyPc, state.preferFlats),
+        name: Theory.noteName(melodyPc, state.preferFlats),
+        bass: false,
+        kind: 'melody',
+        melody: true,
+        melodyNote
+      });
+    }
+
+    // Keep a maximum of four visible guitar voices before the melody. This
+    // gives a compact shell (usually bass + 3 + 7 + color) rather than trying
+    // to translate every piano key literally to six strings.
+    const maxVoices = melodyPc == null ? 4 : 5;
+    const protectedVoices = voices.filter(voice => voice.kind === 'melody' || voice.kind === 'bass');
+    const optionalVoices = voices
+      .filter(voice => !protectedVoices.includes(voice))
+      .sort((left, right) => guitarVoiceDropPriority(left) - guitarVoiceDropPriority(right) || left.sourceMidi - right.sourceMidi);
+    const reduced = [...protectedVoices, ...optionalVoices].slice(0, maxVoices);
+    // Treat melody as the highest intended voice even when the source MIDI is
+    // lower than a piano accompaniment octave. The solver will octave-fit the
+    // accompaniment below it, just as a guitar chord-melody arranger does.
+    return reduced.sort((left, right) => {
+      if (left.kind === 'melody') return 1;
+      if (right.kind === 'melody') return -1;
+      return left.sourceMidi - right.sourceMidi || guitarVoiceDropPriority(left) - guitarVoiceDropPriority(right);
+    });
+  }
+
+  function guitarMidiChoices(voice) {
+    const target = Number(voice?.sourceMidi ?? voice?.midi);
+    if (!Number.isFinite(target)) return [];
+    const lowest = FRETBOARD_STRINGS[FRETBOARD_STRINGS.length - 1].midi;
+    const highest = FRETBOARD_STRINGS[0].midi + FRETBOARD_MAX_FRET;
+    const choices = new Set();
+    for (let shift = -36; shift <= 36; shift += 12) {
+      const midi = target + shift;
+      if (midi >= lowest && midi <= highest) choices.add(midi);
+    }
+    return [...choices];
+  }
+
+  function guitarSmartCandidates(voice) {
+    const target = Number(voice?.sourceMidi ?? voice?.midi);
+    const candidates = guitarMidiChoices(voice)
+      .flatMap(midi => fretboardCandidatesForMidi(midi))
+      .filter((position, index, all) => all.findIndex(item => fretboardPositionKey(item) === fretboardPositionKey(position)) === index);
+    const candidateScore = position => {
+      const octaveDistance = Math.abs(position.midi - target) / 12;
+      const highFret = Math.max(0, position.fret - 9) * .24;
+      if (voice.kind === 'melody') {
+        // Guitar melody lives on the top three strings; do not default to an
+        // open melody note when a fretted choice gives a usable hand shape.
+        return octaveDistance * 1.35 + position.stringIndex * .78 + (position.fret === 0 ? 2.6 : 0) + highFret;
+      }
+      if (voice.kind === 'bass') {
+        return octaveDistance * .25 + Math.max(0, 3 - position.stringIndex) * 1.1 + highFret * .35;
+      }
+      return octaveDistance * .58 + Math.max(0, 2 - position.stringIndex) * .36 + highFret;
+    };
+    return candidates
+      .sort((left, right) => candidateScore(left) - candidateScore(right) || left.fret - right.fret || left.stringIndex - right.stringIndex)
+      .slice(0, FRETBOARD_CANDIDATES_PER_VOICE);
+  }
+
+  function guitarShapeCenter(selected) {
+    const fretted = selected.map(item => item.position.fret).filter(fret => fret > 0);
+    const values = fretted.length ? fretted : selected.map(item => item.position.fret);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+  }
+
+  function scoreGuitarChordMelodyShape(selected, previousCenter = null) {
+    if (!selected.length) return Infinity;
+    const strings = selected.map(item => item.position.stringIndex);
+    if (new Set(strings).size !== strings.length) return Infinity;
+    // Our voices are low-to-high while the visual strings are high-to-low.
+    // Reject any crossed guitar grip before scoring its musical niceties.
+    for (let index = 1; index < selected.length; index += 1) {
+      if (selected[index - 1].position.stringIndex <= selected[index].position.stringIndex) return Infinity;
+      if (selected[index - 1].position.midi >= selected[index].position.midi) return Infinity;
+    }
+    const melody = selected.find(item => item.voice.kind === 'melody') || null;
+    if (melody) {
+      if (selected.some(item => item !== melody && item.position.midi > melody.position.midi)) return Infinity;
+      if (selected.some(item => item !== melody && item.position.stringIndex <= melody.position.stringIndex)) return Infinity;
+    }
+    const fretted = selected.map(item => item.position.fret).filter(fret => fret > 0);
+    const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+    if (span > FRETBOARD_MAX_FRETTED_SPAN) return Infinity;
+    const center = guitarShapeCenter(selected);
+    const motion = previousCenter == null ? Math.abs(center - 5) * .22 : Math.abs(center - previousCenter) * 1.3;
+    const stringsSpread = Math.max(...strings) - Math.min(...strings);
+    const octaveShift = selected.reduce((sum, item) => {
+      const weight = item.voice.kind === 'melody' ? 1.35 : item.voice.kind === 'bass' ? .25 : .58;
+      return sum + Math.abs(item.position.midi - item.voice.sourceMidi) / 12 * weight;
+    }, 0);
+    const openPenalty = selected.reduce((sum, item) => {
+      if (item.position.fret !== 0) return sum;
+      if (item.voice.kind === 'melody') return sum + 4.4;
+      return sum + (item.voice.kind === 'bass' || item.position.stringIndex >= 3 ? .12 : 1.1);
+    }, 0);
+    const melodyStringPenalty = melody ? melody.position.stringIndex * 1.25 : 0;
+    const melodyFretPenalty = melody && melody.position.fret > 0 ? Math.max(0, Math.abs(melody.position.fret - center) - 2) * 1.35 : 0;
+    return motion + span * 1.7 + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty;
+  }
+
+  function chooseGuitarChordMelodyShape(voices, previousCenter = null) {
+    const candidateSets = voices.map(guitarSmartCandidates);
+    if (!voices.length || candidateSets.some(candidates => !candidates.length)) return null;
     let best = null;
-    const visit = (noteIndex, selected, previousString) => {
-      if (noteIndex === notes.length) {
-        const fretted = selected.map(item => item.position.fret).filter(fret => fret > 0);
-        const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
-        const distance = selected.reduce((sum, item) => sum + item.position.distance, 0);
-        const highestFret = fretted.length ? Math.max(...fretted) : 0;
-        const score = span * 20 + distance * .35 + highestFret * .04;
+    const visit = (index, selected) => {
+      if (index === voices.length) {
+        const score = scoreGuitarChordMelodyShape(selected, previousCenter);
         if (!best || score < best.score) best = { score, selected: selected.slice() };
         return;
       }
-      candidateLists[noteIndex].forEach(position => {
-        // Notes are ordered from low to high, while drawn strings run from
-        // high E (0) to low E (5). This prevents impossible crossings and
-        // guarantees a maximum of one held chord note per string.
-        if (position.stringIndex >= previousString) return;
-        selected.push({ note: notes[noteIndex], position });
-        visit(noteIndex + 1, selected, position.stringIndex);
+      candidateSets[index].forEach(position => {
+        if (selected.some(item => item.position.stringIndex === position.stringIndex)) return;
+        selected.push({ voice: voices[index], position });
+        visit(index + 1, selected);
         selected.pop();
       });
     };
-    visit(0, [], FRETBOARD_STRINGS.length);
-    if (!best) return new Map();
-    return new Map(best.selected.map(({ note, position }) => [fretboardPositionKey(position), {
-      ...note,
-      displayMidi: position.midi,
-      folded: position.midi !== note.midi
-    }]));
+    visit(0, []);
+    return best;
   }
 
-  function melodyFretboardPosition(value, occupiedStrings = new Set()) {
-    return fretboardCandidatesForMidi(value).find(position => !occupiedStrings.has(position.stringIndex))
-      || fretboardPositionForMidi(value);
+  function guitarChordMelodyShape(chord, voicing, melodyNote = null, previousCenter = null) {
+    let voices = guitarChordMelodyVoices(chord, voicing, melodyNote);
+    const omitted = [];
+    while (voices.length) {
+      const shape = chooseGuitarChordMelodyShape(voices, previousCenter);
+      if (shape) {
+        const notes = new Map(shape.selected.map(({ voice, position }) => [fretboardPositionKey(position), {
+          ...voice,
+          displayMidi: position.midi,
+          folded: position.midi !== voice.sourceMidi,
+          melody: voice.kind === 'melody'
+        }]));
+        return {
+          notes,
+          center: guitarShapeCenter(shape.selected),
+          score: shape.score,
+          omitted
+        };
+      }
+      const removable = voices
+        .map((voice, index) => ({ voice, index }))
+        .filter(({ voice }) => voice.kind !== 'melody')
+        .sort((left, right) => guitarVoiceDropPriority(right.voice) - guitarVoiceDropPriority(left.voice) || right.voice.sourceMidi - left.voice.sourceMidi)[0];
+      if (!removable) break;
+      omitted.push(removable.voice.role);
+      voices = voices.filter((_, index) => index !== removable.index);
+    }
+    return { notes: new Map(), center: previousCenter, score: Infinity, omitted };
   }
 
-  function renderFretboard(chord, scale, voicing, melodyNote = null) {
-    if (!elements.fretboard) return;
+  function guitarChordMelodyPlan(event, melodyNote = null) {
+    let previousCenter = null;
+    let shape = null;
+    const activeIndex = Math.max(0, state.activeIndex);
+    // Build the hand path in form order. This is intentionally separate from
+    // the selected piano range: Frets remains a real first-position guitar
+    // arrangement whether Keys is compact, split, wide, or full-song.
+    for (let index = 0; index <= activeIndex; index += 1) {
+      const planEvent = index === activeIndex ? event : state.events[index];
+      if (!planEvent?.chord) continue;
+      const planMelody = index === activeIndex
+        ? melodyNote
+        : state.showMelody ? melodyNotesForEvent(planEvent)[0] || null : null;
+      const planVoicing = state.showMelody
+        ? soundingVoicingForMelody(Theory.makeVoicing(planEvent.chord), melodyNotesDuringEvent(planEvent))
+        : Theory.makeVoicing(planEvent.chord);
+      shape = guitarChordMelodyShape(planEvent.chord, planVoicing, planMelody, previousCenter);
+      if (Number.isFinite(shape.center)) previousCenter = shape.center;
+    }
+    return shape || { notes: new Map(), center: null, score: Infinity, omitted: [] };
+  }
+
+  function renderFretboard(event, scale, melodyNote = null) {
+    // The planner deliberately considers previous chart events. Avoid doing
+    // that work while the player is studying Keys; switching to Frets always
+    // triggers a fresh render through the instrument control handler.
+    if (!elements.fretboard || state.instrumentView !== 'fretboard') return;
+    const chord = event?.chord;
+    if (!chord) return;
     const toneMode = validToneMode(state.fretboardToneMode);
     const scaleSet = new Set((scale?.pcs || []).map(pc => Theory.mod(pc)));
     const chordSet = new Set(Theory.chordPitchClasses(chord));
@@ -1430,16 +1622,25 @@
       if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
     });
     const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
-    const voicingByPosition = guitarVoicingPositions(voicing);
-    const occupiedStrings = new Set([...voicingByPosition.keys()].map(key => Number(key.split(':')[0])));
-    const melodyPosition = melodyNote ? melodyFretboardPosition(melodyNote.midi, occupiedStrings) : null;
-    const melodyPositionKey = fretboardPositionKey(melodyPosition);
+    const chordMelody = guitarChordMelodyPlan(event, melodyNote);
+    const voicingByPosition = chordMelody.notes;
+    const melodyPositionEntry = [...voicingByPosition.entries()].find(([, note]) => note.melody) || null;
+    const melodyPositionKey = melodyPositionEntry?.[0] || '';
+    const melodyPosition = melodyPositionKey
+      ? (() => {
+          const [stringIndex, fret] = melodyPositionKey.split(':').map(Number);
+          return { stringIndex, fret, midi: FRETBOARD_STRINGS[stringIndex].midi + fret };
+        })()
+      : null;
     elements.fretboard.dataset.lowMidi = '40';
     elements.fretboard.dataset.highMidi = String(64 + FRETBOARD_MAX_FRET);
     elements.fretboard.dataset.rangeMode = 'fretboard';
     elements.fretboard.dataset.toneMode = toneMode;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
-    elements.fretboard.setAttribute('aria-label', 'Guitar fretboard from the open strings through the twelfth fret, showing chord, scale, voicing, and optional melody');
+    elements.fretboard.dataset.arrangement = melodyNote ? 'chord-melody' : 'guitar-voicing';
+    elements.fretboard.setAttribute('aria-label', melodyNote
+      ? 'Guitar chord-melody fretboard from the open strings through the twelfth fret, with melody on top and chord tones below'
+      : 'Guitar fretboard from the open strings through the twelfth fret, showing chord, scale, and compact voicing');
 
     const board = document.createElement('div');
     board.className = 'fretboard-grid';
@@ -1467,7 +1668,7 @@
         cell.setAttribute('role', 'gridcell');
         if (fret === 0) cell.classList.add('open-string');
         addToneClass(cell, pc, toneMode, rootBassSet, chordSet, scaleSet, sounding);
-        if (sounding) cell.classList.add('voicing');
+        if (sounding) cell.classList.add('voicing', 'chord-melody-tone');
         if (sounding?.bass) cell.classList.add('bass');
         if (melodyHere) {
           cell.classList.add('melody-tone');
@@ -1479,7 +1680,7 @@
         const spelling = sounding?.spelling || chordSpellingByPc.get(pc) || scaleSpellingByPc.get(pc) || Theory.noteName(pc, state.preferFlats);
         const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
         const foldedMelody = Boolean(melodyHere && melodyPosition.midi !== melodyNote.midi);
-        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, suggested ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
+        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, chord-melody ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
         if (state.showNoteNames && toneVisible) {
           const noteLabel = document.createElement('span');
           noteLabel.className = 'fretboard-note';
@@ -1616,7 +1817,7 @@
     elements.scaleName.textContent = `${scaleRoot} ${scale.name}${parentSuffix}`;
     elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}`;
     renderPiano(event.chord, scale, voicing, melodyNote, melodyNotesOnCard);
-    renderFretboard(event.chord, scale, state.displayVoicing, melodyNote);
+    renderFretboard(event, scale, melodyNote);
     syncInstrumentControls();
     syncMelodyControls(event, melodyNotes, melodyNote);
     syncTransportControls();
