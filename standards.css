@@ -132,7 +132,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .melody-panel-head output { max-width: 55%; overflow: hidden; color: var(--ink); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .melody-panel input { width: 100%; margin: 7px 0 0; accent-color: #55d9d1; }
 .melody-panel input:disabled { opacity: .55; }
-.piano { position: relative; height: 106px; overflow: hidden; background: #07090d; border: 1px solid #596474; border-radius: 0 0 9px 9px; touch-action: none; }
+.piano { position: relative; height: 106px; overflow: hidden; background: #07090d; border: 0; border-bottom: 1px solid #596474; border-radius: 0; touch-action: none; }
 .piano-key { position: absolute; top: 0; margin: 0; padding: 0; border-radius: 0; touch-action: none; transition: filter .08s ease, outline-color .08s ease; }
 .piano-key.white { z-index: 1; height: 100%; color: #18202b; background: #e9edf3; border: 0; border-right: 1px solid #87909e; }
 .piano-key.white:last-child { border-right: 0; }
@@ -176,8 +176,9 @@ input[type="search"]::placeholder { color: #7f8999; }
 [hidden] { display: none !important; }
 
 @media (max-width: 780px) {
-  .workspace { grid-template-columns: 1fr; }
-  .chart-scroll { height: 38vh; min-height: 260px; max-height: 430px; }
+  .workspace { grid-template-columns: 1fr; gap: 6px; }
+  /* Keep the practice loop together: chart, two-octave keyboard, then step buttons. */
+  .chart-scroll { height: clamp(180px, 29vh, 248px); height: clamp(180px, 29svh, 248px); min-height: 0; max-height: none; }
   .study-card { position: static; }
 }
 
@@ -188,7 +189,7 @@ input[type="search"]::placeholder { color: #7f8999; }
   nav a { min-height: 31px; padding: 0 7px; justify-content: center; font-size: .61rem; }
   .song-heading { align-items: start; }
   .song-meta { max-width: 42%; font-size: .6rem; }
-  .chart-scroll { padding: 3px; min-height: 230px; }
+  .chart-scroll { height: clamp(176px, 28vh, 230px); height: clamp(176px, 28svh, 230px); min-height: 0; padding: 3px; }
   .measure { min-height: 72px; padding: 18px 0 4px; }
   .chart-chord, .chart-hold { min-height: 44px; padding-inline: 1px; }
   .chart-chord { font-size: clamp(.62rem, 2.8vw, .82rem); letter-spacing: -.02em; }
@@ -199,7 +200,7 @@ input[type="search"]::placeholder { color: #7f8999; }
   .dense-measure .measure-chords { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(44px, 1fr)); }
   .dense-measure .chord-stack { min-height: 44px; }
   .piano { height: 106px; }
-  .chord-navigator { grid-template-columns: 46px minmax(0, 1fr) 46px; min-height: 76px; }
+  .chord-navigator { grid-template-columns: 46px minmax(0, 1fr) 46px; min-height: 70px; }
   .performance-toolbar { padding-inline: 7px; gap: 5px; }
   .performance-button { min-height: 40px; font-size: .58rem; }
   .performance-options { padding-inline: 9px; }

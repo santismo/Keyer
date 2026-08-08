@@ -19,6 +19,11 @@ assert.match(html, /id="chartSource"/);
 assert.match(html, /src="miditar-midi\.js"/);
 assert.match(html, /Two-octave piano/);
 assert.match(html, /root-swatch[\s\S]*chord-swatch[\s\S]*scale-swatch[\s\S]*melody-swatch/);
+assert.ok(
+  html.indexOf('id="chartScroll"') < html.indexOf('id="piano"')
+    && html.indexOf('id="piano"') < html.indexOf('id="previousChord"'),
+  'On phones the practice flow should be chart, keyboard, then chord navigation.'
+);
 
 assert.match(css, /--paper:\s*#080b10/);
 assert.match(css, /\.chart-scroll\s*\{[^}]*overflow-x:\s*hidden/);
@@ -27,6 +32,7 @@ assert.doesNotMatch(css, /min-width:\s*(?:485|520|560)px/);
 assert.match(css, /\.realbook-chart\s*\{[^}]*grid-template-columns:\s*repeat\(4/);
 assert.match(css, /@media \(max-width:\s*379px\)[\s\S]*\.dense-measure \.measure-chords[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 assert.match(css, /\.piano\s*\{[^}]*height:\s*106px/);
+assert.match(css, /@media \(max-width:\s*780px\)[\s\S]*\.workspace\s*\{[^}]*gap:\s*6px/);
 assert.match(css, /--root-tone:\s*#ffd36e/);
 assert.match(css, /--chord-tone:\s*#ff5964/);
 assert.match(css, /--scale-tone:\s*#4aa8ff/);
