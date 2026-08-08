@@ -51,7 +51,10 @@
   // for a rendered/solved neck: fretboardMaxFret() keeps a high melody in its
   // written register instead of folding it down an octave.
   const FRETBOARD_MAX_FRET = 12;
-  const FRETBOARD_MAX_FRETTED_SPAN = 5;
+  // A difference of four covers five numbered fret positions (for example,
+  // frets 5–9), which is the practical upper edge for a normal chord grip.
+  // Open strings do not consume a left-hand finger and are excluded below.
+  const FRETBOARD_MAX_FRETTED_SPAN = 4;
   const FRETBOARD_CANDIDATES_PER_VOICE = 8;
   const MODE_NAMES = {
     major: ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'],
@@ -122,6 +125,7 @@
     voicing: [],
     displayVoicing: [],
     fretboardVoicing: [],
+    guitarPlanCache: null,
     displayRange: { low: DISPLAY_LOW, high: DISPLAY_HIGH },
     keyboardRangeMode: document.body.classList.contains('desktop-mode') ? 'wide' : 'compact',
     keyboardToneMode: 'scale',
@@ -1481,6 +1485,14 @@
     return 1; // A root/bass is useful, but a compact shell beats no shape.
   }
 
+  function guitarVoiceOmissionCost(voice) {
+    if (!voice || voice.kind === 'melody') return Infinity;
+    if (voice.kind === 'fifth') return .75;
+    if (voice.kind === 'color') return 1.05;
+    if (voice.kind === 'guide') return 2.35;
+    return 3.1; // Preserve the root/bass unless a smaller shell is much easier.
+  }
+
   function guitarChordMelodyVoices(chord, voicing, melodyNote = null) {
     const voices = [];
     const usedPitchClasses = new Set();
@@ -1611,6 +1623,46 @@
     return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
   }
 
+  function guitarFrettingFingerEstimate(selected) {
+    // Open strings require no fretting finger. Notes on one fret can share a
+    // partial/full barre unless a selected lower/open note between them would
+    // be changed by that barre.
+    const positions = selected.map(item => item.position);
+    const selectedFretByString = new Map(positions.map(position => [position.stringIndex, position.fret]));
+    const byFret = new Map();
+    positions.filter(position => position.fret > 0).forEach(position => {
+      const strings = byFret.get(position.fret) || [];
+      strings.push(position.stringIndex);
+      byFret.set(position.fret, strings);
+    });
+    let fingers = 0;
+    byFret.forEach((strings, fret) => {
+      strings.sort((left, right) => left - right);
+      if (!strings.length) return;
+      fingers += 1;
+      for (let index = 1; index < strings.length; index += 1) {
+        let blocked = false;
+        for (let stringIndex = strings[index - 1] + 1; stringIndex < strings[index]; stringIndex += 1) {
+          const selectedFret = selectedFretByString.get(stringIndex);
+          if (selectedFret != null && selectedFret < fret) {
+            blocked = true;
+            break;
+          }
+        }
+        if (blocked) fingers += 1;
+      }
+    });
+    return fingers;
+  }
+
+  function guitarHandShiftPenalty(center, previousCenter, anchored = false) {
+    if (!Number.isFinite(center)) return Infinity;
+    const target = Number.isFinite(previousCenter) ? previousCenter : 5;
+    const distance = Math.abs(center - target);
+    const weight = anchored ? .6 : 1.65;
+    return distance * weight + Math.max(0, distance - FRETBOARD_MAX_FRETTED_SPAN) * (anchored ? 1.4 : 4.2);
+  }
+
   function scoreGuitarChordMelodyShape(selected, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
     if (!selected.length) return Infinity;
     const strings = selected.map(item => item.position.stringIndex);
@@ -1629,6 +1681,8 @@
     const fretted = selected.map(item => item.position.fret).filter(fret => fret > 0);
     const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
     if (span > FRETBOARD_MAX_FRETTED_SPAN) return Infinity;
+    const fingerEstimate = guitarFrettingFingerEstimate(selected);
+    if (fingerEstimate > 4) return Infinity;
     const center = guitarShapeCenter(selected);
     const anchor = validFretboardPositionAnchor(positionAnchor);
     const accompanimentPositions = selected
@@ -1643,9 +1697,7 @@
     const anchorPenalty = anchor == null || chordFloor == null
       ? 0
       : Math.abs(chordFloor - anchor) * 4 + Math.abs(chordCenter - (anchor + 1.75)) * .65;
-    const motion = previousCenter == null
-      ? Math.abs(center - 5) * .22
-      : Math.abs(center - previousCenter) * (anchor == null ? 1.3 : .35);
+    const motion = guitarHandShiftPenalty(center, previousCenter, anchor != null);
     const stringsSpread = Math.max(...strings) - Math.min(...strings);
     const octaveShift = selected.reduce((sum, item) => {
       const weight = item.voice.kind === 'melody' ? 1.35 : item.voice.kind === 'bass' ? .25 : .58;
@@ -1659,7 +1711,11 @@
     const melodyStringPenalty = melody ? melody.position.stringIndex * 1.25 : 0;
     const melodyFretPenalty = melody && melody.position.fret > 0 ? Math.max(0, Math.abs(melody.position.fret - center) - 2) * 1.35 : 0;
     const melodyAnchorPenalty = melody ? guitarMelodyAnchorPenalty(melody.position, anchor) : 0;
-    return motion + anchorPenalty + span * 1.7 + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty + melodyAnchorPenalty;
+    const stretchPenalty = span >= FRETBOARD_MAX_FRETTED_SPAN
+      ? 2.2 + Math.max(0, 5 - Math.min(...fretted)) * .35
+      : 0;
+    const fingerPenalty = Math.max(0, fingerEstimate - 3) * .8;
+    return motion + anchorPenalty + span * 1.7 + stretchPenalty + fingerPenalty + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty + melodyAnchorPenalty;
   }
 
   function chooseGuitarChordMelodyShape(voices, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
@@ -1669,6 +1725,7 @@
     const visit = (index, selected) => {
       if (index === voices.length) {
         const score = scoreGuitarChordMelodyShape(selected, previousCenter, positionAnchor);
+        if (!Number.isFinite(score)) return;
         if (!best || score < best.score) best = { score, selected: selected.slice() };
         return;
       }
@@ -1686,6 +1743,8 @@
   function guitarChordMelodyShape(chord, voicing, melodyNote = null, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
     let voices = guitarChordMelodyVoices(chord, voicing, melodyNote);
     const omitted = [];
+    let omissionCost = 0;
+    let bestResult = null;
     while (voices.length) {
       const shape = chooseGuitarChordMelodyShape(voices, previousCenter, positionAnchor);
       if (shape) {
@@ -1695,12 +1754,27 @@
           folded: position.midi !== voice.sourceMidi,
           melody: voice.kind === 'melody'
         }]));
-        return {
+        const accompanimentCount = shape.selected.filter(item => item.voice.kind !== 'melody').length;
+        const minimumAccompaniment = melodyNote ? 2 : 3;
+        const sparseChordPenalty = Math.max(0, minimumAccompaniment - accompanimentCount) * 12;
+        const candidate = {
           notes,
           center: guitarShapeCenter(shape.selected),
-          score: shape.score,
-          omitted
+          score: shape.score + omissionCost + sparseChordPenalty,
+          omitted: omitted.slice(),
+          fingerEstimate: guitarFrettingFingerEstimate(shape.selected),
+          accompanimentCount,
+          coverageMet: accompanimentCount >= minimumAccompaniment
         };
+        // A chord-melody grip must remain a chord whenever a playable shell
+        // exists. Do not trade bass/guide-tone coverage for a superficially
+        // smaller motion score; use a sparse result only as the strict-anchor
+        // or literal-register fallback when no two-tone shell can be formed.
+        if (!bestResult
+          || (candidate.coverageMet && !bestResult.coverageMet)
+          || (candidate.coverageMet === bestResult.coverageMet && candidate.score < bestResult.score)) {
+          bestResult = candidate;
+        }
       }
       const removable = voices
         .map((voice, index) => ({ voice, index }))
@@ -1708,9 +1782,10 @@
         .sort((left, right) => guitarVoiceDropPriority(right.voice) - guitarVoiceDropPriority(left.voice) || right.voice.sourceMidi - left.voice.sourceMidi)[0];
       if (!removable) break;
       omitted.push(removable.voice.role);
+      omissionCost += guitarVoiceOmissionCost(removable.voice);
       voices = voices.filter((_, index) => index !== removable.index);
     }
-    return { notes: new Map(), center: previousCenter, score: Infinity, omitted };
+    return bestResult || { notes: new Map(), center: previousCenter, score: Infinity, omitted, fingerEstimate: 0 };
   }
 
   function guitarMelodyAnchorForEvent(event) {
@@ -1739,7 +1814,73 @@
     return { stringIndex, fret, midi: FRETBOARD_STRINGS[stringIndex].midi + fret };
   }
 
-  function guitarMelodyDisplayPosition(melodyNote, voicingByPosition, handCenter = null) {
+  function guitarMelodyPositionMetrics(position, accompanimentEntries) {
+    const held = accompanimentEntries
+      .map(([key, note]) => ({ key, note, position: guitarPositionFromKey(key) }))
+      .filter(item => item.position);
+    const occupied = held.find(item => item.position.stringIndex === position.stringIndex)?.position || null;
+    // The chord has already sounded on the downbeat. As the melody descends,
+    // release any sustained chord tone above it, plus the finger being moved
+    // on its chosen string, so the purple note remains the real top voice.
+    const mandatoryReleased = new Set(held.filter(item => (
+      item.position.midi > position.midi
+      || (item.position.stringIndex === position.stringIndex && item.position.fret !== position.fret)
+    )).map(item => item.key));
+    const eligible = held.filter(item => !mandatoryReleased.has(item.key));
+    let bestSubset = null;
+    // A later melody leap is allowed to shift the fretting hand, but a held
+    // chord dot cannot remain lit across an impossible reach. There are at
+    // most a handful of accompaniment tones, so examine every retained
+    // subset and preserve the most harmonically useful playable shell.
+    for (let mask = 0; mask < (1 << eligible.length); mask += 1) {
+      const activeItems = eligible.filter((_, index) => mask & (1 << index));
+      const activePositions = activeItems.map(item => item.position);
+      if (!activePositions.some(item => fretboardPositionKey(item) === fretboardPositionKey(position))) {
+        activePositions.push(position);
+      }
+      const fretted = activePositions.map(item => item.fret).filter(fret => fret > 0);
+      const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+      const fingerEstimate = guitarFrettingFingerEstimate(activePositions.map(activePosition => ({ position: activePosition })));
+      if (span > FRETBOARD_MAX_FRETTED_SPAN || fingerEstimate > 4) continue;
+      const retainedValue = activeItems.reduce((sum, item) => {
+        const value = guitarVoiceOmissionCost(item.note);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0);
+      const score = retainedValue * 10 + activeItems.length - span * .12 - fingerEstimate * .05;
+      if (!bestSubset || score > bestSubset.score) {
+        bestSubset = { activeItems, activePositions, span, fingerEstimate, score };
+      }
+    }
+    const activeItems = bestSubset?.activeItems || [];
+    const activePositions = bestSubset?.activePositions || [position];
+    const activeKeys = new Set(activeItems.map(item => item.key));
+    const releasedKeys = new Set(held.filter(item => !activeKeys.has(item.key)).map(item => item.key));
+    const span = bestSubset?.span || 0;
+    const fingerEstimate = bestSubset?.fingerEstimate || (position.fret > 0 ? 1 : 0);
+    const activeAccompaniment = activeItems.map(item => item.position);
+    const topAccompanimentMidi = activeAccompaniment.length
+      ? Math.max(...activeAccompaniment.map(item => item.midi))
+      : -Infinity;
+    const displaced = occupied && occupied.fret !== position.fret ? occupied : null;
+    const releasedValue = held
+      .filter(item => releasedKeys.has(item.key))
+      .reduce((sum, item) => {
+        const value = guitarVoiceOmissionCost(item.note);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0);
+    return {
+      span,
+      fingerEstimate,
+      playable: true,
+      displaced,
+      displacedDistance: displaced ? Math.abs(displaced.fret - position.fret) : 0,
+      releasedKeys: [...releasedKeys],
+      releasedValue,
+      topAccompanimentMidi
+    };
+  }
+
+  function guitarMelodyDisplayPosition(melodyNote, voicingByPosition, handCenter = null, previousPosition = null) {
     if (!Number.isFinite(Number(melodyNote?.midi))) return null;
     const targetMidi = Number(melodyNote.midi);
     const lowest = FRETBOARD_STRINGS[FRETBOARD_STRINGS.length - 1].midi;
@@ -1757,21 +1898,21 @@
     if (anchorEntry) return guitarPositionFromKey(anchorEntry[0]);
     const accompanimentEntries = [...voicingByPosition.entries()]
       .filter(([, note]) => !note.melody && note.kind !== 'melody');
+    const accompanimentPositions = accompanimentEntries
+      .map(([key]) => guitarPositionFromKey(key))
+      .filter(Boolean);
+    const topCanonicalAccompanimentString = accompanimentPositions.length
+      ? Math.min(...accompanimentPositions.map(position => position.stringIndex))
+      : FRETBOARD_STRINGS.length - 1;
     const occupiedFretsByString = new Map(accompanimentEntries.map(([key]) => {
       const position = guitarPositionFromKey(key);
       return [position.stringIndex, position.fret];
     }));
-    const occupiedStrings = new Set(occupiedFretsByString.keys());
-    const accompanimentStrings = accompanimentEntries
-      .map(([key]) => guitarPositionFromKey(key)?.stringIndex)
-      .filter(Number.isInteger);
     const heldMidis = [...voicingByPosition.values()].map(note => Number(note.displayMidi ?? note.midi)).filter(Number.isFinite);
     const topHeldMidi = heldMidis.length ? Math.max(...heldMidis) : Number(melodyNote.midi);
-    // This is a live melodic cursor laid over a held grip. It may need to
-    // octave-displace a passing note to remain the visually highest voice on
-    // the fixed 0–12 fret board. Prefer an unused upper string, but never
-    // send the melody down to an arbitrary bass-string octave merely because
-    // the high strings are occupied by the held chord.
+    // This is a live melodic cursor laid over the downbeat grip. Preserve its
+    // literal register, but allow the guitarist to release one held finger and
+    // move it a fret or two instead of jumping to a distant "free" string.
     const candidates = guitarMidiChoices({ kind: 'melody', sourceMidi: targetMidi })
       .flatMap(midi => fretboardCandidatesForMidi(midi, { maxFret }).filter(position => !literalOnBoard || position.midi === midi))
       .filter((position, index, all) => all.findIndex(item => fretboardPositionKey(item) === fretboardPositionKey(position)) === index);
@@ -1779,66 +1920,170 @@
     const preferredCenter = Number.isFinite(handCenter)
       ? handCenter
       : positionAnchor == null ? null : positionAnchor + 1.75;
-    const topAccompanimentString = accompanimentStrings.length ? Math.min(...accompanimentStrings) : FRETBOARD_STRINGS.length;
-    const anchored = positionAnchor == null || !literalOnBoard ? [] : candidates.filter(position => {
-      const occupiedFret = occupiedFretsByString.get(position.stringIndex);
-      return position.fret >= positionAnchor
-        && (!Number.isFinite(preferredCenter) || Math.abs(position.fret - preferredCenter) <= FRETBOARD_MAX_FRETTED_SPAN)
-        && (occupiedFret == null || occupiedFret === position.fret);
-    });
-    const aboveAccompaniment = anchored.filter(position => (
-      occupiedFretsByString.get(position.stringIndex) === position.fret
-      || position.stringIndex < topAccompanimentString
+    const evaluated = candidates.map(position => ({
+      position,
+      metrics: guitarMelodyPositionMetrics(position, accompanimentEntries)
+    }));
+    const playable = evaluated.filter(item => item.metrics.playable);
+    const anchored = positionAnchor == null || !literalOnBoard ? [] : playable.filter(({ position, metrics }) => (
+      position.fret >= positionAnchor
+      && (!Number.isFinite(preferredCenter) || Math.abs(position.fret - preferredCenter) <= FRETBOARD_MAX_FRETTED_SPAN)
+      // A fret anchor describes the chord hand, not permission to put the
+      // melody on an arbitrary bass string. Keep an anchored melody on or
+      // above the canonical accompaniment's highest string; if that cannot
+      // be done literally, the normal upper-string placement may fall below
+      // the anchor instead.
+      && (position.stringIndex <= topCanonicalAccompanimentString
+        || occupiedFretsByString.get(position.stringIndex) === position.fret)
+      && (position.midi >= metrics.topAccompanimentMidi
+        || occupiedFretsByString.get(position.stringIndex) === position.fret)
     ));
-    // Prefer a conventional top-string melody first. An exact same-fret
-    // chord-tone overlap is also useful; otherwise retain the natural literal
-    // fallback instead of forcing the melody onto a lower string for the fret.
-    const preferred = aboveAccompaniment;
-    const conventional = candidates.filter(position => {
+    const topVoicePlayable = playable.filter(({ position, metrics }) => (
+      position.midi >= metrics.topAccompanimentMidi
+      || occupiedFretsByString.get(position.stringIndex) === position.fret
+    ));
+    const upperStringPlayable = topVoicePlayable.filter(({ position }) => position.stringIndex <= 3);
+    // With a selected fret, prefer a playable upper-string melody at/above
+    // that position. Otherwise every exact placement that keeps the active
+    // hand inside its five-position window competes on local finger motion.
+    const preferred = anchored;
+    const conventional = evaluated.filter(({ position }) => {
       const occupiedFret = occupiedFretsByString.get(position.stringIndex);
       return occupiedFret == null || occupiedFret === position.fret;
     });
-    // A later melody attack cannot share a string with a held chord tone at a
-    // different fret. If the soft anchor has no sensible top-voice placement,
-    // use a free conventional string (or the exact same chord-tone cell)
-    // before considering that physically conflicting last resort.
-    const pool = preferred.length ? preferred : conventional.length ? conventional : candidates;
-    return pool.sort((left, right) => {
-      const score = position => {
+    // If there is no in-window position, prefer a free string or the exact
+    // same chord-tone cell before considering a larger temporary shift.
+    const pool = preferred.length
+      ? preferred
+      : upperStringPlayable.length ? upperStringPlayable
+      : topVoicePlayable.length ? topVoicePlayable
+      : playable.length ? playable
+      : conventional.length ? conventional
+      : evaluated;
+    const choice = pool.sort((left, right) => {
+      const score = ({ position, metrics }) => {
         const belowTop = Math.max(0, topHeldMidi - position.midi);
         const upperString = Math.min(3, position.stringIndex);
-        const occupied = occupiedStrings.has(position.stringIndex) ? 1 : 0;
         const handDistance = Number.isFinite(handCenter) && position.fret > 0 ? Math.abs(position.fret - handCenter) : 0;
+        const melodyTravel = previousPosition && position.fret > 0
+          ? Math.abs(position.fret - previousPosition.fret) * 1.05
+            + Math.abs(position.stringIndex - previousPosition.stringIndex) * .3
+          : 0;
         const octaveDistance = Math.abs(position.midi - targetMidi) / 12;
         const anchorDistance = preferred.length ? Math.abs(position.fret - positionAnchor) : 0;
-        return belowTop * 2.8 + occupied * .45 + upperString * .72 + handDistance * .16 + anchorDistance * .12 + octaveDistance * .35;
+        const reach = Math.max(0, metrics.span - FRETBOARD_MAX_FRETTED_SPAN) * 9;
+        const fingers = Math.max(0, metrics.fingerEstimate - 4) * 8;
+        const displaced = metrics.displaced
+          ? .35 + metrics.displacedDistance * 1.35
+          : 0;
+        const released = metrics.releasedKeys.length * .35 + metrics.releasedValue * .55;
+        return belowTop * 2.8 + upperString * .72 + handDistance * .48 + melodyTravel
+          + anchorDistance * .12 + octaveDistance * .35 + reach + fingers + displaced + released;
       };
       return score(left) - score(right)
-        || left.stringIndex - right.stringIndex
-        || left.fret - right.fret;
+        || left.position.stringIndex - right.position.stringIndex
+        || left.position.fret - right.position.fret;
     })[0] || null;
+    if (!choice) return null;
+    return {
+      ...choice.position,
+      releasedKeys: choice.metrics.releasedKeys,
+      activeSpan: choice.metrics.span,
+      fingerEstimate: choice.metrics.fingerEstimate
+    };
+  }
+
+  function guitarMelodyPathForEvent(notes, voicingByPosition, handCenter) {
+    const positions = new Map();
+    let previousPosition = null;
+    const releasedKeys = new Set();
+    (notes || []).forEach(note => {
+      const position = guitarMelodyDisplayPosition(note, voicingByPosition, handCenter, previousPosition);
+      if (!position) return;
+      (position.releasedKeys || []).forEach(key => releasedKeys.add(key));
+      // A returning melody note can re-articulate a previously released chord
+      // cell. Other released chord fingers remain off until the next harmony
+      // rather than visually reappearing without being sounded again.
+      releasedKeys.delete(fretboardPositionKey(position));
+      const plannedPosition = { ...position, releasedKeys: [...releasedKeys] };
+      positions.set(note.id, plannedPosition);
+      previousPosition = plannedPosition;
+    });
+    const finalFret = previousPosition?.fret > 0 ? previousPosition.fret : null;
+    const exitCenter = Number.isFinite(finalFret)
+      ? Number.isFinite(handCenter) && Math.abs(finalFret - handCenter) <= FRETBOARD_MAX_FRETTED_SPAN
+        ? handCenter * .35 + finalFret * .65
+        : finalFret
+      : handCenter;
+    return { positions, exitCenter };
+  }
+
+  function guitarPlanOneEvent(event, previousCenter, positionAnchor) {
+    if (!event?.chord) return null;
+    const planMelody = guitarMelodyAnchorForEvent(event);
+    const planMelodyNotes = state.showMelody ? guitarMelodyNotesForEvent(event) : [];
+    const planVoicing = state.showMelody
+      ? soundingVoicingForMelody(Theory.makeVoicing(event.chord), planMelodyNotes)
+      : Theory.makeVoicing(event.chord);
+    let shape = guitarChordMelodyShape(event.chord, planVoicing, planMelody, previousCenter, positionAnchor);
+    const melodyPath = state.showMelody
+      ? guitarMelodyPathForEvent(planMelodyNotes, shape.notes, shape.center)
+      : { positions: new Map(), exitCenter: shape.center };
+    shape = {
+      ...shape,
+      melodyPositions: melodyPath.positions,
+      exitCenter: melodyPath.exitCenter
+    };
+    return shape;
+  }
+
+  function currentGuitarPlanCache() {
+    const positionAnchor = validFretboardPositionAnchor(state.fretboardPositionAnchor);
+    const maxFret = fretboardMaxFret();
+    const cache = state.guitarPlanCache;
+    if (cache
+      && cache.events === state.events
+      && cache.melodyNotes === state.melodyNotes
+      && cache.showMelody === state.showMelody
+      && cache.positionAnchor === positionAnchor
+      && cache.maxFret === maxFret) {
+      return cache;
+    }
+    state.guitarPlanCache = {
+      events: state.events,
+      melodyNotes: state.melodyNotes,
+      showMelody: state.showMelody,
+      positionAnchor,
+      maxFret,
+      plans: [],
+      exitCenters: []
+    };
+    return state.guitarPlanCache;
   }
 
   function guitarChordMelodyPlan(event) {
-    const positionAnchor = validFretboardPositionAnchor(state.fretboardPositionAnchor);
-    let previousCenter = positionAnchor == null ? null : positionAnchor + 1.75;
-    let shape = null;
     const activeIndex = Math.max(0, state.activeIndex);
-    // Build the hand path in form order. This is intentionally separate from
-    // the selected piano range: Frets remains a real first-position guitar
-    // arrangement whether Keys is compact, split, wide, or full-song.
-    for (let index = 0; index <= activeIndex; index += 1) {
-      const planEvent = index === activeIndex ? event : state.events[index];
-      if (!planEvent?.chord) continue;
-      const planMelody = guitarMelodyAnchorForEvent(planEvent);
-      const planMelodyNotes = guitarMelodyNotesForEvent(planEvent);
-      const planVoicing = state.showMelody
-        ? soundingVoicingForMelody(Theory.makeVoicing(planEvent.chord), planMelodyNotes)
-        : Theory.makeVoicing(planEvent.chord);
-      shape = guitarChordMelodyShape(planEvent.chord, planVoicing, planMelody, previousCenter, positionAnchor);
-      if (Number.isFinite(shape.center)) previousCenter = shape.center;
+    const cache = currentGuitarPlanCache();
+    const automaticStart = cache.positionAnchor == null ? null : cache.positionAnchor + 1.75;
+    // Build the hand path once in form order, then reuse it while the learner
+    // steps through later melody notes. This is intentionally independent of
+    // the selected piano range.
+    for (let index = cache.plans.length; index <= activeIndex; index += 1) {
+      const previousCenter = index > 0 ? cache.exitCenters[index - 1] : automaticStart;
+      const plan = guitarPlanOneEvent(state.events[index], previousCenter, cache.positionAnchor);
+      cache.plans[index] = plan;
+      cache.exitCenters[index] = Number.isFinite(plan?.exitCenter)
+        ? plan.exitCenter
+        : Number.isFinite(plan?.center) ? plan.center : previousCenter;
     }
-    return shape || { notes: new Map(), center: null, score: Infinity, omitted: [] };
+    const baseEvent = state.events[activeIndex];
+    if (event === baseEvent) {
+      return cache.plans[activeIndex]
+        || { notes: new Map(), melodyPositions: new Map(), center: null, exitCenter: null, score: Infinity, omitted: [] };
+    }
+    const previousCenter = activeIndex > 0 ? cache.exitCenters[activeIndex - 1] : automaticStart;
+    return guitarPlanOneEvent(event, previousCenter, cache.positionAnchor)
+      || { notes: new Map(), melodyPositions: new Map(), center: null, exitCenter: null, score: Infinity, omitted: [] };
   }
 
   function renderFretboard(event, scale, melodyNote = null) {
@@ -1865,12 +2110,32 @@
     const chordSpellingByPc = new Map((chord?.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
     const chordMelody = chord ? guitarChordMelodyPlan(event) : { notes: new Map(), center: null };
     const voicingByPosition = chordMelody.notes;
+    const melodyPosition = chordMelody.melodyPositions?.get(melodyNote?.id)
+      || guitarMelodyDisplayPosition(melodyNote, voicingByPosition, chordMelody.center);
+    const melodyPositionKey = fretboardPositionKey(melodyPosition);
+    const releasedVoicingKeys = new Set(melodyPosition?.releasedKeys || []);
+    // The first-onset melody is part of the canonical grip. Once the purple
+    // cursor moves to a later pitch, that original melody finger is released
+    // just like any other displaced chord finger. Its ghosted dot keeps the
+    // downbeat shape understandable without implying both notes are held.
+    if (melodyPositionKey) {
+      voicingByPosition.forEach((note, key) => {
+        if (note.melody && key !== melodyPositionKey) releasedVoicingKeys.add(key);
+      });
+    }
+    const releasedChordMidis = [...releasedVoicingKeys]
+      .map(key => voicingByPosition.get(key))
+      .filter(note => note && !note.melody && note.kind !== 'melody')
+      .map(note => Number(note.displayMidi ?? note.midi))
+      .filter(Number.isFinite);
+    stopReleasedFretboardChordVoices(releasedChordMidis);
     // Frets must sound the exact physical grip that is drawn. Keep melody out
     // of this accompaniment list because it is auditioned/scheduled as its
-    // own purple voice. An empty anchored result intentionally remains silent
-    // rather than falling back to the unrelated piano-register suggestion.
-    state.fretboardVoicing = [...voicingByPosition.values()]
-      .filter(note => !note.melody && note.kind !== 'melody')
+    // own purple voice. A later melody note can temporarily replace a held
+    // chord finger on that string; omit that released tone from replay too.
+    state.fretboardVoicing = [...voicingByPosition.entries()]
+      .filter(([key, note]) => !releasedVoicingKeys.has(key) && !note.melody && note.kind !== 'melody')
+      .map(([, note]) => note)
       .map(note => ({
         ...note,
         midi: Number(note.displayMidi ?? note.midi),
@@ -1881,8 +2146,6 @@
     const maxFret = fretboardMaxFret();
     const columnCount = maxFret + 1;
     const extendedNeck = maxFret > FRETBOARD_MAX_FRET;
-    const melodyPosition = guitarMelodyDisplayPosition(melodyNote, voicingByPosition, chordMelody.center);
-    const melodyPositionKey = fretboardPositionKey(melodyPosition);
     elements.fretboard.dataset.lowMidi = '40';
     elements.fretboard.dataset.highMidi = String(FRETBOARD_STRINGS[0].midi + maxFret);
     elements.fretboard.dataset.firstFret = '0';
@@ -1892,6 +2155,10 @@
     elements.fretboard.dataset.rangeMode = 'fretboard';
     elements.fretboard.dataset.toneMode = toneMode;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
+    elements.fretboard.dataset.activeFretSpan = Number.isFinite(melodyPosition?.activeSpan)
+      ? String(melodyPosition.activeSpan)
+      : '';
+    elements.fretboard.dataset.releasedVoicingKeys = [...releasedVoicingKeys].join(',');
     elements.fretboard.dataset.positionAnchor = state.fretboardPositionAnchor == null
       ? ''
       : String(state.fretboardPositionAnchor);
@@ -1951,6 +2218,7 @@
         const cellKey = `${stringIndex}:${fret}`;
         const sounding = voicingByPosition.get(cellKey);
         const melodyHere = cellKey === melodyPositionKey;
+        const releasedForMelody = Boolean(sounding && releasedVoicingKeys.has(cellKey));
         const toneVisible = melodyHere || (Boolean(chord) && (
           toneMode === 'scale'
           || Boolean(sounding)
@@ -1963,6 +2231,7 @@
         if (fret === 0) cell.classList.add('open-string');
         if (chord) addToneClass(cell, pc, toneMode, rootBassSet, chordSet, scaleSet, sounding);
         if (sounding) cell.classList.add('voicing', 'chord-melody-tone');
+        if (releasedForMelody) cell.classList.add('released-for-melody');
         if (sounding?.bass) cell.classList.add('bass');
         if (melodyHere) {
           cell.classList.add('melody-tone');
@@ -1974,7 +2243,7 @@
         const spelling = sounding?.spelling || chordSpellingByPc.get(pc) || scaleSpellingByPc.get(pc) || Theory.noteName(pc, state.preferFlats);
         const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
         const foldedMelody = Boolean(melodyHere && melodyPosition.midi !== melodyNote.midi);
-        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, chord-melody ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
+        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, chord-melody ${sounding.role}` : ''}${releasedForMelody ? ', released for the current melody note' : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
         if (state.showNoteNames && toneVisible) {
           const noteLabel = document.createElement('span');
           noteLabel.className = 'fretboard-note';
@@ -2642,6 +2911,15 @@
     voice.envelope.gain.setValueAtTime(.06, now);
     voice.envelope.gain.exponentialRampToValueAtTime(.0001, now + release);
     voice.oscillators.forEach(oscillator => oscillator.stop(now + release + .03));
+  }
+
+  function stopReleasedFretboardChordVoices(midis) {
+    const released = new Set((midis || []).map(Number).filter(Number.isFinite));
+    if (!released.size) return;
+    [...voices.entries()].forEach(([id, voice]) => {
+      if (voice.visual !== 'fretboard-chord') return;
+      if (released.has(Number(voice.displayMidi ?? voice.midi))) stopVoice(id, true);
+    });
   }
 
   function playVoicing(voicing, duration = 1.35, prefix = 'preview', visual = 'chord') {

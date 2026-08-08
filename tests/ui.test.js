@@ -608,7 +608,7 @@ const server = http.createServer((request, response) => {
   assert.equal(extendedPositionRail.anchor, fretPositionRail.lastFret);
   assert.equal(extendedPositionRail.boardAnchor, String(fretPositionRail.lastFret));
   assert.equal(extendedPositionRail.selectedFret, fretPositionRail.lastFret);
-  assert.ok(extendedPositionRail.lastFret >= fretPositionRail.lastFret + 5, 'A high anchor needs enough additional frets to form a chord shape.');
+  assert.ok(extendedPositionRail.lastFret >= fretPositionRail.lastFret + 4, 'A high anchor needs a full five-position hand window for a chord shape.');
   assert.equal(extendedPositionRail.selectedVisible, true, 'The newly locked fret should remain visible after the neck rerenders.');
   assert.ok(extendedPositionRail.documentOverflow <= 1, 'A high fret lock must not widen the mobile document.');
   assert.ok(extendedPositionRail.stageOverflow > 1, 'A high fret lock should keep the expanded neck horizontally scrollable.');
@@ -983,6 +983,8 @@ const server = http.createServer((request, response) => {
         }))
         .sort((left, right) => left.string - right.string || left.fret - right.fret);
       return {
+        activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+        chord: document.querySelector('#selectedChord')?.textContent || '',
         anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
         cursor: window.KeyerStandardsDebug.state.melodyCursor,
         sourceMidi,
@@ -990,6 +992,13 @@ const server = http.createServer((request, response) => {
         string: Number(melody?.dataset.string),
         fret: Number(melody?.dataset.fret),
         octaveBadge: melody?.querySelector('.melody-octave')?.textContent || '',
+        releasedVoicingKeys: (board.dataset.releasedVoicingKeys || '').split(',').filter(Boolean),
+        ghostedVoicingKeys: [...board.querySelectorAll('.fretboard-cell.released-for-melody')]
+          .map(cell => `${cell.dataset.string}:${cell.dataset.fret}`),
+        playingChordKeys: [...board.querySelectorAll('.fretboard-cell.chord-melody-tone.playing')]
+          .map(cell => `${cell.dataset.string}:${cell.dataset.fret}`),
+        activeFretSpan: Number(board.dataset.activeFretSpan),
+        audibleChordMidis: window.KeyerStandardsDebug.state.fretboardVoicing.map(note => note.midi),
         exactCandidates,
         heldGrip,
         accompaniment: heldGrip.filter(note => note.role !== 'M')
@@ -1081,6 +1090,155 @@ const server = http.createServer((request, response) => {
   );
   assert.deepEqual(naturalLowMelody.heldGrip, highAnchorHeldMelody.heldGrip, 'The low moving melody must not revoice the held chord grip.');
   await page.locator('.fret-position-button[data-fret="10"]').click();
+
+  // A normal chord-melody hand should never need more than five numbered
+  // fret positions (a delta of four) or more than four distinct fretted
+  // finger locations. The first melody onset owns each chord's canonical
+  // grip; later melody notes may release one held finger to remain nearby.
+  await page.evaluate(() => {
+    window.KeyerStandardsDebug.installMidiSource({
+      title: 'Playable chord melody grip',
+      ppq: 120,
+      durationTicks: 960,
+      markers: [
+        { type: 'marker', text: 'Cmaj7', tick: 0 },
+        { type: 'marker', text: 'Fmaj7', tick: 480 }
+      ],
+      tempos: [{ bpm: 100 }],
+      timeSignatures: [{ tick: 0, numerator: 4, denominator: 4 }],
+      tracks: [{
+        index: 0,
+        name: 'Melody',
+        notes: [
+          { midi: 67, tick: 0, endTick: 120, durationTicks: 120, channel: 0, trackIndex: 0 },
+          { midi: 60, tick: 120, endTick: 240, durationTicks: 120, channel: 0, trackIndex: 0 },
+          { midi: 76, tick: 240, endTick: 360, durationTicks: 120, channel: 0, trackIndex: 0 },
+          { midi: 65, tick: 480, endTick: 600, durationTicks: 120, channel: 0, trackIndex: 0 }
+        ]
+      }]
+    }, { name: 'playable-chord-melody-grip.mid', title: 'Playable chord melody grip' });
+  });
+
+  function guitarGripMetrics(grip) {
+    const fretted = grip.map(note => note.fret).filter(fret => fret > 0);
+    return {
+      span: fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0,
+      distinctFrets: new Set(fretted).size,
+      center: fretted.length ? fretted.reduce((sum, fret) => sum + fret, 0) / fretted.length : 0
+    };
+  }
+
+  function assertPlayableGuitarGrip(snapshot, label) {
+    const metrics = guitarGripMetrics(snapshot.heldGrip);
+    assert.ok(snapshot.heldGrip.length > 0, `${label} must not accept an impossible/empty candidate.`);
+    assert.ok(metrics.span <= 4, `${label} spans ${metrics.span} frets: ${JSON.stringify(snapshot)}`);
+    assert.ok(metrics.distinctFrets <= 4, `${label} needs ${metrics.distinctFrets} fretted finger positions: ${JSON.stringify(snapshot)}`);
+    return metrics;
+  }
+
+  await page.locator('#nextChord').click();
+  const playableCGrip = await melodyAnchorPreferenceSnapshot();
+  const playableCMetrics = assertPlayableGuitarGrip(playableCGrip, 'Cmaj7 downbeat grip');
+  assert.equal(playableCGrip.activeIndex, 0);
+  assert.equal(playableCGrip.chord, 'Cmaj7');
+  assert.equal(playableCGrip.cursor, 0);
+  assert.equal(playableCGrip.sourceMidi, 67, 'The Cmaj7 grip must follow its first-onset G4.');
+  assert.ok(
+    playableCGrip.heldGrip.some(note => note.role === 'M' && note.string === playableCGrip.string && note.fret === playableCGrip.fret),
+    `The first G4 onset should be part of the canonical Cmaj7 grip: ${JSON.stringify(playableCGrip)}`
+  );
+  assert.ok(playableCGrip.accompaniment.length >= 2, 'A feasible automatic chord-melody grip must retain a real accompaniment shell.');
+
+  await page.locator('#nextChord').click();
+  const nearbyC4 = await melodyAnchorPreferenceSnapshot();
+  assert.equal(nearbyC4.activeIndex, playableCGrip.activeIndex);
+  assert.equal(nearbyC4.cursor, 1);
+  assert.equal(nearbyC4.sourceMidi, 60);
+  assert.equal(nearbyC4.physicalMidi, 60, 'The later C4 must stay at its exact guitar pitch.');
+  assert.ok(
+    nearbyC4.exactCandidates.some(position => position.string === 3 && position.fret === 10),
+    'The regression needs the technically free but distant D-string fret-10 C4 candidate.'
+  );
+  assert.notDeepEqual(
+    { string: nearbyC4.string, fret: nearbyC4.fret },
+    { string: 3, fret: 10 },
+    `C4 should release a nearby held finger instead of jumping to D-string fret 10: ${JSON.stringify(nearbyC4)}`
+  );
+  assert.ok(
+    Math.abs(nearbyC4.fret - playableCGrip.fret) <= 4,
+    `The G4-to-C4 melody fingering should remain inside one hand position: ${JSON.stringify({ playableCGrip, nearbyC4 })}`
+  );
+  assert.ok(nearbyC4.releasedVoicingKeys.length > 0, 'A nearby occupied string should be temporarily released for C4.');
+  const releasedAccompaniment = playableCGrip.accompaniment.filter(note => nearbyC4.releasedVoicingKeys.includes(`${note.string}:${note.fret}`));
+  assert.ok(releasedAccompaniment.length > 0, `At least one nearby accompaniment finger must be released for C4: ${JSON.stringify(nearbyC4)}`);
+  assert.ok(
+    nearbyC4.releasedVoicingKeys.includes(`${playableCGrip.string}:${playableCGrip.fret}`),
+    'After the melody moves, its original G4 onset cell should no longer appear held.'
+  );
+  assert.ok(
+    releasedAccompaniment.every(note => !nearbyC4.audibleChordMidis.includes(note.midi)),
+    'Every released chord finger must also be omitted from the audible fretboard grip.'
+  );
+  assert.ok(
+    releasedAccompaniment.every(note => !nearbyC4.playingChordKeys.includes(`${note.string}:${note.fret}`)),
+    'A chord tone released for the moving melody must stop ringing instead of only disappearing from the next replay.'
+  );
+  assert.ok(nearbyC4.activeFretSpan <= 4, `The temporary C4 fingering must stay within a five-position hand window: ${JSON.stringify(nearbyC4)}`);
+  assert.deepEqual(nearbyC4.heldGrip, playableCGrip.heldGrip, 'Moving G4 to C4 must not regenerate the canonical Cmaj7 grip.');
+
+  await page.locator('#nextChord').click();
+  const highExactE5 = await melodyAnchorPreferenceSnapshot();
+  assert.equal(highExactE5.activeIndex, playableCGrip.activeIndex, 'The high leap remains inside Cmaj7.');
+  assert.equal(highExactE5.cursor, 2);
+  assert.equal(highExactE5.sourceMidi, 76);
+  assert.equal(highExactE5.physicalMidi, 76, 'A later high E5 must remain at its exact guitar MIDI/register.');
+  assert.equal(highExactE5.octaveBadge, '', 'An exact E5 on fret 12 needs no folded-octave badge.');
+  assert.deepEqual(
+    { string: highExactE5.string, fret: highExactE5.fret },
+    { string: 0, fret: 12 },
+    `E5 should occupy its literal high-E-string fret: ${JSON.stringify(highExactE5)}`
+  );
+  assert.deepEqual(highExactE5.heldGrip, playableCGrip.heldGrip, 'A forced high melody leap must not regenerate the canonical Cmaj7 grip.');
+  const highMelodyOutOfWindow = playableCGrip.accompaniment.filter(note => Math.abs(note.fret - highExactE5.fret) > 4);
+  assert.ok(highMelodyOutOfWindow.length > 0, 'The fixture needs chord fingers outside the high melody hand window.');
+  assert.ok(
+    highMelodyOutOfWindow.every(note => highExactE5.releasedVoicingKeys.includes(`${note.string}:${note.fret}`)),
+    `Every out-of-window chord finger must be released for the high E5: ${JSON.stringify(highExactE5)}`
+  );
+  assert.ok(
+    highMelodyOutOfWindow.every(note => highExactE5.ghostedVoicingKeys.includes(`${note.string}:${note.fret}`)),
+    'Released out-of-window chord fingers should remain visible only as ghosted learning references.'
+  );
+  assert.ok(
+    highMelodyOutOfWindow.every(note => !highExactE5.audibleChordMidis.includes(note.midi)),
+    'Out-of-window chord voices must be removed from the audible fretboard voicing.'
+  );
+  assert.ok(
+    highMelodyOutOfWindow.every(note => !highExactE5.playingChordKeys.includes(`${note.string}:${note.fret}`)),
+    'Out-of-window chord voices already ringing from the downbeat must stop on the high leap.'
+  );
+  assert.ok(highExactE5.activeFretSpan <= 4, `The high E5 display must still fit a five-position active hand window: ${JSON.stringify(highExactE5)}`);
+
+  await page.locator('#nextChord').click();
+  const playableFGrip = await melodyAnchorPreferenceSnapshot();
+  const playableFMetrics = assertPlayableGuitarGrip(playableFGrip, 'Fmaj7 downbeat grip');
+  assert.equal(playableFGrip.activeIndex, 1);
+  assert.equal(playableFGrip.chord, 'Fmaj7');
+  assert.equal(playableFGrip.cursor, 0);
+  assert.equal(playableFGrip.sourceMidi, 65, 'The next chord must use its own first-onset F4 as the new melody anchor.');
+  assert.ok(
+    playableFGrip.heldGrip.some(note => note.role === 'M' && note.string === playableFGrip.string && note.fret === playableFGrip.fret),
+    `F4 should be part of the canonical Fmaj7 grip: ${JSON.stringify(playableFGrip)}`
+  );
+  assert.ok(playableFGrip.accompaniment.length >= 2, 'The next automatic grip must remain a chord rather than melody alone.');
+  assert.ok(
+    Math.abs(playableFGrip.fret - nearbyC4.fret) <= 4,
+    `The melody should take the nearby exact F4 position when entering Fmaj7: ${JSON.stringify({ nearbyC4, playableFGrip })}`
+  );
+  assert.ok(
+    Math.abs(playableFMetrics.center - playableCMetrics.center) <= 4,
+    `Avoidable chord-to-chord hand motion should stay within one position: ${JSON.stringify({ playableCMetrics, playableFMetrics })}`
+  );
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
