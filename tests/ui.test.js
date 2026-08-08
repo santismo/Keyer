@@ -139,6 +139,16 @@ const server = http.createServer((request, response) => {
 
   assert.equal(await page.locator('#songTitle').textContent(), 'Autumn Leaves');
   assert.match(await page.locator('#libraryStatus').textContent(), /1 jazz-standard chart/);
+  const libraryActionLayout = await page.evaluate(() => {
+    const random = document.querySelector('#randomSong').getBoundingClientRect();
+    const play = document.querySelector('#playChart').getBoundingClientRect();
+    return {
+      sameLeft: Math.abs(random.left - play.left) < 1,
+      sameWidth: Math.abs(random.width - play.width) < 1,
+      belowRandom: play.top >= random.bottom + 6
+    };
+  });
+  assert.deepEqual(libraryActionLayout, { sameLeft: true, sameWidth: true, belowRandom: true }, 'Play chart should sit directly under Random in the library controls.');
   assert.ok(await page.locator('.chart-chord').count() >= 4);
   assert.equal(await page.locator('.chart-chord[aria-current="true"]').count(), 1);
   assert.equal(await page.locator('.piano-key.white').count(), 15);
