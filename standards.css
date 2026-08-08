@@ -110,6 +110,12 @@ input[type="search"]::placeholder { color: #7f8999; }
 .instrument-stage { position: relative; width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #49566b transparent; }
 .instrument-stage::-webkit-scrollbar { height: 5px; }
 .instrument-stage::-webkit-scrollbar-thumb { background: #49566b; border-radius: 999px; }
+.keyboard-stack { width: 100%; min-width: 0; }
+.keyboard-pane { min-width: 0; }
+.instrument-pane-label { display: none; min-height: 22px; padding: 6px 10px 3px; color: var(--muted); background: #0d121a; border-bottom: 1px solid var(--line); font: 850 .56rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .09em; text-transform: uppercase; }
+.keyboard-stack[data-range-mode="split"] .instrument-pane-label { display: block; }
+.keyboard-stack[data-range-mode="split"] .melody-keyboard-pane { border-top: 1px solid var(--line); }
+.keyboard-stack[data-range-mode="split"] .piano { height: 98px; }
 .chord-navigator { display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; align-items: stretch; min-height: 80px; border-bottom: 1px solid var(--line); }
 .chord-navigator > button { color: var(--muted); background: transparent; border: 0; font-size: 2.2rem; }
 .chord-navigator > button:hover { color: var(--ink); background: #ffffff08; }
@@ -144,8 +150,8 @@ input[type="search"]::placeholder { color: #7f8999; }
 .melody-panel input { width: 100%; margin: 7px 0 0; accent-color: var(--melody-tone); }
 .melody-panel input:disabled { opacity: .55; }
 .piano { position: relative; width: 100%; height: 106px; overflow: hidden; background: #07090d; border: 0; border-bottom: 1px solid #596474; border-radius: 0; touch-action: none; }
-.piano:is([data-range-mode="full"], [data-range-mode="full-song"]) { width: max(100%, var(--full-keyboard-width, 100%)); min-width: var(--full-keyboard-width, 100%); height: clamp(100px, 30vw, 126px); min-height: 100px; }
-.piano:is([data-range-mode="full"], [data-range-mode="full-song"]), .piano:is([data-range-mode="full"], [data-range-mode="full-song"]) .piano-key { touch-action: manipulation; }
+.piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) { width: max(100%, var(--full-keyboard-width, 100%)); min-width: var(--full-keyboard-width, 100%); height: clamp(100px, 30vw, 126px); min-height: 100px; }
+.piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]), .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) .piano-key { touch-action: manipulation; }
 .piano-key { position: absolute; top: 0; margin: 0; padding: 0; border-radius: 0; touch-action: none; transition: filter .08s ease, outline-color .08s ease; }
 .piano-key.white { z-index: 1; height: 100%; color: #18202b; background: #e9edf3; border: 0; border-right: 1px solid #87909e; }
 .piano-key.white:last-child { border-right: 0; }
