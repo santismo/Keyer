@@ -34,6 +34,13 @@
         </div>
         <button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button>
       </div>
+      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span>
+        <select id="songAvailabilityFilter" aria-label="Filter standards by melody availability">
+          <option value="all">All standards</option>
+          <option value="melody">With MIDI melody</option>
+          <option value="chords">Chord charts only</option>
+        </select>
+      </label>
       <p class="library-status" id="libraryStatus" role="status">Loading jazz standards…</p>
     </section>
 
