@@ -2558,6 +2558,13 @@
     });
   }
 
+  function randomSelectionSongs() {
+    // Search is for narrowing the result list only. Random always draws from
+    // the currently selected library bank (all charts, MIDI melody, or charts
+    // only), so a typed title can never trap the button on that one song.
+    return matchingSongs('');
+  }
+
   function renderSearchResults() {
     if (!state.songs.length) return;
     const songs = matchingSongs(elements.search.value);
@@ -3227,7 +3234,7 @@
     if (!event.target.closest('.search-wrap')) hideSearchResults();
   });
   elements.randomSong.addEventListener('click', () => {
-    const songs = matchingSongs(elements.search.value);
+    const songs = randomSelectionSongs();
     if (!songs.length) return;
     loadSong(songs[Math.floor(Math.random() * songs.length)]);
   });

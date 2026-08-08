@@ -121,6 +121,7 @@ assert.match(js, /pickupNotes/);
 assert.doesNotMatch(js, /source\.slice\(0, 60\)/);
 assert.match(js, /function buildMelodyNotes\(/);
 assert.match(js, /function toggleMelody\(/);
+assert.match(js, /function randomSelectionSongs\(\)\s*\{[\s\S]*return matchingSongs\(''\);/);
 assert.match(js, /document\.addEventListener\('dblclick'/);
 assert.match(js, /deferredFullKeyboardTaps/);
 assert.match(js, /holdOnly: span\.startTick < barStartTick/);
