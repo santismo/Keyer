@@ -45,7 +45,7 @@
     'upper-structure', 'modern', 'cluster', 'avant-garde'
   ]);
   const GUITAR_VOICING_STYLES = new Set([
-    'chord-melody', 'shell', 'rootless', 'triads', 'drop-2', 'spread'
+    'chord-melody', 'adjacent-strings', 'shell', 'rootless', 'triads', 'drop-2', 'spread'
   ]);
   const BLACK_PCS = new Set([1, 3, 6, 8, 10]);
   // Display high E first, just as a guitar is normally drawn from the
@@ -1602,6 +1602,18 @@
     // chooses the actual strings/frets, enforces its five-position/4-finger
     // limits, and can omit a low-priority tone when a written melody needs it.
     if (style === 'shell') return preserveMelody([...bass.slice(0, 1), ...guides.slice(0, 2)]);
+    if (style === 'adjacent-strings') {
+      // Start with enough harmonic material for a 3–5 string chord block.
+      // The dedicated solver rule below then rejects any string skip, so this
+      // becomes a compact top/middle/bottom string-set grip rather than a
+      // scattered collection of individually convenient notes.
+      return preserveMelody([
+        ...bass.slice(0, 1),
+        ...guides.slice(0, 2),
+        ...fifths.slice(0, 1),
+        ...colors.slice(0, 1)
+      ]);
+    }
     if (style === 'rootless') {
       const rootless = [...guides.slice(0, 2), ...colors.slice(0, 1)];
       return preserveMelody(rootless.length ? rootless : [...guides.slice(0, 1), ...fifths.slice(0, 1)]);
@@ -1678,7 +1690,7 @@
     // gives a compact shell (usually bass + 3 + 7 + color) rather than trying
     // to translate every piano key literally to six strings.
     const maxVoices = melodyPc == null ? 4 : 5;
-    const protectedVoices = styled.filter(voice => voice.kind === 'melody' || (voice.kind === 'bass' && state.guitarVoicingStyle !== 'rootless'));
+    const protectedVoices = styled.filter(voice => voice.kind === 'melody' || (voice.kind === 'bass' && validGuitarVoicingStyle(state.guitarVoicingStyle) !== 'rootless'));
     const optionalVoices = styled
       .filter(voice => !protectedVoices.includes(voice))
       .sort((left, right) => guitarVoiceDropPriority(left) - guitarVoiceDropPriority(right) || left.sourceMidi - right.sourceMidi);
@@ -1804,7 +1816,7 @@
     return distance * weight + Math.max(0, distance - FRETBOARD_MAX_FRETTED_SPAN) * (anchored ? 1.4 : 4.2);
   }
 
-  function scoreGuitarChordMelodyShape(selected, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
+  function scoreGuitarChordMelodyShape(selected, previousCenter = null, positionAnchor = state.fretboardPositionAnchor, options = {}) {
     if (!selected.length) return Infinity;
     const strings = selected.map(item => item.position.stringIndex);
     if (new Set(strings).size !== strings.length) return Infinity;
@@ -1819,6 +1831,13 @@
       if (selected.some(item => item !== melody && item.position.midi > melody.position.midi)) return Infinity;
       if (selected.some(item => item !== melody && item.position.stringIndex <= melody.position.stringIndex)) return Infinity;
     }
+    const adjacentStrings = Boolean(options.adjacentStrings);
+    const stringsSpread = Math.max(...strings) - Math.min(...strings);
+    // Adjacent-string mode deliberately chooses an unbroken, familiar string
+    // set (three, four, or five neighboring strings). This is what avoids a
+    // left hand needing to leap over muted strings while keeping the melody
+    // as the top voice at the harmony's downbeat.
+    if (adjacentStrings && (selected.length < 3 || stringsSpread !== selected.length - 1)) return Infinity;
     const fretted = selected.map(item => item.position.fret).filter(fret => fret > 0);
     const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
     if (span > FRETBOARD_MAX_FRETTED_SPAN) return Infinity;
@@ -1839,7 +1858,6 @@
       ? 0
       : Math.abs(chordFloor - anchor) * 4 + Math.abs(chordCenter - (anchor + 1.75)) * .65;
     const motion = guitarHandShiftPenalty(center, previousCenter, anchor != null);
-    const stringsSpread = Math.max(...strings) - Math.min(...strings);
     const octaveShift = selected.reduce((sum, item) => {
       const weight = item.voice.kind === 'melody' ? 1.35 : item.voice.kind === 'bass' ? .25 : .58;
       return sum + Math.abs(item.position.midi - item.voice.sourceMidi) / 12 * weight;
@@ -1859,13 +1877,13 @@
     return motion + anchorPenalty + span * 1.7 + stretchPenalty + fingerPenalty + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty + melodyAnchorPenalty;
   }
 
-  function chooseGuitarChordMelodyShape(voices, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
+  function chooseGuitarChordMelodyShape(voices, previousCenter = null, positionAnchor = state.fretboardPositionAnchor, options = {}) {
     const candidateSets = voices.map(voice => guitarSmartCandidates(voice, positionAnchor));
     if (!voices.length || candidateSets.some(candidates => !candidates.length)) return null;
     let best = null;
     const visit = (index, selected) => {
       if (index === voices.length) {
-        const score = scoreGuitarChordMelodyShape(selected, previousCenter, positionAnchor);
+        const score = scoreGuitarChordMelodyShape(selected, previousCenter, positionAnchor, options);
         if (!Number.isFinite(score)) return;
         if (!best || score < best.score) best = { score, selected: selected.slice() };
         return;
@@ -1881,13 +1899,14 @@
     return best;
   }
 
-  function guitarChordMelodyShape(chord, voicing, melodyNote = null, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
+  function guitarChordMelodyShape(chord, voicing, melodyNote = null, previousCenter = null, positionAnchor = state.fretboardPositionAnchor, options = {}) {
     let voices = guitarChordMelodyVoices(chord, voicing, melodyNote);
+    const adjacentStrings = options.adjacentStrings ?? validGuitarVoicingStyle(state.guitarVoicingStyle) === 'adjacent-strings';
     const omitted = [];
     let omissionCost = 0;
     let bestResult = null;
     while (voices.length) {
-      const shape = chooseGuitarChordMelodyShape(voices, previousCenter, positionAnchor);
+      const shape = chooseGuitarChordMelodyShape(voices, previousCenter, positionAnchor, { adjacentStrings });
       if (shape) {
         const notes = new Map(shape.selected.map(({ voice, position }) => [fretboardPositionKey(position), {
           ...voice,
@@ -1926,7 +1945,16 @@
       omissionCost += guitarVoiceOmissionCost(removable.voice);
       voices = voices.filter((_, index) => index !== removable.index);
     }
-    return bestResult || { notes: new Map(), center: previousCenter, score: Infinity, omitted, fingerEstimate: 0 };
+    if (bestResult) return bestResult;
+    // Very high/low written melodies can occasionally make every literal
+    // adjacent-string block impossible within the four-fret hand window. In
+    // that rare case retain a playable chord instead of showing nothing, and
+    // mark it so the fretboard can describe the graceful fallback.
+    if (adjacentStrings) {
+      const fallback = guitarChordMelodyShape(chord, voicing, melodyNote, previousCenter, positionAnchor, { adjacentStrings: false });
+      return { ...fallback, adjacentFallback: true };
+    }
+    return { notes: new Map(), center: previousCenter, score: Infinity, omitted, fingerEstimate: 0 };
   }
 
   function guitarMelodyAnchorForEvent(event) {
@@ -2236,6 +2264,7 @@
     if (!elements.fretboard || state.instrumentView !== 'fretboard') return;
     const chord = event?.chord || null;
     const toneMode = chord ? validToneMode(state.fretboardToneMode) : 'none';
+    const guitarVoicingStyle = validGuitarVoicingStyle(state.guitarVoicingStyle);
     const scaleSet = new Set((scale?.pcs || []).map(pc => Theory.mod(pc)));
     const chordSet = new Set(Theory.chordPitchClasses(chord));
     const rootBassSet = new Set();
@@ -2297,6 +2326,7 @@
     elements.fretboard.dataset.extended = String(extendedNeck);
     elements.fretboard.dataset.rangeMode = 'fretboard';
     elements.fretboard.dataset.toneMode = toneMode;
+    elements.fretboard.dataset.voicingStyle = guitarVoicingStyle;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
     elements.fretboard.dataset.activeFretSpan = Number.isFinite(melodyPosition?.activeSpan)
       ? String(melodyPosition.activeSpan)
@@ -2318,11 +2348,16 @@
     const positionDescription = state.fretboardPositionAnchor == null
       ? 'automatic chord position'
       : `chord position anchored at fret ${state.fretboardPositionAnchor}`;
+    const adjacentDescription = guitarVoicingStyle === 'adjacent-strings'
+      ? chordMelody.adjacentFallback
+        ? ' · closest playable fallback when an adjacent string block is impossible'
+        : ' · neighboring-string chord block'
+      : '';
     elements.fretboard.setAttribute('aria-label', event?.kind === 'pickup'
       ? `Guitar fretboard from the open strings through fret ${maxFret}, showing the melody pickup only`
       : melodyNote
-      ? `Guitar chord-melody fretboard from the open strings through fret ${maxFret}, with melody on top and chord tones below, ${positionDescription}`
-      : `Guitar fretboard from the open strings through fret ${maxFret}, showing chord, scale, and compact voicing, ${positionDescription}`);
+      ? `Guitar chord-melody fretboard from the open strings through fret ${maxFret}, with melody on top and chord tones below, ${positionDescription}${adjacentDescription}`
+      : `Guitar fretboard from the open strings through fret ${maxFret}, showing chord, scale, and compact voicing, ${positionDescription}${adjacentDescription}`);
 
     const board = document.createElement('div');
     board.className = 'fretboard-grid';

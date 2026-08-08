@@ -666,7 +666,7 @@ const server = http.createServer((request, response) => {
   // first-chord grip underneath the lead-in.
   await page.locator('#instrumentView').selectOption('fretboard');
   await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
-  const guitarStyles = ['chord-melody', 'shell', 'rootless', 'triads', 'drop-2', 'spread'];
+  const guitarStyles = ['chord-melody', 'adjacent-strings', 'shell', 'rootless', 'triads', 'drop-2', 'spread'];
   for (const style of guitarStyles) {
     await page.locator('#guitarVoicingStyle').selectOption(style);
     const grip = await page.evaluate(() => {
@@ -676,14 +676,27 @@ const server = http.createServer((request, response) => {
         storage: localStorage.getItem('keyer-jazz-guitar-voicing-style'),
         count: state.fretboardVoicing.length,
         hasBass: state.fretboardVoicing.some(note => note.bass),
-        roles: state.fretboardVoicing.map(note => note.role)
+        roles: state.fretboardVoicing.map(note => note.role),
+        boardStyle: document.querySelector('#fretboard').dataset.voicingStyle,
+        fallback: document.querySelector('#fretboard').getAttribute('aria-label').includes('closest playable fallback'),
+        heldStrings: [...document.querySelectorAll('#fretboard .fretboard-cell.chord-melody-tone:not(.released-for-melody)')]
+          .map(cell => Number(cell.dataset.string)).sort((a, b) => a - b)
       };
     });
     assert.equal(grip.style, style);
     assert.equal(grip.storage, style, `${style} should persist for guitar study.`);
+    assert.equal(grip.boardStyle, style, `${style} should be exposed on the rendered fretboard.`);
     assert.ok(grip.count >= 2 && grip.count <= 4, `${style} should retain a playable guitar shell.`);
     if (style === 'shell') assert.ok(grip.count <= 3, 'Shell should not become a dense guitar grip.');
     if (style === 'rootless') assert.equal(grip.hasBass, false, 'Rootless guitar voicings must omit the bass/root.');
+    if (style === 'adjacent-strings' && !grip.fallback) {
+      assert.ok(grip.heldStrings.length >= 3 && grip.heldStrings.length <= 5, 'Adjacent-string voicings should use a practical three-to-five-string block.');
+      assert.equal(
+        grip.heldStrings.at(-1) - grip.heldStrings[0],
+        grip.heldStrings.length - 1,
+        'Adjacent-string mode must not skip a string inside its held chord block.'
+      );
+    }
   }
   await page.locator('#guitarVoicingStyle').selectOption('chord-melody');
   await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
