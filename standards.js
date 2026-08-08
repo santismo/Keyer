@@ -28,6 +28,8 @@
   const FRETBOARD_TONE_STORAGE_KEY = 'keyer-jazz-fretboard-tone-mode';
   const FRETBOARD_POSITION_STORAGE_KEY = 'keyer-jazz-fretboard-position';
   const PIANO_VOICING_STORAGE_KEY = 'keyer-jazz-piano-voicing-style';
+  const GUITAR_VOICING_STORAGE_KEY = 'keyer-jazz-guitar-voicing-style';
+  const MELODY_VISIBILITY_STORAGE_KEY = 'keyer-jazz-show-melody';
   const REHARM_LEVEL_STORAGE_KEY = 'keyer-jazz-reharm-level';
   const FAVORITES_STORAGE_KEY = 'keyer-jazz-standard-favorites';
   const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
@@ -41,6 +43,9 @@
   const PIANO_VOICING_STYLES = new Set([
     'root-shell', 'shell', 'rootless', 'closed', 'spread',
     'upper-structure', 'modern', 'cluster', 'avant-garde'
+  ]);
+  const GUITAR_VOICING_STYLES = new Set([
+    'chord-melody', 'shell', 'rootless', 'triads', 'drop-2', 'spread'
   ]);
   const BLACK_PCS = new Set([1, 3, 6, 8, 10]);
   // Display high E first, just as a guitar is normally drawn from the
@@ -108,6 +113,7 @@
     keyboardRangeMode: document.querySelector('#keyboardRangeMode'),
     keyboardToneMode: document.querySelector('#keyboardToneMode'),
     pianoVoicingStyle: document.querySelector('#pianoVoicingStyle'),
+    guitarVoicingStyle: document.querySelector('#guitarVoicingStyle'),
     fretboardToneMode: document.querySelector('#fretboardToneMode'),
     instrumentView: document.querySelector('#instrumentView'),
     studyCard: document.querySelector('.study-card'),
@@ -145,6 +151,7 @@
     fretboardToneMode: 'scale',
     fretboardPositionAnchor: null,
     pianoVoicingStyle: 'root-shell',
+    guitarVoicingStyle: 'chord-melody',
     reharmLevel: 0,
     reharmCharts: new Map(),
     instrumentView: 'piano',
@@ -859,6 +866,14 @@
     state.melodyNavigationEventKey = '';
   }
 
+  function setMelodyVisibility(visible, { persist = true } = {}) {
+    state.showMelody = Boolean(visible);
+    if (!persist) return;
+    try {
+      localStorage.setItem(MELODY_VISIBILITY_STORAGE_KEY, state.showMelody ? 'on' : 'off');
+    } catch (_) {}
+  }
+
   function selectMelodyNote(event, notes, index, { navigated = false } = {}) {
     if (!event || !notes.length) return null;
     const cursor = Math.max(0, Math.min(notes.length - 1, Number(index) || 0));
@@ -1240,6 +1255,13 @@
         ? 'Piano voicing style, available in Keys view'
         : 'Piano voicing style');
     }
+    if (elements.guitarVoicingStyle) {
+      elements.guitarVoicingStyle.value = validGuitarVoicingStyle(state.guitarVoicingStyle);
+      elements.guitarVoicingStyle.disabled = view !== 'fretboard';
+      elements.guitarVoicingStyle.setAttribute('aria-label', view === 'fretboard'
+        ? 'Guitar chord voicing style'
+        : 'Guitar voicing style, available in Frets view');
+    }
     if (elements.reharmLevel) {
       elements.reharmLevel.value = String(state.reharmLevel);
       const definition = Reharm?.LEVELS?.[state.reharmLevel];
@@ -1551,6 +1573,66 @@
     return 3.1; // Preserve the root/bass unless a smaller shell is much easier.
   }
 
+  function validGuitarVoicingStyle(style) {
+    return GUITAR_VOICING_STYLES.has(style) ? style : 'chord-melody';
+  }
+
+  function guitarVoicesForStyle(voices, melodyPc) {
+    const style = validGuitarVoicingStyle(state.guitarVoicingStyle);
+    const melody = voices.filter(voice => voice.kind === 'melody');
+    const bass = voices.filter(voice => voice.kind === 'bass');
+    const guides = voices.filter(voice => voice.kind === 'guide');
+    const thirds = guides.filter(voice => /^(?:3|♭3|4)$/.test(safeText(voice.role)));
+    const sevenths = guides.filter(voice => /^(?:7|♭7)$/.test(safeText(voice.role)));
+    const fifths = voices.filter(voice => voice.kind === 'fifth');
+    const colors = voices.filter(voice => voice.kind === 'color');
+    const withoutMelody = list => list.filter(voice => voice.kind !== 'melody');
+    const distinct = list => {
+      const seen = new Set();
+      return list.filter(voice => {
+        const key = `${voice.kind}:${voice.pc}:${voice.role}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
+    const preserveMelody = list => distinct([...withoutMelody(list), ...melody]);
+
+    // These are guitar-specific tone recipes. The position solver still
+    // chooses the actual strings/frets, enforces its five-position/4-finger
+    // limits, and can omit a low-priority tone when a written melody needs it.
+    if (style === 'shell') return preserveMelody([...bass.slice(0, 1), ...guides.slice(0, 2)]);
+    if (style === 'rootless') {
+      const rootless = [...guides.slice(0, 2), ...colors.slice(0, 1)];
+      return preserveMelody(rootless.length ? rootless : [...guides.slice(0, 1), ...fifths.slice(0, 1)]);
+    }
+    if (style === 'triads') {
+      const third = thirds[0] || guides[0];
+      const triad = [bass[0], third, fifths[0]].filter(Boolean);
+      return preserveMelody(triad.length ? triad : [...bass.slice(0, 1), ...guides.slice(0, 1), ...colors.slice(0, 1)]);
+    }
+    if (style === 'drop-2') {
+      // A four-note, inner-string recipe gives the solver the familiar
+      // drop-2 density without hard-coding a particular inversion.
+      return preserveMelody([
+        ...bass.slice(0, 1),
+        ...(thirds[0] ? [thirds[0]] : guides.slice(0, 1)),
+        ...fifths.slice(0, 1),
+        ...(sevenths[0] ? [sevenths[0]] : colors.slice(0, 1))
+      ]);
+    }
+    if (style === 'spread') {
+      return preserveMelody([
+        ...bass.slice(0, 1),
+        ...(thirds[0] ? [thirds[0]] : guides.slice(0, 1)),
+        ...(sevenths[0] ? [sevenths[0]] : guides.slice(1, 2)),
+        ...colors.slice(0, 1)
+      ]);
+    }
+    // Balanced chord-melody retains the existing root + guide + color recipe.
+    return preserveMelody(voices);
+  }
+
   function guitarChordMelodyVoices(chord, voicing, melodyNote = null) {
     const voices = [];
     const usedPitchClasses = new Set();
@@ -1591,12 +1673,13 @@
       });
     }
 
+    const styled = guitarVoicesForStyle(voices, melodyPc);
     // Keep a maximum of four visible guitar voices before the melody. This
     // gives a compact shell (usually bass + 3 + 7 + color) rather than trying
     // to translate every piano key literally to six strings.
     const maxVoices = melodyPc == null ? 4 : 5;
-    const protectedVoices = voices.filter(voice => voice.kind === 'melody' || voice.kind === 'bass');
-    const optionalVoices = voices
+    const protectedVoices = styled.filter(voice => voice.kind === 'melody' || (voice.kind === 'bass' && state.guitarVoicingStyle !== 'rootless'));
+    const optionalVoices = styled
       .filter(voice => !protectedVoices.includes(voice))
       .sort((left, right) => guitarVoiceDropPriority(left) - guitarVoiceDropPriority(right) || left.sourceMidi - right.sourceMidi);
     const reduced = [...protectedVoices, ...optionalVoices].slice(0, maxVoices);
@@ -2103,6 +2186,7 @@
       && cache.events === state.events
       && cache.melodyNotes === state.melodyNotes
       && cache.showMelody === state.showMelody
+      && cache.voicingStyle === validGuitarVoicingStyle(state.guitarVoicingStyle)
       && cache.positionAnchor === positionAnchor
       && cache.maxFret === maxFret) {
       return cache;
@@ -2111,6 +2195,7 @@
       events: state.events,
       melodyNotes: state.melodyNotes,
       showMelody: state.showMelody,
+      voicingStyle: validGuitarVoicingStyle(state.guitarVoicingStyle),
       positionAnchor,
       maxFret,
       plans: [],
@@ -2390,7 +2475,9 @@
     elements.toggleMelody.textContent = state.showMelody ? 'Hide melody' : canShowMelody ? 'Show melody' : 'No melody MIDI';
     elements.toggleMelody.setAttribute('aria-pressed', String(state.showMelody));
     elements.toggleMelody.setAttribute('aria-label', state.showMelody ? 'Hide melody from the piano' : canShowMelody ? 'Show melody over the chord' : 'No matching melody MIDI is available');
-    elements.toggleMelody.disabled = !canShowMelody && state.midiCatalogReady;
+    // Keep the toggle available to turn an already-enabled preference back
+    // off, even on a chart that does not have a matching MIDI file.
+    elements.toggleMelody.disabled = !canShowMelody && state.midiCatalogReady && !state.showMelody;
     elements.playMelody.disabled = !ready || !melodyMatchesActiveChart;
     elements.playMelody.checked = state.transport.playMelody;
     elements.chartSourceLabel.hidden = !state.midiChart;
@@ -2618,7 +2705,6 @@
     state.guitarPlanCache = null;
     state.fullSongKeyboard = { key: '', range: null, eventVoicings: new Map(), midis: [] };
     resetMelodySelection();
-    if (!melodyMatchesChart(source)) state.showMelody = false;
     state.preferFlats = Theory.preferFlatsForKey(chart.sourceKey || state.song?.key);
     elements.songMeta.textContent = songMetaText();
     renderChart();
@@ -2673,7 +2759,6 @@
     state.melodyTrack = null;
     state.melodyNotes = [];
     state.melodyOverlayChartId = null;
-    state.showMelody = false;
     state.midiEntry = MiditarMidi?.findCatalogMatch?.(song.title, state.midiCatalog) || null;
 
     elements.songTitle.textContent = song.title || 'Untitled standard';
@@ -2687,6 +2772,10 @@
     hideSearchResults();
     activateChartSource('ireal', { transport: true });
     syncMidiSourceStatus();
+    // "Show melody" is a learner preference, not a property of one chart.
+    // Keep it on through Random/song selection and quietly load the next
+    // compatible melody when the catalog has a match.
+    if (state.showMelody && state.midiEntry) void requestMidiSource({ showAfterLoad: true });
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: song.title, composer: song.composer, key: song.key })); } catch (_) {}
     return true;
   }
@@ -2843,7 +2932,10 @@
       });
       state.midiCatalogTitles = new Set(state.midiCatalog.map(entry => MiditarMidi.normalizeCatalogTitle(entry.title)).filter(Boolean));
       state.midiCatalogReady = true;
-      if (state.song) state.midiEntry = MiditarMidi.findCatalogMatch(state.song.title, state.midiCatalog);
+      if (state.song) {
+        state.midiEntry = MiditarMidi.findCatalogMatch(state.song.title, state.midiCatalog);
+        if (state.showMelody && state.midiEntry && !state.midi) void requestMidiSource({ showAfterLoad: true });
+      }
     } catch (error) {
       console.warn('Miditar catalog unavailable', error);
       state.midiCatalogReady = true;
@@ -2888,20 +2980,24 @@
       })
       : null;
     state.melodyOverlayChartId = state.midiChart ? 'midi' : 'ireal';
-    state.showMelody = true;
+    setMelodyVisibility(true);
     activateChartSource(state.midiChart ? 'midi' : 'ireal', { transport: true });
     elements.songMeta.textContent = songMetaText();
     syncMidiSourceStatus();
   }
 
-  async function loadMatchedMiditarMidi() {
+  async function loadMatchedMiditarMidi(entry = state.midiEntry, expectedSong = state.song) {
     if (!MiditarMidi) throw new Error('The MIDI melody reader did not load.');
-    if (!state.midiEntry) throw new Error('No matching melody MIDI was found.');
+    if (!entry) throw new Error('No matching melody MIDI was found.');
     elements.toggleMelody.disabled = true;
-    elements.midiStatus.textContent = `Loading melody MIDI for ${state.midiEntry.title}…`;
+    elements.midiStatus.textContent = `Loading melody MIDI for ${entry.title}…`;
     try {
-      const buffer = await fetchFirst(midiUrlsForEntry(state.midiEntry), 'arrayBuffer');
-      installMidiSource(MiditarMidi.parseMidi(buffer, state.midiEntry.name), state.midiEntry);
+      const buffer = await fetchFirst(midiUrlsForEntry(entry), 'arrayBuffer');
+      // Random can be pressed while another melody download is in flight.
+      // Never install the earlier song's MIDI on the new chart.
+      if (state.song !== expectedSong || state.midiEntry !== entry) return false;
+      installMidiSource(MiditarMidi.parseMidi(buffer, entry.name), entry);
+      return true;
     } finally {
       elements.toggleMelody.disabled = false;
       syncMidiSourceStatus();
@@ -2914,14 +3010,14 @@
       if (state.midi) {
         if (state.midiChart && state.chartSource !== 'midi') activateChartSource('midi');
         if (showAfterLoad) {
-          state.showMelody = true;
+          setMelodyVisibility(true);
           resetMelodySelection();
           renderStudy({ keepVisible: false });
         }
         return;
       }
       if (state.midiEntry) {
-        await loadMatchedMiditarMidi();
+        await loadMatchedMiditarMidi(state.midiEntry, state.song);
         return;
       }
       elements.midiStatus.textContent = 'No matching melody MIDI is available for this standard.';
@@ -2933,11 +3029,12 @@
 
   async function toggleMelody() {
     if (state.showMelody) {
-      state.showMelody = false;
+      setMelodyVisibility(false);
       resetMelodySelection();
       renderStudy({ keepVisible: false });
       return;
     }
+    setMelodyVisibility(true);
     await requestMidiSource({ showAfterLoad: true });
   }
 
@@ -3370,7 +3467,7 @@
     }
     let startIndex = timelineIndexForSelection();
     if (startIndex < 0) return;
-    if (state.transport.playMelody && melodyMatchesChart()) state.showMelody = true;
+    if (state.transport.playMelody && melodyMatchesChart()) setMelodyVisibility(true, { persist: false });
     state.activeMelodyNote = null;
     state.transport.playing = true;
     state.transport.session += 1;
@@ -3470,6 +3567,13 @@
     try { localStorage.setItem(PIANO_VOICING_STORAGE_KEY, state.pianoVoicingStyle); } catch (_) {}
     renderStudy({ keepVisible: false });
   });
+  elements.guitarVoicingStyle?.addEventListener('change', () => {
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    state.guitarVoicingStyle = validGuitarVoicingStyle(elements.guitarVoicingStyle.value);
+    state.guitarPlanCache = null;
+    try { localStorage.setItem(GUITAR_VOICING_STORAGE_KEY, state.guitarVoicingStyle); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
   elements.reharmLevel?.addEventListener('change', () => {
     const level = Reharm?.normalizeLevel?.(elements.reharmLevel.value) ?? 0;
     if (level === state.reharmLevel) return;
@@ -3519,7 +3623,7 @@
   elements.playMelody.addEventListener('change', () => {
     state.transport.playMelody = elements.playMelody.checked;
     if (state.transport.playMelody && melodyMatchesChart()) {
-      state.showMelody = true;
+      setMelodyVisibility(true);
       renderStudy({ keepVisible: false });
     }
   });
@@ -3632,6 +3736,8 @@
   try { state.keyboardToneMode = validToneMode(localStorage.getItem(KEYBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try { state.fretboardToneMode = validToneMode(localStorage.getItem(FRETBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try { state.pianoVoicingStyle = validPianoVoicingStyle(localStorage.getItem(PIANO_VOICING_STORAGE_KEY)); } catch (_) {}
+  try { state.guitarVoicingStyle = validGuitarVoicingStyle(localStorage.getItem(GUITAR_VOICING_STORAGE_KEY)); } catch (_) {}
+  try { state.showMelody = localStorage.getItem(MELODY_VISIBILITY_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.reharmLevel = Reharm?.normalizeLevel?.(localStorage.getItem(REHARM_LEVEL_STORAGE_KEY)) ?? 0; } catch (_) {}
   try {
     const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
