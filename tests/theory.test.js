@@ -78,6 +78,83 @@ assert.deepEqual(
 assert.equal(Theory.spelledMidiName(60, 'B#'), 'B♯3');
 assert.equal(Theory.spelledMidiName(59, 'Cb'), 'C♭4');
 
+const pianoStyles = [
+  'root-shell',
+  'shell',
+  'rootless',
+  'closed',
+  'spread',
+  'upper-structure',
+  'modern',
+  'cluster',
+  'avant-garde'
+];
+
+function upperSpan(voicing) {
+  const upper = voicing.filter(note => !note.bass).map(note => note.midi).sort((a, b) => a - b);
+  return upper.length > 1 ? upper[upper.length - 1] - upper[0] : 0;
+}
+
+function assertPlayablePianoVoicing(symbol, style, options = {}) {
+  const parsed = chord(symbol);
+  const voicing = Theory.makePianoVoicing(parsed, { low: 36, high: 72, ...options, style });
+  const again = Theory.makePianoVoicing(parsed, { low: 36, high: 72, ...options, style });
+  assert.deepEqual(voicing, again, `${symbol} ${style} is deterministic`);
+  assert.ok(voicing.length >= 3 && voicing.length <= 5, `${symbol} ${style} uses 3–5 notes`);
+  assert.equal(new Set(voicing.map(note => note.midi)).size, voicing.length, `${symbol} ${style} uses distinct keys`);
+  assert.ok(voicing.every(note => note.midi >= 36 && note.midi <= 72), `${symbol} ${style} stays in range`);
+  const bass = voicing.find(note => note.bass);
+  const rootBearing = ['root-shell', 'closed', 'spread', 'upper-structure', 'avant-garde'].includes(style) || parsed.slash != null;
+  if (rootBearing) {
+    assert.ok(bass, `${symbol} ${style} includes a bass note`);
+    assert.equal(bass.midi, Math.min(...voicing.map(note => note.midi)), `${symbol} ${style} keeps the bass lowest`);
+    assert.equal(bass.pc, parsed.slash == null ? parsed.root : parsed.slash, `${symbol} ${style} uses the exact requested bass pitch class`);
+  } else {
+    if (bass) assert.equal(bass.midi, Math.min(...voicing.map(note => note.midi)), `${symbol} ${style} keeps any anchor note lowest`);
+    assert.ok(!voicing.some(note => note.pc === parsed.root), `${symbol} ${style} is genuinely rootless`);
+  }
+  const maxSpan = style === 'cluster' ? 7 : 12;
+  assert.ok(upperSpan(voicing) <= maxSpan, `${symbol} ${style} keeps the playable upper-hand span compact`);
+  if (parsed.slash == null && !['spread', 'upper-structure', 'avant-garde'].includes(style)) {
+    assert.ok(Math.max(...voicing.map(note => note.midi)) - Math.min(...voicing.map(note => note.midi)) <= maxSpan,
+      `${symbol} ${style} fits one simultaneous chord hand`);
+  }
+  if (options.melodyMidis) {
+    const melodyMidis = (Array.isArray(options.melodyMidis) ? options.melodyMidis : [options.melodyMidis]).map(Number);
+    const top = Math.max(...voicing.map(note => note.midi));
+    assert.ok(top <= Math.min(...melodyMidis) - 1, `${symbol} ${style} leaves room under the melody`);
+  }
+  return voicing;
+}
+
+assert.deepEqual(
+  Theory.makePianoVoicing(chord('Cmaj7')),
+  Theory.makePianoVoicing(chord('Cmaj7'), { style: 'root-shell' }),
+  'The dedicated piano API defaults to the root-shell style'
+);
+
+['C13', 'Cm13', 'C11', 'Cmaj7'].forEach(symbol => {
+  pianoStyles.forEach(style => {
+    assertPlayablePianoVoicing(symbol, style, { melodyMidis: [67] });
+  });
+});
+assert.ok(Theory.makePianoVoicing(chord('C13'), { style: 'closed' }).some(note => note.role === '13'),
+  'Closed extended voicings retain the named 13th');
+assert.ok(Theory.makePianoVoicing(chord('C11'), { style: 'closed' }).some(note => note.role === '11'),
+  'Closed extended voicings retain the named 11th');
+
+const slashPiano = assertPlayablePianoVoicing('Cmaj7/G', 'closed', { melodyMidis: [67] });
+assert.equal(slashPiano[0].role, 'Bass');
+
+const alteredPiano = assertPlayablePianoVoicing('B7b9#5', 'rootless', { melodyMidis: [73] });
+assert.ok(alteredPiano.some(note => note.role === '♭9' || note.role === '♯5'), 'Altered voicings preserve altered color tones');
+
+const susPiano = assertPlayablePianoVoicing('C7sus13', 'upper-structure', { melodyMidis: [69] });
+assert.ok(susPiano.some(note => note.role === '4' || note.role === '11'), 'Sus voicings keep the suspension');
+
+const dimPiano = assertPlayablePianoVoicing('Co7', 'cluster', { melodyMidis: [69] });
+assert.ok(dimPiano.some(note => note.role === '♭5' || note.role === '♭♭7'), 'Diminished voicings keep diminished-defining tones');
+
 const rootPosition = Theory.makeVoicing(chord('Cmaj7'));
 assert.equal(rootPosition.length, 4);
 assert.equal(rootPosition[0].pc, 0);
