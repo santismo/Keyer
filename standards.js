@@ -21,12 +21,26 @@
   const STORAGE_KEY = 'keyer-jazz-standard';
   const NOTE_NAMES_STORAGE_KEY = 'keyer-jazz-note-names';
   const TEMPO_STORAGE_KEY = 'keyer-jazz-tempo';
+  const KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-keyboard-range';
+  const INSTRUMENT_VIEW_STORAGE_KEY = 'keyer-jazz-instrument-view';
   const DISPLAY_LOW = 48;
   const DISPLAY_HIGH = 72;
   const ACCOMPANIMENT_LOW = 24;
   const ACCOMPANIMENT_HIGH = 72;
   const DEFAULT_TEMPO = 120;
   const BLACK_PCS = new Set([1, 3, 6, 8, 10]);
+  // Display high E first, just as a guitar is normally drawn from the
+  // player's point of view.  Every string stays within its real open-to-12th
+  // fret register; out-of-window melody notes carry their true octave badge.
+  const FRETBOARD_STRINGS = [
+    { label: 'e', name: 'high E', midi: 64 },
+    { label: 'B', name: 'B', midi: 59 },
+    { label: 'G', name: 'G', midi: 55 },
+    { label: 'D', name: 'D', midi: 50 },
+    { label: 'A', name: 'A', midi: 45 },
+    { label: 'E', name: 'low E', midi: 40 }
+  ];
+  const FRETBOARD_MAX_FRET = 12;
   const MODE_NAMES = {
     major: ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'],
     minor: ['Aeolian', 'Locrian', 'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian']
@@ -66,6 +80,10 @@
     tempoValue: document.querySelector('#tempoValue'),
     playMelody: document.querySelector('#playMelody'),
     piano: document.querySelector('#piano'),
+    fretboard: document.querySelector('#fretboard'),
+    keyboardRangeMode: document.querySelector('#keyboardRangeMode'),
+    instrumentView: document.querySelector('#instrumentView'),
+    studyCard: document.querySelector('.study-card'),
     errorCard: document.querySelector('#errorCard'),
     errorMessage: document.querySelector('#errorMessage'),
     retryLoad: document.querySelector('#retryLoad')
@@ -90,6 +108,11 @@
     voicing: [],
     displayVoicing: [],
     displayRange: { low: DISPLAY_LOW, high: DISPLAY_HIGH },
+    keyboardRangeMode: 'compact',
+    instrumentView: 'piano',
+    // The full keyboard must remain stable while stepping through a chart.
+    // It is rebuilt only when the selected chart/melody data changes.
+    fullSongKeyboard: { key: '', range: null, eventVoicings: new Map(), midis: [] },
     scale: null,
     activeAlternateCellId: null,
     activeAlternateIndex: -1,
@@ -124,6 +147,7 @@
   let audioInput = null;
   const voices = new Map();
   const pressedCounts = new Map();
+  const deferredFullKeyboardTaps = new Map();
   let swipe = null;
 
   const safeText = value => String(value == null ? '' : value).trim();
@@ -912,6 +936,119 @@
     elements.chart.replaceChildren(fragment);
   }
 
+  function melodyMidiValues(notes) {
+    return (notes || []).map(note => Number(note?.midi ?? note)).filter(Number.isFinite);
+  }
+
+  function soundingVoicingForMelody(voicing, notes = []) {
+    voicing = Array.isArray(voicing) ? voicing : [];
+    const melodyMidis = melodyMidiValues(notes);
+    const fitted = melodyMidis.length && typeof Theory.fitVoicingForMelody === 'function'
+      ? Theory.fitVoicingForMelody(voicing, melodyMidis, ACCOMPANIMENT_LOW, ACCOMPANIMENT_HIGH)
+      : Theory.fitVoicingToRange(voicing, DISPLAY_LOW, DISPLAY_HIGH);
+    return fitted.length === voicing.length ? fitted : voicing;
+  }
+
+  function eventChordVariants(event) {
+    const variants = [event?.chord];
+    (event?.item?.alternates || []).forEach(option => {
+      if (option?.parsed) variants.push(option.parsed);
+    });
+    const seen = new Set();
+    return variants.filter(chord => {
+      const key = chord?.raw || chord?.display || '';
+      if (!chord || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function fullSongKeyboardAvailable() {
+    return Boolean(state.events.length && state.midi && state.melodyNotes.length && melodyMatchesChart());
+  }
+
+  function fullSongKeyboardKey() {
+    const events = state.events.map(event => {
+      const variants = eventChordVariants(event).map(chord => chord.raw || chord.display).join(',');
+      const timing = melodyTimingForEvent(event);
+      return `${event.eventIndex}:${event.cellId}:${variants}:${timing?.startBeat ?? ''}:${timing?.endBeat ?? ''}`;
+    }).join('|');
+    const melody = state.melodyNotes.map(note => `${note.id}:${note.midi}:${note.startBeat}:${note.endBeat}`).join('|');
+    return `${state.chartSource}::${events}::${melody}`;
+  }
+
+  function snapFullKeyboardRange(midis) {
+    const values = (midis || []).map(Number).filter(Number.isFinite);
+    if (!values.length) return null;
+    const min = Math.max(0, Math.min(...values));
+    const max = Math.min(127, Math.max(...values));
+    let low = Math.max(0, Math.floor(min / 12) * 12);
+    // C-to-C gives an honest count of whole octaves and keeps the top key
+    // useful, rather than ending a "full octave" at B.
+    let high = Math.min(127, Math.ceil(max / 12) * 12);
+    if (high - low < 12) high = Math.min(127, low + 12);
+    if (high - low < 12) low = Math.max(0, high - 12);
+    return {
+      low,
+      high,
+      span: high - low + 1,
+      octaves: (high - low) / 12,
+      full: true
+    };
+  }
+
+  function fullSongKeyboardData() {
+    if (!fullSongKeyboardAvailable()) return null;
+    const key = fullSongKeyboardKey();
+    if (state.fullSongKeyboard?.key === key && state.fullSongKeyboard.range) return state.fullSongKeyboard;
+
+    const allMidis = melodyMidiValues(state.melodyNotes);
+    const eventVoicings = new Map();
+    state.events.forEach(event => {
+      // Use the exact held-note ownership rule used by the live card.  A
+      // note crossing a marker can change the fitted accompaniment register.
+      const eventMelody = melodyNotesDuringEvent(event);
+      eventChordVariants(event).forEach(chord => {
+        const voicing = soundingVoicingForMelody(Theory.makeVoicing(chord), eventMelody);
+        const variantKey = `${event.eventIndex}:${chord.raw || chord.display}`;
+        eventVoicings.set(variantKey, voicing);
+        voicing.forEach(note => { if (Number.isFinite(note?.midi)) allMidis.push(note.midi); });
+      });
+    });
+    const range = snapFullKeyboardRange(allMidis);
+    state.fullSongKeyboard = { key, range, eventVoicings, midis: [...new Set(allMidis)].sort((a, b) => a - b) };
+    return state.fullSongKeyboard;
+  }
+
+  function activeKeyboardRangeMode() {
+    return state.keyboardRangeMode === 'full' && fullSongKeyboardData()?.range ? 'full' : 'compact';
+  }
+
+  function syncInstrumentControls() {
+    const fullAvailable = Boolean(fullSongKeyboardData()?.range);
+    if (elements.keyboardRangeMode) {
+      const fullOption = elements.keyboardRangeMode.querySelector('option[value="full"], option[value="full-song"]');
+      if (fullOption) fullOption.disabled = !fullAvailable;
+      if (!fullAvailable && state.keyboardRangeMode === 'full') state.keyboardRangeMode = 'compact';
+      elements.keyboardRangeMode.value = state.keyboardRangeMode;
+      elements.keyboardRangeMode.setAttribute('aria-label', fullAvailable
+        ? 'Keyboard range: compact or full song register'
+        : 'Keyboard range: load a matching MIDI to use the full song register');
+    }
+    const view = state.instrumentView === 'fretboard' && elements.fretboard ? 'fretboard' : 'piano';
+    state.instrumentView = view;
+    if (elements.instrumentView) elements.instrumentView.value = view;
+    if (elements.piano) {
+      elements.piano.hidden = view !== 'piano';
+      elements.piano.dataset.instrumentView = view;
+    }
+    if (elements.fretboard) {
+      elements.fretboard.hidden = view !== 'fretboard';
+      elements.fretboard.dataset.instrumentView = view;
+    }
+    elements.studyCard?.setAttribute('data-instrument-view', view);
+  }
+
   function twoOctaveRanges() {
     const ranges = [];
     for (let low = ACCOMPANIMENT_LOW; low <= ACCOMPANIMENT_HIGH; low += 1) {
@@ -956,31 +1093,41 @@
       if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
     });
     const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
-    const melodyMidis = melodyNotes.map(note => note?.midi).filter(Number.isFinite);
-    const fitted = melodyMidis.length && typeof Theory.fitVoicingForMelody === 'function'
-      ? Theory.fitVoicingForMelody(voicing, melodyMidis, ACCOMPANIMENT_LOW, ACCOMPANIMENT_HIGH)
-      : Theory.fitVoicingToRange(voicing, DISPLAY_LOW, DISPLAY_HIGH);
-    const soundingVoicing = fitted.length === voicing.length ? fitted : voicing;
-    const range = displayRangeForVoicing(soundingVoicing, melodyMidis);
+    const melodyMidis = melodyMidiValues(melodyNotes);
+    const soundingVoicing = soundingVoicingForMelody(voicing, melodyMidis);
+    const rangeMode = activeKeyboardRangeMode();
+    const fullSongRange = rangeMode === 'full' ? fullSongKeyboardData()?.range : null;
+    const range = fullSongRange || displayRangeForVoicing(soundingVoicing, melodyMidis);
     const LOW = range.low;
     const HIGH = range.high;
     const whiteMidis = [];
     for (let midi = LOW; midi <= HIGH; midi += 1) if (!BLACK_PCS.has(Theory.mod(midi))) whiteMidis.push(midi);
     const whiteCount = whiteMidis.length;
-    const displayVoicing = soundingVoicing.every(note => note.midi >= LOW && note.midi <= HIGH)
+    const displayVoicing = rangeMode === 'full' || soundingVoicing.every(note => note.midi >= LOW && note.midi <= HIGH)
       ? soundingVoicing
       : Theory.fitVoicingToRange(soundingVoicing, LOW, HIGH);
     const voicingByMidi = new Map(displayVoicing.map(note => [note.midi, note]));
-    const melodyDisplayMidi = melodyNote ? foldedMidiForDisplay(melodyNote.midi, LOW, HIGH) : null;
-    const melodyFolded = melodyNote && melodyDisplayMidi !== melodyNote.midi;
+    // A full song keyboard is deliberately literal: never fold its melody
+    // to an adjacent octave just to fit the card.
+    const melodyDisplayMidi = melodyNote
+      ? rangeMode === 'full' ? Number(melodyNote.midi) : foldedMidiForDisplay(melodyNote.midi, LOW, HIGH)
+      : null;
+    const melodyFolded = Boolean(melodyNote && melodyDisplayMidi !== melodyNote.midi);
     state.displayVoicing = displayVoicing;
     state.displayRange = range;
     elements.piano.dataset.voicingCount = String(displayVoicing.length);
     elements.piano.dataset.lowMidi = String(LOW);
     elements.piano.dataset.highMidi = String(HIGH);
+    elements.piano.dataset.rangeMode = rangeMode;
+    elements.piano.dataset.keyboardSpan = String(HIGH - LOW + 1);
+    elements.piano.dataset.whiteKeyCount = String(whiteCount);
+    elements.piano.style.setProperty('--key-count', String(HIGH - LOW + 1));
+    elements.piano.style.setProperty('--white-key-count', String(whiteCount));
+    elements.piano.style.setProperty('--full-keyboard-width', rangeMode === 'full' ? `${Math.max(264, whiteCount * 22)}px` : '');
     elements.piano.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
     elements.piano.dataset.melodyDisplayMidi = melodyDisplayMidi == null ? '' : String(melodyDisplayMidi);
-    elements.piano.setAttribute('aria-label', `Two-octave piano from ${Theory.midiName(LOW, state.preferFlats)} to ${Theory.midiName(HIGH, state.preferFlats)} showing the chord, scale, suggested fingering, and optional melody`);
+    const rangeLabel = rangeMode === 'full' ? 'Full-song piano' : 'Two-octave piano';
+    elements.piano.setAttribute('aria-label', `${rangeLabel} from ${Theory.midiName(LOW, state.preferFlats)} to ${Theory.midiName(HIGH, state.preferFlats)} showing the chord, scale, suggested fingering, and optional melody`);
     elements.piano.closest('.study-card')?.querySelector('.color-legend')?.setAttribute('data-melody-visible', String(Boolean(melodyNote)));
     const fragment = document.createDocumentFragment();
     let whitesBefore = 0;
@@ -1041,6 +1188,140 @@
     elements.piano.replaceChildren(fragment);
     pressedCounts.forEach((count, midi) => {
       if (count > 0) elements.piano.querySelector(`[data-midi="${midi}"]`)?.classList.add('playing');
+    });
+  }
+
+  function fretboardPositionForMidi(value, { preferLowString = false } = {}) {
+    const target = Number(value);
+    if (!Number.isFinite(target)) return null;
+    const candidates = [];
+    FRETBOARD_STRINGS.forEach((string, stringIndex) => {
+      for (let fret = 0; fret <= FRETBOARD_MAX_FRET; fret += 1) {
+        const midi = string.midi + fret;
+        if (Theory.mod(midi) !== Theory.mod(target)) continue;
+        candidates.push({ stringIndex, fret, midi, distance: Math.abs(midi - target) });
+      }
+    });
+    candidates.sort((left, right) => (
+      left.distance - right.distance
+      || left.fret - right.fret
+      || (preferLowString ? right.stringIndex - left.stringIndex : left.stringIndex - right.stringIndex)
+    ));
+    return candidates[0] || null;
+  }
+
+  function fretboardPositionKey(position) {
+    return position ? `${position.stringIndex}:${position.fret}` : '';
+  }
+
+  function renderFretboard(chord, scale, voicing, melodyNote = null) {
+    if (!elements.fretboard) return;
+    const scaleSet = new Set((scale?.pcs || []).map(pc => Theory.mod(pc)));
+    const chordSet = new Set(Theory.chordPitchClasses(chord));
+    const rootBassSet = new Set([Theory.mod(chord.root)]);
+    if (chord.slash != null) rootBassSet.add(Theory.mod(chord.slash));
+    const scaleSpellingByPc = new Map();
+    (scale?.notes || []).forEach(note => {
+      const parsed = Theory.parseNoteSpelling(note);
+      if (parsed) scaleSpellingByPc.set(parsed.pc, note);
+    });
+    (scale?.pcs || []).forEach(pc => {
+      const pitchClass = Theory.mod(pc);
+      if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
+    });
+    const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
+    const voicingByPosition = new Map();
+    (voicing || []).forEach(note => {
+      const position = fretboardPositionForMidi(note.midi, { preferLowString: Boolean(note.bass) });
+      const key = fretboardPositionKey(position);
+      if (!key) return;
+      const current = voicingByPosition.get(key);
+      if (!current || note.bass) voicingByPosition.set(key, { ...note, displayMidi: position.midi, folded: position.midi !== note.midi });
+    });
+    const melodyPosition = melodyNote ? fretboardPositionForMidi(melodyNote.midi) : null;
+    const melodyPositionKey = fretboardPositionKey(melodyPosition);
+    elements.fretboard.dataset.lowMidi = '40';
+    elements.fretboard.dataset.highMidi = String(64 + FRETBOARD_MAX_FRET);
+    elements.fretboard.dataset.rangeMode = 'fretboard';
+    elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
+    elements.fretboard.setAttribute('aria-label', 'Guitar fretboard from the open strings through the twelfth fret, showing chord, scale, voicing, and optional melody');
+
+    const board = document.createElement('div');
+    board.className = 'fretboard-grid';
+    FRETBOARD_STRINGS.forEach((string, stringIndex) => {
+      const row = document.createElement('div');
+      row.className = 'fretboard-string';
+      row.setAttribute('role', 'row');
+      row.dataset.string = String(stringIndex);
+      row.dataset.openMidi = String(string.midi);
+      const stringLabel = document.createElement('span');
+      stringLabel.className = 'fretboard-string-label';
+      stringLabel.textContent = string.label;
+      stringLabel.setAttribute('aria-hidden', 'true');
+      row.appendChild(stringLabel);
+      for (let fret = 0; fret <= FRETBOARD_MAX_FRET; fret += 1) {
+        const midi = string.midi + fret;
+        const pc = Theory.mod(midi);
+        const cellKey = `${stringIndex}:${fret}`;
+        const sounding = voicingByPosition.get(cellKey);
+        const melodyHere = cellKey === melodyPositionKey;
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'fretboard-cell';
+        cell.setAttribute('role', 'gridcell');
+        if (fret === 0) cell.classList.add('open-string');
+        if (rootBassSet.has(pc)) cell.classList.add('root-tone');
+        else if (chordSet.has(pc)) cell.classList.add('chord-tone');
+        else if (scaleSet.has(pc)) cell.classList.add('scale-tone');
+        if (sounding) cell.classList.add('voicing');
+        if (sounding?.bass) cell.classList.add('bass');
+        if (melodyHere) {
+          cell.classList.add('melody-tone');
+          cell.dataset.melodyMidi = String(melodyNote.midi);
+        }
+        cell.dataset.string = String(stringIndex);
+        cell.dataset.fret = String(fret);
+        cell.dataset.midi = String(midi);
+        const spelling = sounding?.spelling || chordSpellingByPc.get(pc) || scaleSpellingByPc.get(pc) || Theory.noteName(pc, state.preferFlats);
+        const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
+        const foldedMelody = Boolean(melodyHere && melodyPosition.midi !== melodyNote.midi);
+        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, suggested ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
+        if (stringIndex === 0) {
+          const fretLabel = document.createElement('span');
+          fretLabel.className = 'fretboard-fret-label';
+          fretLabel.textContent = String(fret);
+          fretLabel.setAttribute('aria-hidden', 'true');
+          cell.appendChild(fretLabel);
+        }
+        if (state.showNoteNames) {
+          const noteLabel = document.createElement('span');
+          noteLabel.className = 'fretboard-note';
+          noteLabel.textContent = Theory.displayNoteSpelling(spelling);
+          cell.appendChild(noteLabel);
+        }
+        if (sounding) {
+          const role = document.createElement('span');
+          role.className = 'fretboard-role';
+          role.textContent = sounding.role === 'Bass' ? 'B' : sounding.role;
+          cell.appendChild(role);
+        }
+        if (foldedMelody) {
+          const octave = document.createElement('span');
+          octave.className = 'melody-octave';
+          octave.textContent = melodyLabel(melodyNote);
+          octave.setAttribute('aria-hidden', 'true');
+          cell.appendChild(octave);
+        }
+        row.appendChild(cell);
+      }
+      board.appendChild(row);
+    });
+    elements.fretboard.replaceChildren(board);
+    pressedCounts.forEach((count, midi) => {
+      if (!count) return;
+      const position = fretboardPositionForMidi(midi);
+      if (!position) return;
+      elements.fretboard.querySelector(`[data-string="${position.stringIndex}"][data-fret="${position.fret}"]`)?.classList.add('playing');
     });
   }
 
@@ -1136,6 +1417,8 @@
     elements.scaleName.textContent = `${scaleRoot} ${scale.name}${parentSuffix}`;
     elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}`;
     renderPiano(event.chord, scale, voicing, melodyNote, melodyNotesOnCard);
+    renderFretboard(event.chord, scale, state.displayVoicing, melodyNote);
+    syncInstrumentControls();
     syncMelodyControls(event, melodyNotes, melodyNote);
     syncTransportControls();
     setChartButtonState(event);
@@ -1558,7 +1841,11 @@
     const next = Math.max(0, (pressedCounts.get(midi) || 0) + direction);
     if (next) pressedCounts.set(midi, next);
     else pressedCounts.delete(midi);
-    elements.piano.querySelector(`[data-midi="${midi}"]`)?.classList.toggle('playing', next > 0);
+    elements.piano?.querySelectorAll(`[data-midi="${midi}"]`).forEach(key => key.classList.toggle('playing', next > 0));
+    const fretPosition = fretboardPositionForMidi(midi);
+    if (fretPosition) {
+      elements.fretboard?.querySelector(`[data-string="${fretPosition.stringIndex}"][data-fret="${fretPosition.fret}"]`)?.classList.toggle('playing', next > 0);
+    }
   }
 
   function startVoice(id, midi, duration = null, displayMidi = midi) {
@@ -1892,6 +2179,17 @@
   elements.previousChord.addEventListener('click', () => navigateChord(-1));
   elements.nextChord.addEventListener('click', () => navigateChord(1));
   elements.toggleNoteNames.addEventListener('click', toggleNoteNames);
+  elements.keyboardRangeMode?.addEventListener('change', () => {
+    const selected = elements.keyboardRangeMode.value === 'full' || elements.keyboardRangeMode.value === 'full-song' ? 'full' : 'compact';
+    state.keyboardRangeMode = selected === 'full' && !fullSongKeyboardData()?.range ? 'compact' : selected;
+    try { localStorage.setItem(KEYBOARD_RANGE_STORAGE_KEY, state.keyboardRangeMode); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
+  elements.instrumentView?.addEventListener('change', () => {
+    state.instrumentView = elements.instrumentView.value === 'fretboard' ? 'fretboard' : 'piano';
+    try { localStorage.setItem(INSTRUMENT_VIEW_STORAGE_KEY, state.instrumentView); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
   elements.toggleMelody.addEventListener('click', () => { toggleMelody(); });
   elements.loadMidi.addEventListener('click', () => {
     if (state.midi) elements.midiFileInput.click();
@@ -1948,28 +2246,46 @@
   });
   elements.retryLoad.addEventListener('click', loadCatalog);
 
-  elements.piano.addEventListener('pointerdown', event => {
-    const key = event.target.closest('.piano-key[data-midi]');
-    if (!key) return;
+  function instrumentPointerDown(surface, event) {
+    const key = event.target.closest('.piano-key[data-midi], .fretboard-cell[data-midi]');
+    if (!key || !surface?.contains(key)) return;
+    // In full mode a real horizontal swipe must scroll the internal keyboard,
+    // not get captured as a held key.  A short release is still an audible tap.
+    if (surface === elements.piano && surface.dataset.rangeMode === 'full') {
+      deferredFullKeyboardTaps.set(event.pointerId, { midi: Number(key.dataset.midi), x: event.clientX, y: event.clientY });
+      return;
+    }
     event.preventDefault();
-    elements.piano.setPointerCapture(event.pointerId);
+    surface.setPointerCapture(event.pointerId);
     startVoice(`pointer-${event.pointerId}`, Number(key.dataset.midi));
-  });
-  const releasePianoPointer = event => {
+  }
+  function releaseInstrumentPointer(surface, event) {
+    const deferred = deferredFullKeyboardTaps.get(event.pointerId);
+    if (deferred) {
+      deferredFullKeyboardTaps.delete(event.pointerId);
+      const distance = Math.hypot(event.clientX - deferred.x, event.clientY - deferred.y);
+      if (event.type === 'pointerup' && distance < 10) startVoice(`pointer-${event.pointerId}`, deferred.midi, .62);
+      return;
+    }
     stopVoice(`pointer-${event.pointerId}`);
-    if (elements.piano.hasPointerCapture(event.pointerId)) elements.piano.releasePointerCapture(event.pointerId);
-  };
-  elements.piano.addEventListener('pointerup', releasePianoPointer);
-  elements.piano.addEventListener('pointercancel', releasePianoPointer);
-  elements.piano.addEventListener('lostpointercapture', releasePianoPointer);
-  elements.piano.addEventListener('contextmenu', event => event.preventDefault());
+    if (surface?.hasPointerCapture?.(event.pointerId)) surface.releasePointerCapture(event.pointerId);
+  }
+  function bindInstrumentSurface(surface) {
+    if (!surface) return;
+    surface.addEventListener('pointerdown', event => instrumentPointerDown(surface, event));
+    surface.addEventListener('pointerup', event => releaseInstrumentPointer(surface, event));
+    surface.addEventListener('pointercancel', event => releaseInstrumentPointer(surface, event));
+    surface.addEventListener('lostpointercapture', event => releaseInstrumentPointer(surface, event));
+    surface.addEventListener('contextmenu', event => event.preventDefault());
+  }
+  bindInstrumentSurface(elements.piano);
+  bindInstrumentSurface(elements.fretboard);
 
-  elements.studyCard = document.querySelector('.study-card');
   elements.studyCard.addEventListener('pointerdown', event => {
     // Range drags used to bubble into the study-card swipe recognizer. A
     // rightward drag then looked exactly like a swipe and selected the prior
     // chord/bar. Controls own their pointer interaction completely.
-    if (event.target.closest('button, input, select, textarea, label, a, [contenteditable], .piano')) {
+    if (event.target.closest('button, input, select, textarea, label, a, [contenteditable], .piano, .fretboard, .instrument-stage')) {
       swipe = null;
       return;
     }
@@ -1990,6 +2306,13 @@
     if (event.key === 'ArrowRight') { event.preventDefault(); navigateChord(1); }
     if (event.key === ' ') { event.preventDefault(); playCurrentVoicing(); }
   });
+  // `touch-action: manipulation` handles current mobile browsers without
+  // disabling pinch or scroll.  This small fallback also prevents a stray
+  // double-click from turning into a browser zoom gesture on older WebKit.
+  document.addEventListener('dblclick', event => {
+    if (event.target.closest('input, textarea, select, [contenteditable]')) return;
+    event.preventDefault();
+  }, { passive: false });
   window.addEventListener('pagehide', () => {
     stopChartPlayback({ render: false });
     [...voices.keys()].forEach(id => stopVoice(id, true));
@@ -1997,10 +2320,19 @@
 
   try { state.showNoteNames = localStorage.getItem(NOTE_NAMES_STORAGE_KEY) !== 'off'; } catch (_) {}
   try {
+    const savedRange = localStorage.getItem(KEYBOARD_RANGE_STORAGE_KEY);
+    if (savedRange === 'full' || savedRange === 'compact') state.keyboardRangeMode = savedRange;
+  } catch (_) {}
+  try {
+    const savedView = localStorage.getItem(INSTRUMENT_VIEW_STORAGE_KEY);
+    if (savedView === 'fretboard' || savedView === 'piano') state.instrumentView = savedView;
+  } catch (_) {}
+  try {
     const savedTempo = Number(localStorage.getItem(TEMPO_STORAGE_KEY));
     if (Number.isFinite(savedTempo) && savedTempo >= 40 && savedTempo <= 260) state.transport.customBpm = savedTempo;
   } catch (_) {}
   syncNoteNameToggle();
+  syncInstrumentControls();
   syncTransportControls();
   window.KeyerStandardsDebug = {
     state,
@@ -2013,7 +2345,11 @@
     startChartPlayback,
     stopChartPlayback,
     melodyNotesForEvent,
-    navigateChord
+    navigateChord,
+    fullSongKeyboardData,
+    snapFullKeyboardRange,
+    fretboardPositionForMidi,
+    activeKeyboardRangeMode
   };
   loadCatalog();
 })();

@@ -63,7 +63,10 @@
             <span id="chordProgress">1 / 1</span>
           </div>
 
-          <div class="piano" id="piano" role="group" aria-label="Two-octave piano showing the chord, scale, suggested fingering, and optional melody"></div>
+          <div class="instrument-stage">
+            <div class="piano" id="piano" role="group" aria-label="Two-octave piano showing the chord, scale, suggested fingering, and optional melody"></div>
+            <div class="fretboard" id="fretboard" role="grid" aria-label="Six-string guitar fretboard from open strings through the twelfth fret" aria-rowcount="6" aria-colcount="13" data-string-count="6" data-first-fret="0" data-last-fret="12" hidden></div>
+          </div>
 
           <div class="chord-navigator">
             <button id="previousChord" type="button" aria-label="Previous chord">‹</button>
@@ -72,6 +75,21 @@
               <span id="scaleName">C Ionian / major</span>
             </div>
             <button id="nextChord" type="button" aria-label="Next chord">›</button>
+          </div>
+
+          <div class="display-options" aria-label="Instrument and keyboard display">
+            <label class="display-control" for="instrumentView"><span>View</span>
+              <select id="instrumentView" aria-controls="piano fretboard">
+                <option value="piano" selected>Keys</option>
+                <option value="fretboard">Frets</option>
+              </select>
+            </label>
+            <label class="display-control" for="keyboardRangeMode"><span>Range</span>
+              <select id="keyboardRangeMode" aria-controls="piano">
+                <option value="compact" selected>2 octaves</option>
+                <option value="full">Full song</option>
+              </select>
+            </label>
           </div>
 
           <div class="performance-toolbar" aria-label="Melody and chart playback">
@@ -94,7 +112,7 @@
           </div>
           <input id="midiFileInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
 
-          <div class="color-legend" aria-label="Piano colors">
+          <div class="color-legend" aria-label="Instrument colors">
             <span><i class="root-swatch"></i>Root / bass</span>
             <span><i class="chord-swatch"></i>Chord</span>
             <span><i class="scale-swatch"></i>Scale</span>

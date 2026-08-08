@@ -336,6 +336,77 @@ const server = http.createServer((request, response) => {
   }
   await page.setViewportSize({ width: 390, height: 844 });
 
+  // Full register is literal: it should include the actual MIDI range for
+  // the whole current chart rather than folding C6 back into the card.
+  await page.locator('#keyboardRangeMode').selectOption('full');
+  const fullRegister = await page.evaluate(() => {
+    const piano = document.querySelector('#piano');
+    const stage = document.querySelector('.instrument-stage');
+    const keys = [...document.querySelectorAll('.piano-key')].map(key => Number(key.dataset.midi));
+    const melody = document.querySelector('.piano-key.melody-tone');
+    return {
+      rangeMode: piano.dataset.rangeMode,
+      low: Number(piano.dataset.lowMidi),
+      high: Number(piano.dataset.highMidi),
+      keys,
+      shownVoicing: window.KeyerStandardsDebug.state.displayVoicing.map(note => note.midi),
+      melodyMidi: melody?.dataset.melodyMidi,
+      melodyKeyMidi: melody?.dataset.midi,
+      melodyOctaveBadge: melody?.querySelector('.melody-octave')?.textContent || '',
+      melodyColor: melody ? getComputedStyle(melody).backgroundColor : '',
+      documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
+      stageOverflow: stage.scrollWidth - stage.clientWidth
+    };
+  });
+  assert.equal(fullRegister.rangeMode, 'full');
+  assert.ok(fullRegister.keys.length > 25, 'Full register should show more than the compact two octaves');
+  assert.ok(fullRegister.low <= 84 && fullRegister.high >= 84, 'Full register must include the actual C6 melody');
+  assert.equal(fullRegister.melodyMidi, '84');
+  assert.equal(fullRegister.melodyKeyMidi, '84', 'Full register must not fold the melody to another octave');
+  assert.equal(fullRegister.melodyOctaveBadge, '', 'An in-range full-register melody needs no folded octave badge');
+  assert.equal(fullRegister.melodyColor, 'rgb(165, 102, 255)', 'The entire active melody key should be purple');
+  assert.ok(fullRegister.shownVoicing.every(midi => fullRegister.keys.includes(midi)), 'Full register must show the exact sounding chord voicing');
+  assert.ok(fullRegister.documentOverflow <= 1, 'A full keyboard must not widen the mobile document');
+  assert.ok(fullRegister.stageOverflow > 1, 'A long keyboard should scroll only inside its own stage');
+
+  // The guitar view is a fixed standard-tuning, open-to-12th-fret board.
+  await page.locator('#instrumentView').selectOption('fretboard');
+  const fretboard = await page.evaluate(() => {
+    const board = document.querySelector('#fretboard');
+    const rows = [...board.querySelectorAll('.fretboard-string')];
+    const openMidis = rows.map(row => Number(row.querySelector('.fretboard-cell[data-fret="0"]')?.dataset.midi));
+    const octaveMidis = rows.map(row => Number(row.querySelector('.fretboard-cell[data-fret="12"]')?.dataset.midi));
+    const melody = board.querySelector('.fretboard-cell.melody-tone');
+    const melodyNote = melody?.querySelector('.fretboard-note');
+    return {
+      hidden: board.hidden,
+      pianoHidden: document.querySelector('#piano').hidden,
+      rowCount: rows.length,
+      cellCount: board.querySelectorAll('.fretboard-cell').length,
+      openMidis,
+      octaveMidis,
+      melodyMidi: melody?.dataset.melodyMidi,
+      melodyBadge: melody?.querySelector('.melody-octave')?.textContent || '',
+      melodyColor: melodyNote ? getComputedStyle(melodyNote).backgroundColor : '',
+      documentOverflow: document.documentElement.scrollWidth - window.innerWidth
+    };
+  });
+  assert.equal(fretboard.hidden, false);
+  assert.equal(fretboard.pianoHidden, true);
+  assert.equal(fretboard.rowCount, 6);
+  assert.equal(fretboard.cellCount, 78, 'Six strings with open through fret 12 should give 78 cells');
+  assert.deepEqual(fretboard.openMidis, [64, 59, 55, 50, 45, 40]);
+  assert.deepEqual(fretboard.octaveMidis, [76, 71, 67, 62, 57, 52]);
+  assert.equal(fretboard.melodyMidi, '84');
+  assert.equal(fretboard.melodyBadge, 'C6', 'A melody beyond the fixed guitar octave should retain its real octave label');
+  assert.equal(fretboard.melodyColor, 'rgb(165, 102, 255)', 'The fretboard melody marker should be purple');
+  assert.ok(fretboard.documentOverflow <= 1, 'The fixed 12-fret board must fit the mobile document');
+
+  // Return the rest of the MIDI interaction regressions to their default
+  // compact piano surface.
+  await page.locator('#instrumentView').selectOption('piano');
+  await page.locator('#keyboardRangeMode').selectOption('compact');
+
   await page.locator('#melodySlider').evaluate(element => {
     element.value = '1';
     element.dispatchEvent(new Event('input', { bubbles: true }));
