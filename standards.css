@@ -55,6 +55,8 @@ input[type="search"] { width: 100%; height: 44px; padding: 0 13px; color: var(--
 input[type="search"]::placeholder { color: #7f8999; }
 .square-button { width: 44px; height: 44px; color: var(--gold); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; font-size: 1.2rem; }
 .random-standard-button { min-height: 44px; padding: 0 12px; color: var(--gold); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; font-size: .68rem; font-weight: 850; letter-spacing: .04em; white-space: nowrap; }
+.library-filter { display: inline-flex; align-items: center; gap: 7px; margin: 8px 3px 0; color: var(--muted); font-size: .62rem; font-weight: 750; }
+.library-filter select { min-height: 29px; padding: 0 24px 0 8px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; font: inherit; }
 .library-status { min-height: 1em; margin: 7px 3px 0; color: var(--muted); font-size: .64rem; }
 .search-results { position: absolute; z-index: 20; top: calc(100% + 5px); left: 0; right: 0; max-height: min(56vh, 410px); overflow: auto; padding: 5px; border: 1px solid #465165; border-radius: 12px; background: #111722; box-shadow: 0 20px 44px #000b; overscroll-behavior: contain; }
 .result-button { width: 100%; min-height: 48px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 9px; color: var(--ink); text-align: left; background: transparent; border: 0; border-radius: 8px; }

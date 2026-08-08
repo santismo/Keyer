@@ -54,6 +54,7 @@
   const elements = {
     search: document.querySelector('#songSearch'),
     searchResults: document.querySelector('#searchResults'),
+    songAvailabilityFilter: document.querySelector('#songAvailabilityFilter'),
     randomSong: document.querySelector('#randomSong'),
     libraryStatus: document.querySelector('#libraryStatus'),
     lesson: document.querySelector('#lesson'),
@@ -113,6 +114,7 @@
     activeIndex: 0,
     preferFlats: true,
     searchIndex: -1,
+    songAvailabilityFilter: 'all',
     voicing: [],
     displayVoicing: [],
     displayRange: { low: DISPLAY_LOW, high: DISPLAY_HIGH },
@@ -128,6 +130,7 @@
     activeAlternateIndex: -1,
     showNoteNames: true,
     midiCatalog: [],
+    midiCatalogTitles: new Set(),
     midiCatalogReady: false,
     midiCatalogLoading: false,
     midiEntry: null,
@@ -159,7 +162,11 @@
   let audioContext = null;
   let audioInput = null;
   const voices = new Map();
-  const pressedCounts = new Map();
+  const pressedCounts = {
+    chord: new Map(),
+    melody: new Map(),
+    fretboard: new Map()
+  };
   const deferredFullKeyboardTaps = new Map();
   let swipe = null;
 
@@ -522,22 +529,18 @@
     const ppq = Number(midi.ppq) || 120;
     const initialBarTicks = midiBarTicks(midi, 0);
     const finalTick = Math.max(Number(midi.durationTicks) || 0, markers[markers.length - 1].tick + initialBarTicks);
+    const firstMarkerTick = Math.max(0, Number(markers[0].tick) || 0);
+    const pickupStartTick = Math.max(0, firstMarkerTick - initialBarTicks);
     const pickupNotes = (melodyNotes || []).filter(note => (
-      Number(note?.tick) < markers[0].tick && Number(note?.endTick) > 0
+      Number(note?.tick) < firstMarkerTick && Number(note?.endTick) > pickupStartTick
     ));
-    const pickupTicks = pickupNotes.length && markers[0].tick > 0 && markers[0].tick <= initialBarTicks
-      ? markers[0].tick
-      : 0;
-    const regularBarCount = Math.max(1, Math.ceil((finalTick - pickupTicks) / initialBarTicks));
-    const barCount = regularBarCount + Number(Boolean(pickupTicks));
-    const bars = Array.from({ length: barCount }, (_, barIndex) => {
-      const pickup = Boolean(pickupTicks && barIndex === 0);
-      const regularIndex = barIndex - Number(Boolean(pickupTicks));
-      const tick = pickup ? 0 : pickupTicks + regularIndex * initialBarTicks;
-      const endTick = pickup ? pickupTicks : tick + initialBarTicks;
+    const hasPickupBar = Boolean(pickupNotes.length && firstMarkerTick > 0);
+    const bars = [];
+    const addBar = (tick, endTick, { pickup = false, formStart = false } = {}) => {
       const meter = midiMeterAtTick(midi, tick);
       const label = 'MIDI';
-      return {
+      const barIndex = bars.length;
+      bars.push({
         index: barIndex,
         barIndex,
         raw: '',
@@ -545,13 +548,13 @@
         overflowChords: [],
         sectionId: 'MIDI@0',
         sectionLabel: label,
-        sectionStarts: !pickup && regularIndex === 0,
-        explicitSection: !pickup && regularIndex === 0 ? label : '',
+        sectionStarts: formStart,
+        explicitSection: formStart ? label : '',
         annotationsText: '',
         roadmapMarks: [],
         endingText: '',
         timeSignature: meter,
-        timeSignatureText: !pickup && regularIndex === 0 ? `${meter.beats}/${meter.beatUnit}` : '',
+        timeSignatureText: formStart ? `${meter.beats}/${meter.beatUnit}` : '',
         repeatStart: false,
         repeatEnd: false,
         noChord: false,
@@ -560,8 +563,24 @@
         pickupNotes: pickup ? pickupNotes : [],
         startTick: tick,
         endTick
-      };
-    });
+      });
+    };
+    if (hasPickupBar) {
+      let tick = 0;
+      while (tick < pickupStartTick) {
+        const endTick = Math.min(pickupStartTick, tick + initialBarTicks);
+        addBar(tick, endTick);
+        tick = endTick;
+      }
+      addBar(pickupStartTick, firstMarkerTick, { pickup: true });
+      for (let tick = firstMarkerTick, formStart = true; tick < finalTick; tick += initialBarTicks, formStart = false) {
+        addBar(tick, Math.min(finalTick, tick + initialBarTicks), { formStart });
+      }
+    } else {
+      for (let tick = 0, formStart = true; tick < finalTick; tick += initialBarTicks, formStart = false) {
+        addBar(tick, Math.min(finalTick, tick + initialBarTicks), { formStart });
+      }
+    }
 
     const markerSpans = markers.map((marker, markerIndex) => {
       const next = markers[markerIndex + 1];
@@ -1275,7 +1294,8 @@
       fragment.appendChild(key);
     }
     surface.replaceChildren(fragment);
-    pressedCounts.forEach((count, midi) => {
+    const pressed = surface === elements.melodyPiano ? pressedCounts.melody : pressedCounts.chord;
+    pressed.forEach((count, midi) => {
       if (count > 0) surface.querySelector(`[data-midi="${midi}"]`)?.classList.add('playing');
     });
     return displayVoicing;
@@ -1321,9 +1341,9 @@
     elements.piano.closest('.study-card')?.querySelector('.color-legend')?.setAttribute('data-melody-visible', String(Boolean(melodyNote)));
   }
 
-  function fretboardPositionForMidi(value, { preferLowString = false } = {}) {
+  function fretboardCandidatesForMidi(value, { preferLowString = false } = {}) {
     const target = Number(value);
-    if (!Number.isFinite(target)) return null;
+    if (!Number.isFinite(target)) return [];
     const candidates = [];
     FRETBOARD_STRINGS.forEach((string, stringIndex) => {
       for (let fret = 0; fret <= FRETBOARD_MAX_FRET; fret += 1) {
@@ -1337,11 +1357,60 @@
       || left.fret - right.fret
       || (preferLowString ? right.stringIndex - left.stringIndex : left.stringIndex - right.stringIndex)
     ));
-    return candidates[0] || null;
+    return candidates;
+  }
+
+  function fretboardPositionForMidi(value, options = {}) {
+    return fretboardCandidatesForMidi(value, options)[0] || null;
   }
 
   function fretboardPositionKey(position) {
     return position ? `${position.stringIndex}:${position.fret}` : '';
+  }
+
+  function guitarVoicingPositions(voicing) {
+    const notes = (voicing || [])
+      .filter(note => Number.isFinite(Number(note?.midi)))
+      .slice()
+      .sort((left, right) => Number(left.midi) - Number(right.midi));
+    if (!notes.length || notes.length > FRETBOARD_STRINGS.length) return new Map();
+
+    const candidateLists = notes.map(note => fretboardCandidatesForMidi(note.midi, { preferLowString: Boolean(note.bass) }));
+    if (candidateLists.some(candidates => !candidates.length)) return new Map();
+
+    let best = null;
+    const visit = (noteIndex, selected, previousString) => {
+      if (noteIndex === notes.length) {
+        const fretted = selected.map(item => item.position.fret).filter(fret => fret > 0);
+        const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+        const distance = selected.reduce((sum, item) => sum + item.position.distance, 0);
+        const highestFret = fretted.length ? Math.max(...fretted) : 0;
+        const score = span * 20 + distance * .35 + highestFret * .04;
+        if (!best || score < best.score) best = { score, selected: selected.slice() };
+        return;
+      }
+      candidateLists[noteIndex].forEach(position => {
+        // Notes are ordered from low to high, while drawn strings run from
+        // high E (0) to low E (5). This prevents impossible crossings and
+        // guarantees a maximum of one held chord note per string.
+        if (position.stringIndex >= previousString) return;
+        selected.push({ note: notes[noteIndex], position });
+        visit(noteIndex + 1, selected, position.stringIndex);
+        selected.pop();
+      });
+    };
+    visit(0, [], FRETBOARD_STRINGS.length);
+    if (!best) return new Map();
+    return new Map(best.selected.map(({ note, position }) => [fretboardPositionKey(position), {
+      ...note,
+      displayMidi: position.midi,
+      folded: position.midi !== note.midi
+    }]));
+  }
+
+  function melodyFretboardPosition(value, occupiedStrings = new Set()) {
+    return fretboardCandidatesForMidi(value).find(position => !occupiedStrings.has(position.stringIndex))
+      || fretboardPositionForMidi(value);
   }
 
   function renderFretboard(chord, scale, voicing, melodyNote = null) {
@@ -1361,15 +1430,9 @@
       if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
     });
     const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
-    const voicingByPosition = new Map();
-    (voicing || []).forEach(note => {
-      const position = fretboardPositionForMidi(note.midi, { preferLowString: Boolean(note.bass) });
-      const key = fretboardPositionKey(position);
-      if (!key) return;
-      const current = voicingByPosition.get(key);
-      if (!current || note.bass) voicingByPosition.set(key, { ...note, displayMidi: position.midi, folded: position.midi !== note.midi });
-    });
-    const melodyPosition = melodyNote ? fretboardPositionForMidi(melodyNote.midi) : null;
+    const voicingByPosition = guitarVoicingPositions(voicing);
+    const occupiedStrings = new Set([...voicingByPosition.keys()].map(key => Number(key.split(':')[0])));
+    const melodyPosition = melodyNote ? melodyFretboardPosition(melodyNote.midi, occupiedStrings) : null;
     const melodyPositionKey = fretboardPositionKey(melodyPosition);
     elements.fretboard.dataset.lowMidi = '40';
     elements.fretboard.dataset.highMidi = String(64 + FRETBOARD_MAX_FRET);
@@ -1451,7 +1514,7 @@
     });
     board.appendChild(positionMarkers);
     elements.fretboard.replaceChildren(board);
-    pressedCounts.forEach((count, midi) => {
+    pressedCounts.fretboard.forEach((count, midi) => {
       if (!count) return;
       const position = fretboardPositionForMidi(midi);
       if (!position) return;
@@ -1706,7 +1769,13 @@
   function matchingSongs(query) {
     const q = safeText(query).toLowerCase();
     const source = q ? state.songs.filter(song => `${song.title} ${song.composer} ${song.style}`.toLowerCase().includes(q)) : state.songs;
-    return source.slice(0, 60);
+    if (state.songAvailabilityFilter === 'all') return source;
+    if (!state.midiCatalogReady) return [];
+    return source.filter(song => {
+      const title = MiditarMidi?.normalizeCatalogTitle?.(song.title) || '';
+      const hasMelody = Boolean(title && state.midiCatalogTitles.has(title));
+      return state.songAvailabilityFilter === 'melody' ? hasMelody : !hasMelody;
+    });
   }
 
   function renderSearchResults() {
@@ -1738,9 +1807,12 @@
     elements.searchResults.replaceChildren(fragment);
     elements.searchResults.hidden = false;
     elements.search.setAttribute('aria-expanded', 'true');
-    elements.libraryStatus.textContent = songs.length === 60
-      ? `Showing the first 60 matches · ${state.songs.length.toLocaleString()} charts available`
-      : `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'} · ${state.songs.length.toLocaleString()} charts available`;
+    if (state.songAvailabilityFilter !== 'all' && !state.midiCatalogReady) {
+      elements.libraryStatus.textContent = 'Finding MIDI melody availability…';
+    } else {
+      const label = state.songAvailabilityFilter === 'melody' ? 'with MIDI melody' : state.songAvailabilityFilter === 'chords' ? 'chord charts only' : '';
+      elements.libraryStatus.textContent = `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'}${label ? ` ${label}` : ''} · ${state.songs.length.toLocaleString()} charts available`;
+    }
   }
 
   function hideSearchResults() {
@@ -1802,6 +1874,7 @@
           size: Number(item?.size) || undefined
         }];
       });
+      state.midiCatalogTitles = new Set(state.midiCatalog.map(entry => MiditarMidi.normalizeCatalogTitle(entry.title)).filter(Boolean));
       state.midiCatalogReady = true;
       if (state.song) state.midiEntry = MiditarMidi.findCatalogMatch(state.song.title, state.midiCatalog);
     } catch (error) {
@@ -1810,6 +1883,7 @@
     } finally {
       state.midiCatalogLoading = false;
       syncMidiSourceStatus();
+      if (!elements.searchResults.hidden) renderSearchResults();
       if (state.song) renderStudy({ keepVisible: false });
     }
   }
@@ -1934,6 +2008,10 @@
   function ensureAudio() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return null;
+    if (audioContext?.state === 'closed') {
+      audioContext = null;
+      audioInput = null;
+    }
     if (!audioContext) {
       audioContext = new AudioContextClass();
       const compressor = audioContext.createDynamicsCompressor();
@@ -1952,26 +2030,48 @@
     return audioContext;
   }
 
-  function markPressed(midi, direction) {
-    if (!Number.isFinite(Number(midi))) return;
-    const next = Math.max(0, (pressedCounts.get(midi) || 0) + direction);
-    if (next) pressedCounts.set(midi, next);
-    else pressedCounts.delete(midi);
-    [elements.piano, elements.melodyPiano].forEach(surface => {
-      surface?.querySelectorAll(`[data-midi="${midi}"]`).forEach(key => key.classList.toggle('playing', next > 0));
-    });
-    const fretPosition = fretboardPositionForMidi(midi);
-    if (fretPosition) {
-      elements.fretboard?.querySelector(`[data-string="${fretPosition.stringIndex}"][data-fret="${fretPosition.fret}"]`)?.classList.toggle('playing', next > 0);
-    }
+  function visualTargets(visual = 'all') {
+    if (visual === 'chord') return ['chord', 'fretboard'];
+    if (visual === 'melody') return ['melody', 'fretboard'];
+    if (visual === 'fretboard') return ['fretboard'];
+    return ['chord', 'melody', 'fretboard'];
   }
 
-  function startVoice(id, midi, duration = null, displayMidi = midi) {
+  function fretboardPressedCell(midi, visual) {
+    const pitchClass = Theory.mod(midi);
+    const selector = visual === 'chord' ? '.fretboard-cell.voicing' : visual === 'melody' ? '.fretboard-cell.melody-tone' : '.fretboard-cell';
+    const shapedCell = [...(elements.fretboard?.querySelectorAll(selector) || [])]
+      .find(cell => Theory.mod(Number(cell.dataset.midi)) === pitchClass);
+    if (shapedCell) return shapedCell;
+    const position = fretboardPositionForMidi(midi);
+    return position
+      ? elements.fretboard?.querySelector(`[data-string="${position.stringIndex}"][data-fret="${position.fret}"]`)
+      : null;
+  }
+
+  function markPressed(midi, direction, visual = 'all') {
+    if (!Number.isFinite(Number(midi))) return;
+    visualTargets(visual).forEach(target => {
+      const counts = pressedCounts[target];
+      const next = Math.max(0, (counts.get(midi) || 0) + direction);
+      if (next) counts.set(midi, next);
+      else counts.delete(midi);
+      if (target === 'chord') {
+        elements.piano?.querySelectorAll(`[data-midi="${midi}"]`).forEach(key => key.classList.toggle('playing', next > 0));
+      } else if (target === 'melody') {
+        elements.melodyPiano?.querySelectorAll(`[data-midi="${midi}"]`).forEach(key => key.classList.toggle('playing', next > 0));
+      } else {
+        fretboardPressedCell(midi, visual)?.classList.toggle('playing', next > 0);
+      }
+    });
+  }
+
+  function startVoice(id, midi, duration = null, displayMidi = midi, visual = 'all') {
     stopVoice(id, true);
     const context = ensureAudio();
-    markPressed(displayMidi, 1);
+    markPressed(displayMidi, 1, visual);
     if (!context || !audioInput) {
-      const voice = { midi, displayMidi, silent: true, timerId: null };
+      const voice = { midi, displayMidi, visual, silent: true, timerId: null };
       voices.set(id, voice);
       if (duration) {
         voice.timerId = window.setTimeout(() => {
@@ -2000,7 +2100,7 @@
     envelope.connect(audioInput);
     oscillator.start(now);
     color.start(now);
-    const voice = { midi, displayMidi, envelope, oscillators: [oscillator, color], startedAt: now, timerId: null };
+    const voice = { midi, displayMidi, visual, envelope, oscillators: [oscillator, color], startedAt: now, timerId: null };
     voices.set(id, voice);
     if (duration) {
       voice.timerId = window.setTimeout(() => {
@@ -2014,7 +2114,7 @@
     if (!voice) return;
     voices.delete(id);
     if (voice.timerId != null) window.clearTimeout(voice.timerId);
-    markPressed(voice.displayMidi ?? voice.midi, -1);
+    markPressed(voice.displayMidi ?? voice.midi, -1, voice.visual);
     if (voice.silent || !audioContext) return;
     const now = audioContext.currentTime;
     const release = immediate ? .025 : .2;
@@ -2024,10 +2124,10 @@
     voice.oscillators.forEach(oscillator => oscillator.stop(now + release + .03));
   }
 
-  function playVoicing(voicing, duration = 1.35, prefix = 'preview') {
+  function playVoicing(voicing, duration = 1.35, prefix = 'preview', visual = 'chord') {
     if (!voicing.length) return;
     [...voices.keys()].filter(id => String(id).startsWith(`${prefix}-`)).forEach(id => stopVoice(id, true));
-    voicing.forEach((note, index) => startVoice(`${prefix}-${index}`, note.midi, duration, note.midi));
+    voicing.forEach((note, index) => startVoice(`${prefix}-${index}`, note.midi, duration, note.midi, visual));
   }
 
   function playCurrentVoicing(duration = 1.35) {
@@ -2145,6 +2245,64 @@
     selectMidiMelodyEvent(state.activeIndex + step, step);
   }
 
+  function desktopMelodyNavigationEnabled() {
+    return document.body.classList.contains('desktop-mode') && state.showMelody && melodyMatchesChart();
+  }
+
+  function eventIndexForMelodyNote(note) {
+    const ownedByEvent = state.events.findIndex(event => melodyNotesForEvent(event).some(candidate => candidate.id === note.id));
+    if (ownedByEvent >= 0) return ownedByEvent;
+    const timedEvent = state.events.findIndex(event => {
+      const timing = melodyTimingForEvent(event);
+      return timing && note.startBeat >= timing.startBeat - .0001 && note.startBeat < timing.endBeat - .0001;
+    });
+    return timedEvent >= 0 ? timedEvent : 0;
+  }
+
+  function initialDesktopMelodyIndex(direction) {
+    const event = activeChartEvent();
+    const notes = melodyNotesForEvent(event);
+    if (notes.length) {
+      const target = direction > 0 ? notes[0] : notes[notes.length - 1];
+      return state.melodyNotes.findIndex(note => note.id === target.id);
+    }
+    const timing = melodyTimingForEvent(event);
+    if (!timing) return direction > 0 ? 0 : state.melodyNotes.length - 1;
+    if (direction > 0) {
+      const index = state.melodyNotes.findIndex(note => note.startBeat >= timing.endBeat - .0001);
+      return index >= 0 ? index : 0;
+    }
+    for (let index = state.melodyNotes.length - 1; index >= 0; index -= 1) {
+      if (state.melodyNotes[index].startBeat < timing.startBeat - .0001) return index;
+    }
+    return state.melodyNotes.length - 1;
+  }
+
+  function navigateDesktopMelody(direction) {
+    if (!desktopMelodyNavigationEnabled() || !state.melodyNotes.length) {
+      navigateChord(direction);
+      return;
+    }
+    const step = Number(direction) < 0 ? -1 : 1;
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    const current = state.activeMelodyNote
+      ? state.melodyNotes.findIndex(note => note.id === state.activeMelodyNote.id)
+      : -1;
+    const index = current >= 0
+      ? Theory.mod(current + step, state.melodyNotes.length)
+      : initialDesktopMelodyIndex(step);
+    const note = state.melodyNotes[index];
+    const eventIndex = eventIndexForMelodyNote(note);
+    selectEvent(eventIndex, false);
+    const event = activeChartEvent();
+    const notes = melodyNotesForEvent(event);
+    const localIndex = notes.findIndex(candidate => candidate.id === note.id);
+    if (localIndex < 0) return;
+    selectMelodyNote(event, notes, localIndex, { navigated: true });
+    renderStudy();
+    previewMelodyNote(note);
+  }
+
   function clearTransportTimers() {
     state.transport.timerIds.forEach(timerId => window.clearTimeout(timerId));
     state.transport.timerIds.clear();
@@ -2172,7 +2330,7 @@
   function previewMelodyNote(note, id = 'melody-scrub', duration = .78) {
     if (!note) return;
     const displayMidi = foldedMidiForDisplay(note.midi);
-    startVoice(id, note.midi, duration, displayMidi == null ? note.midi : displayMidi);
+    startVoice(id, note.midi, duration, displayMidi == null ? note.midi : displayMidi, 'melody');
   }
 
   function scheduleMelodyForSegment(entry, secondsPerBeat, session) {
@@ -2255,7 +2413,19 @@
     const session = state.transport.session;
     const secondsPerBeat = 60 / currentTempo();
     renderStudy({ keepVisible: false });
-    playTimelineEntry(startIndex, session, secondsPerBeat);
+    const begin = () => {
+      if (!state.transport.playing || state.transport.session !== session) return;
+      playTimelineEntry(startIndex, session, secondsPerBeat);
+    };
+    // Start from the click gesture, then wait for a suspended browser audio
+    // context before scheduling the MIDI timeline. This prevents a first
+    // timer tick from being silently lost while an audio context wakes up.
+    const context = ensureAudio();
+    if (context?.state === 'suspended') {
+      context.resume().then(begin, begin);
+    } else {
+      begin();
+    }
   }
 
   function syncNoteNameToggle() {
@@ -2273,6 +2443,13 @@
 
   elements.search.addEventListener('focus', renderSearchResults);
   elements.search.addEventListener('input', () => { state.searchIndex = -1; renderSearchResults(); });
+  elements.songAvailabilityFilter?.addEventListener('change', () => {
+    state.songAvailabilityFilter = ['melody', 'chords'].includes(elements.songAvailabilityFilter.value)
+      ? elements.songAvailabilityFilter.value
+      : 'all';
+    state.searchIndex = -1;
+    renderSearchResults();
+  });
   elements.search.addEventListener('keydown', event => {
     const songs = matchingSongs(elements.search.value);
     if (event.key === 'Escape') { hideSearchResults(); elements.search.blur(); return; }
@@ -2291,8 +2468,9 @@
     if (!event.target.closest('.search-wrap')) hideSearchResults();
   });
   elements.randomSong.addEventListener('click', () => {
-    if (!state.songs.length) return;
-    loadSong(state.songs[Math.floor(Math.random() * state.songs.length)]);
+    const songs = matchingSongs(elements.search.value);
+    if (!songs.length) return;
+    loadSong(songs[Math.floor(Math.random() * songs.length)]);
   });
   elements.previousChord.addEventListener('click', () => navigateChord(-1));
   elements.nextChord.addEventListener('click', () => navigateChord(1));
@@ -2373,14 +2551,18 @@
     }
     event.preventDefault();
     surface.setPointerCapture(event.pointerId);
-    startVoice(`pointer-${event.pointerId}`, Number(key.dataset.midi));
+    const visual = surface === elements.melodyPiano ? 'melody' : surface === elements.piano ? 'chord' : 'fretboard';
+    startVoice(`pointer-${event.pointerId}`, Number(key.dataset.midi), null, Number(key.dataset.midi), visual);
   }
   function releaseInstrumentPointer(surface, event) {
     const deferred = deferredFullKeyboardTaps.get(event.pointerId);
     if (deferred) {
       deferredFullKeyboardTaps.delete(event.pointerId);
       const distance = Math.hypot(event.clientX - deferred.x, event.clientY - deferred.y);
-      if (event.type === 'pointerup' && distance < 10) startVoice(`pointer-${event.pointerId}`, deferred.midi, .62);
+      if (event.type === 'pointerup' && distance < 10) {
+        const visual = surface === elements.melodyPiano ? 'melody' : 'chord';
+        startVoice(`pointer-${event.pointerId}`, deferred.midi, .62, deferred.midi, visual);
+      }
       return;
     }
     stopVoice(`pointer-${event.pointerId}`);
@@ -2418,9 +2600,9 @@
   elements.studyCard.addEventListener('pointercancel', () => { swipe = null; });
 
   document.addEventListener('keydown', event => {
-    if (event.target.closest('input, button, a, select, textarea, [contenteditable]')) return;
-    if (event.key === 'ArrowLeft') { event.preventDefault(); navigateChord(-1); }
-    if (event.key === 'ArrowRight') { event.preventDefault(); navigateChord(1); }
+    if (event.target.closest('input, a, select, textarea, [contenteditable]')) return;
+    if (event.key === 'ArrowLeft') { event.preventDefault(); desktopMelodyNavigationEnabled() ? navigateDesktopMelody(-1) : navigateChord(-1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); desktopMelodyNavigationEnabled() ? navigateDesktopMelody(1) : navigateChord(1); }
     if (event.key === ' ') { event.preventDefault(); playCurrentVoicing(); }
   });
   // `touch-action: manipulation` handles current mobile browsers without

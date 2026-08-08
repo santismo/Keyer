@@ -318,6 +318,38 @@ const server = http.createServer((request, response) => {
   assert.ok(midiSpans.holds.some(title => /Hold D7/.test(title)), 'A chord held over a barline should render a carry mark, not N.C.');
   assert.ok(midiSpans.pickupMeasures.some(text => /Pickup.*C6/.test(text)), 'A melody pickup should receive its own labeled chart bar before the first chord');
   assert.ok(midiSpans.crossingPickup && midiSpans.crossingPickup.duration > midiSpans.crossingPickup.markerStart - midiSpans.crossingPickup.start, 'A pickup crossing a marker needs its full held duration');
+  const distantPickup = await page.evaluate(() => {
+    const chart = window.KeyerStandardsDebug.buildMidiChart({
+      title: 'Distant pickup',
+      ppq: 480,
+      durationTicks: 7680,
+      markers: [
+        { type: 'marker', text: 'Ebmaj7', tick: 3840 },
+        { type: 'marker', text: 'Ab7', tick: 5760 }
+      ],
+      tempos: [],
+      timeSignatures: [{ tick: 0, numerator: 4, denominator: 4 }]
+    }, [{ midi: 70, tick: 3360, endTick: 3840 }]);
+    return chart.bars.slice(0, 3).map(bar => ({
+      pickup: bar.pickup,
+      startTick: bar.startTick,
+      endTick: bar.endTick,
+      chords: bar.chords.map(chord => chord.raw)
+    }));
+  });
+  assert.deepEqual(distantPickup, [
+    { pickup: false, startTick: 0, endTick: 1920, chords: [] },
+    { pickup: true, startTick: 1920, endTick: 3840, chords: [] },
+    { pickup: false, startTick: 3840, endTick: 5760, chords: ['Ebmaj7'] }
+  ], 'A pickup near a later first downbeat should still get its own chart bar.');
+  await page.locator('#keyboardRangeMode').selectOption('split');
+  const splitIsolation = await page.evaluate(() => ({
+    chordMelody: document.querySelectorAll('#piano .melody-tone').length,
+    melodyChordTones: document.querySelectorAll('#melodyPiano .root-tone, #melodyPiano .chord-tone, #melodyPiano .scale-tone').length,
+    melodyNotes: document.querySelectorAll('#melodyPiano .melody-tone').length
+  }));
+  assert.deepEqual(splitIsolation, { chordMelody: 0, melodyChordTones: 0, melodyNotes: 1 }, 'Split keyboards must keep chord and melody colors independent.');
+  await page.locator('#keyboardRangeMode').selectOption('compact');
   const register = await page.evaluate(() => {
     const event = window.KeyerStandardsDebug.state.events[window.KeyerStandardsDebug.state.activeIndex];
     const melody = window.KeyerStandardsDebug.melodyNotesForEvent(event);
@@ -380,6 +412,8 @@ const server = http.createServer((request, response) => {
     const octaveMidis = rows.map(row => Number(row.querySelector('.fretboard-cell[data-fret="12"]')?.dataset.midi));
     const melody = board.querySelector('.fretboard-cell.melody-tone');
     const melodyNote = melody?.querySelector('.fretboard-note');
+    const voicing = [...board.querySelectorAll('.fretboard-cell.voicing')];
+    const frettedVoicing = voicing.map(cell => Number(cell.dataset.fret)).filter(fret => fret > 0);
     return {
       hidden: board.hidden,
       pianoHidden: document.querySelector('#piano').hidden,
@@ -390,6 +424,8 @@ const server = http.createServer((request, response) => {
       melodyMidi: melody?.dataset.melodyMidi,
       melodyBadge: melody?.querySelector('.melody-octave')?.textContent || '',
       melodyColor: melodyNote ? getComputedStyle(melodyNote).backgroundColor : '',
+      voicingStrings: voicing.map(cell => Number(cell.dataset.string)),
+      fretSpan: frettedVoicing.length ? Math.max(...frettedVoicing) - Math.min(...frettedVoicing) : 0,
       documentOverflow: document.documentElement.scrollWidth - window.innerWidth
     };
   });
@@ -402,6 +438,8 @@ const server = http.createServer((request, response) => {
   assert.equal(fretboard.melodyMidi, '84');
   assert.equal(fretboard.melodyBadge, 'C6', 'A melody beyond the fixed guitar octave should retain its real octave label');
   assert.equal(fretboard.melodyColor, 'rgb(165, 102, 255)', 'The fretboard melody marker should be purple');
+  assert.equal(new Set(fretboard.voicingStrings).size, fretboard.voicingStrings.length, 'A displayed guitar voicing must not put two held notes on one string');
+  assert.ok(fretboard.fretSpan <= 5, `A displayed guitar voicing should stay within a practical fret stretch, got ${fretboard.fretSpan}`);
   assert.ok(fretboard.documentOverflow <= 1, 'The fixed 12-fret board must fit the mobile document');
 
   // Return the rest of the MIDI interaction regressions to their default
