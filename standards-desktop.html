@@ -43,7 +43,7 @@
 
       <div class="workspace">
         <section class="chart-panel" aria-labelledby="chart-title">
-          <div class="panel-head"><h3 id="chart-title">Chart</h3><span id="chartStatus">Tap any chord</span></div>
+          <div class="panel-head"><h3 id="chart-title">Chart</h3><span id="chartStatus">Tap any chord</span><label class="reharm-control" for="reharmLevel"><span>Reharm</span><select id="reharmLevel" aria-label="Reharmonization amount"><option value="0" selected>0 · Original</option><option value="1">1 · Color</option><option value="2">2 · Diatonic</option><option value="3">3 · Dominants</option><option value="4">4 · Borrowed</option><option value="5">5 · Advanced</option></select></label></div>
           <div class="chart-scroll" id="chartScroll"><div class="realbook-chart" id="chart" aria-label="Clickable Real Book-style chord chart"></div></div>
         </section>
 
@@ -76,6 +76,7 @@
           <div class="display-options" aria-label="Instrument display settings">
             <label class="display-control" for="instrumentView"><span>View</span><select id="instrumentView" aria-controls="piano fretboard"><option value="piano" selected>Keys</option><option value="fretboard">Frets</option></select></label>
             <label class="display-control" for="keyboardRangeMode"><span>Range</span><select id="keyboardRangeMode" aria-controls="piano"><option value="compact">2 octaves</option><option value="split">Split · 2 + 2</option><option value="wide" selected>Wide keyboard</option><option value="full">Full song</option></select></label>
+            <label class="display-control piano-voicing-control" for="pianoVoicingStyle"><span>Voicing</span><select id="pianoVoicingStyle" aria-controls="piano"><option value="root-shell" selected>Root + shell</option><option value="shell">Shell</option><option value="rootless">Rootless</option><option value="closed">Closed</option><option value="spread">Spread</option><option value="upper-structure">Upper structure</option><option value="modern">Modern</option><option value="cluster">Cluster</option><option value="avant-garde">Avant-garde</option></select></label>
             <label class="display-control" for="keyboardToneMode"><span>Keys</span><select id="keyboardToneMode" aria-controls="piano melodyPiano"><option value="scale" selected>Scale + chord</option><option value="chord">Chord tones</option><option value="voicing">Voicing only</option></select></label>
             <label class="display-control" for="fretboardToneMode"><span>Frets</span><select id="fretboardToneMode" aria-controls="fretboard"><option value="scale" selected>Scale + chord</option><option value="chord">Chord tones</option><option value="voicing">Voicing only</option></select></label>
           </div>
@@ -100,6 +101,7 @@
   <script src="jazz-theory.js"></script>
   <script src="ireal.js"></script>
   <script src="miditar-midi.js"></script>
+  <script src="standards-reharm.js"></script>
   <script src="standards.js"></script>
 </body>
 </html>
