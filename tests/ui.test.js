@@ -909,12 +909,16 @@ const server = http.createServer((request, response) => {
     const accompaniment = [...board.querySelectorAll('.fretboard-cell.chord-melody-tone')]
       .filter(cell => cell.querySelector('.fretboard-role')?.textContent !== 'M')
       .map(cell => Number(cell.dataset.fret));
+    const exactCandidateFrets = [...board.querySelectorAll('.fretboard-string')]
+      .map(row => 45 - Number(row.dataset.openMidi))
+      .filter(fret => fret >= 0 && fret <= Number(board.dataset.lastFret));
     return {
       anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
       boardAnchor: board.dataset.positionAnchor,
       melodyMidi: Number(melody?.dataset.melodyMidi),
       physicalMidi: Number(melody?.dataset.midi),
       melodyFret: Number(melody?.dataset.fret),
+      exactCandidateFrets,
       accompaniment,
       documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
       stageOverflow: board.closest('.instrument-stage').scrollWidth - board.closest('.instrument-stage').clientWidth
@@ -925,6 +929,8 @@ const server = http.createServer((request, response) => {
   assert.equal(anchoredLowMelody.melodyMidi, 45);
   assert.equal(anchoredLowMelody.physicalMidi, 45, 'A fret lock must never octave-fold the literal melody register.');
   assert.ok(anchoredLowMelody.melodyFret < 10, 'The purple melody may sit below the selected chord-position floor.');
+  assert.deepEqual(anchoredLowMelody.exactCandidateFrets, [0, 5], 'A2 has no exact physical position at or above fret 10.');
+  assert.equal(anchoredLowMelody.exactCandidateFrets.some(fret => fret >= 10), false, 'A melody may fall below the anchor only when no exact anchored position exists.');
   assert.ok(anchoredLowMelody.accompaniment.every(fret => fret >= 10), 'Only chord accompaniment is constrained by the selected fret.');
   assert.ok(anchoredLowMelody.documentOverflow <= 1, 'An anchored extended neck must stay inside the phone document.');
   assert.ok(anchoredLowMelody.stageOverflow > 1, 'An anchored extended neck remains horizontally scrollable.');
@@ -934,6 +940,147 @@ const server = http.createServer((request, response) => {
     lastFret: Number(document.querySelector('#fretboard').dataset.lastFret),
     pressed: document.querySelectorAll('.fret-position-button[aria-pressed="true"]').length
   })), { anchor: null, lastFret: 12, pressed: 0 }, 'Deselecting the fret lock should return the compact neck to automatic logic.');
+
+  // A fret lock is a soft preference for melody placement. When the same
+  // literal pitch exists both below and at/above the chosen position, move the
+  // purple note to the nearby alternate string without changing its MIDI.
+  // Only the chord accompaniment remains a hard fret floor.
+  await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    debug.installMidiSource({
+      title: 'Melody anchor preference',
+      ppq: 120,
+      durationTicks: 480,
+      markers: [{ type: 'marker', text: 'Cmaj7', tick: 0 }],
+      tempos: [{ bpm: 100 }],
+      timeSignatures: [{ tick: 0, numerator: 4, denominator: 4 }],
+      tracks: [{
+        index: 0,
+        name: 'Melody',
+        notes: [
+          { midi: 62, tick: 0, endTick: 120, durationTicks: 120, channel: 0, trackIndex: 0 },
+          { midi: 60, tick: 120, endTick: 240, durationTicks: 120, channel: 0, trackIndex: 0 }
+        ]
+      }]
+    }, { name: 'melody-anchor-preference.mid', title: 'Melody anchor preference' });
+  });
+  await page.locator('.fret-position-button[data-fret="5"]').click();
+
+  async function melodyAnchorPreferenceSnapshot() {
+    return page.evaluate(() => {
+      const board = document.querySelector('#fretboard');
+      const melody = board.querySelector('.fretboard-cell.melody-tone');
+      const sourceMidi = Number(melody?.dataset.melodyMidi);
+      const exactCandidates = [...board.querySelectorAll('.fretboard-string')]
+        .map((row, string) => ({ string, fret: sourceMidi - Number(row.dataset.openMidi) }))
+        .filter(position => position.fret >= 0 && position.fret <= Number(board.dataset.lastFret));
+      const heldGrip = [...board.querySelectorAll('.fretboard-cell.chord-melody-tone')]
+        .map(cell => ({
+          string: Number(cell.dataset.string),
+          fret: Number(cell.dataset.fret),
+          midi: Number(cell.dataset.midi),
+          role: cell.querySelector('.fretboard-role')?.textContent || ''
+        }))
+        .sort((left, right) => left.string - right.string || left.fret - right.fret);
+      return {
+        anchor: window.KeyerStandardsDebug.state.fretboardPositionAnchor,
+        cursor: window.KeyerStandardsDebug.state.melodyCursor,
+        sourceMidi,
+        physicalMidi: Number(melody?.dataset.midi),
+        string: Number(melody?.dataset.string),
+        fret: Number(melody?.dataset.fret),
+        octaveBadge: melody?.querySelector('.melody-octave')?.textContent || '',
+        exactCandidates,
+        heldGrip,
+        accompaniment: heldGrip.filter(note => note.role !== 'M')
+      };
+    });
+  }
+
+  // The first press auditions the already-displayed first note; the second
+  // moves to the next onset inside the same chord.
+  await page.locator('#nextChord').click();
+  const firstSoftAnchoredMelody = await melodyAnchorPreferenceSnapshot();
+  assert.equal(firstSoftAnchoredMelody.anchor, 5);
+  assert.equal(firstSoftAnchoredMelody.sourceMidi, 62);
+  assert.equal(firstSoftAnchoredMelody.physicalMidi, 62, 'D4 must stay at its exact sounding/physical MIDI.');
+  assert.equal(firstSoftAnchoredMelody.octaveBadge, '');
+  assert.ok(firstSoftAnchoredMelody.exactCandidates.some(position => position.fret < 5), 'D4 should have a tempting below-anchor upper-string position for this regression.');
+  assert.ok(firstSoftAnchoredMelody.exactCandidates.some(position => position.fret >= 5), 'D4 should also have a reasonable exact position near the anchor.');
+  assert.ok(
+    firstSoftAnchoredMelody.fret >= 5,
+    `The exact D4 should move to an alternate string at or above the soft anchor: ${JSON.stringify(firstSoftAnchoredMelody)}`
+  );
+  assert.ok(firstSoftAnchoredMelody.accompaniment.length > 0 && firstSoftAnchoredMelody.accompaniment.every(note => note.fret >= 5), 'Chord accompaniment keeps the hard fret floor.');
+
+  await page.locator('#nextChord').click();
+  const secondSoftAnchoredMelody = await melodyAnchorPreferenceSnapshot();
+  assert.equal(secondSoftAnchoredMelody.cursor, 1);
+  assert.equal(secondSoftAnchoredMelody.sourceMidi, 60);
+  assert.equal(secondSoftAnchoredMelody.physicalMidi, 60, 'C4 must stay at its exact sounding/physical MIDI.');
+  assert.equal(secondSoftAnchoredMelody.octaveBadge, '');
+  assert.ok(secondSoftAnchoredMelody.exactCandidates.some(position => position.fret < 5));
+  assert.ok(secondSoftAnchoredMelody.exactCandidates.some(position => position.fret >= 5));
+  assert.ok(
+    secondSoftAnchoredMelody.fret >= 5,
+    `The moving purple C4 should prefer the exact anchored-string position: ${JSON.stringify(secondSoftAnchoredMelody)}`
+  );
+  assert.ok(secondSoftAnchoredMelody.accompaniment.length > 0 && secondSoftAnchoredMelody.accompaniment.every(note => note.fret >= 5), 'The accompaniment floor must remain hard on later melody notes.');
+  assert.deepEqual(secondSoftAnchoredMelody.heldGrip, firstSoftAnchoredMelody.heldGrip, 'Soft melody repositioning must not revoice the held chord grip.');
+  await page.locator('.fret-position-button[data-fret="5"]').click();
+
+  // Do not satisfy a high fret preference by dropping a later melody onto an
+  // arbitrary bass string. Ab3 has an exact anchored position at A-string
+  // fret 11, but it neither sits above nor shares a cell with the held
+  // accompaniment. Its conventional G/D-string position is preferable.
+  await page.evaluate(() => {
+    window.KeyerStandardsDebug.installMidiSource({
+      title: 'Melody anchor bass-string fallback',
+      ppq: 120,
+      durationTicks: 480,
+      markers: [{ type: 'marker', text: 'Dm7', tick: 0 }],
+      tempos: [{ bpm: 100 }],
+      timeSignatures: [{ tick: 0, numerator: 4, denominator: 4 }],
+      tracks: [{
+        index: 0,
+        name: 'Melody',
+        notes: [
+          { midi: 65, tick: 0, endTick: 120, durationTicks: 120, channel: 0, trackIndex: 0 },
+          { midi: 56, tick: 120, endTick: 240, durationTicks: 120, channel: 0, trackIndex: 0 }
+        ]
+      }]
+    }, { name: 'melody-anchor-bass-fallback.mid', title: 'Melody anchor bass-string fallback' });
+  });
+  await page.locator('.fret-position-button[data-fret="10"]').click();
+  await page.locator('#nextChord').click();
+  const highAnchorHeldMelody = await melodyAnchorPreferenceSnapshot();
+  assert.equal(highAnchorHeldMelody.anchor, 10);
+  assert.equal(highAnchorHeldMelody.sourceMidi, 65);
+  assert.equal(highAnchorHeldMelody.physicalMidi, 65);
+  assert.ok(highAnchorHeldMelody.fret >= 10, `The onset note should establish an anchored held grip: ${JSON.stringify(highAnchorHeldMelody)}`);
+  assert.ok(highAnchorHeldMelody.accompaniment.length > 0 && highAnchorHeldMelody.accompaniment.every(note => note.fret >= 10));
+
+  await page.locator('#nextChord').click();
+  const naturalLowMelody = await melodyAnchorPreferenceSnapshot();
+  const topAccompanimentString = Math.min(...naturalLowMelody.accompaniment.map(note => note.string));
+  const accompanimentCells = new Set(naturalLowMelody.accompaniment.map(note => `${note.string}:${note.fret}`));
+  const anchoredExactCandidates = naturalLowMelody.exactCandidates.filter(position => position.fret >= 10);
+  const reasonableAnchoredCandidates = anchoredExactCandidates.filter(position => (
+    position.string < topAccompanimentString
+    || accompanimentCells.has(`${position.string}:${position.fret}`)
+  ));
+  assert.equal(naturalLowMelody.cursor, 1);
+  assert.equal(naturalLowMelody.sourceMidi, 56);
+  assert.equal(naturalLowMelody.physicalMidi, 56, 'The fallback must preserve the literal Ab3 register.');
+  assert.equal(naturalLowMelody.octaveBadge, '');
+  assert.ok(anchoredExactCandidates.some(position => position.string === 4 && position.fret === 11), 'The test needs the tempting exact A-string fret-11 candidate.');
+  assert.deepEqual(reasonableAnchoredCandidates, [], `No exact anchored Ab3 belongs above or on the held accompaniment: ${JSON.stringify(naturalLowMelody)}`);
+  assert.ok(
+    naturalLowMelody.fret < 10 && naturalLowMelody.string <= 3,
+    `Prefer a conventional upper-string Ab3 below the anchor over an arbitrary anchored bass string: ${JSON.stringify(naturalLowMelody)}`
+  );
+  assert.deepEqual(naturalLowMelody.heldGrip, highAnchorHeldMelody.heldGrip, 'The low moving melody must not revoice the held chord grip.');
+  await page.locator('.fret-position-button[data-fret="10"]').click();
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
