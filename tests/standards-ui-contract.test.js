@@ -15,6 +15,7 @@ assert.doesNotMatch(html, /id="(?:voicingNotes|scaleNotes|playVoicing)"/);
 assert.match(html, /id="toggleNoteNames"/);
 assert.match(html, /id="toggleMelody"/);
 assert.match(html, /id="randomSong"[^>]*>Random<\/button>/);
+assert.match(html, /class="library-actions"[\s\S]*id="randomSong"[\s\S]*id="playChart"/);
 assert.match(html, /id="songAvailabilityFilter"/);
 assert.doesNotMatch(html, /id="loadMidi"/);
 assert.doesNotMatch(html, /id="midiFileInput"/);
@@ -157,6 +158,7 @@ assert.doesNotMatch(desktopHtml, /melodySlider|melodyWheel|melody-wheel|melodyRe
 assert.match(desktopHtml, /id="previousChord"/);
 assert.match(desktopHtml, /id="nextChord"/);
 assert.match(desktopHtml, /id="pianoVoicingStyle"/);
+assert.match(desktopHtml, /class="library-actions"[\s\S]*id="randomSong"[\s\S]*id="playChart"/);
 assert.match(desktopHtml, /id="reharmLevel"/);
 assert.match(desktopHtml, /src="standards-reharm\.js"/);
 assert.doesNotMatch(desktopCss, /melody-wheel|melody-panel/);
