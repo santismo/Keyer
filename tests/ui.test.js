@@ -331,6 +331,57 @@ const server = http.createServer((request, response) => {
     readoutHidden: true,
     surfaceTouchAction: 'pan-y'
   }, 'The melody wheel should be a text-free tactile encoder while retaining hidden accessible status.');
+  const melodyWheelSizing = await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const label = document.querySelector('#selectedChord');
+    const wheel = document.querySelector('#melodyWheel');
+    const sizeFor = text => {
+      label.textContent = text;
+      const bounds = wheel.getBoundingClientRect();
+      return {
+        width: Math.round(bounds.width * 100) / 100,
+        height: Math.round(bounds.height * 100) / 100,
+        left: Math.round(bounds.left * 100) / 100
+      };
+    };
+    const shortChord = sizeFor('Cmaj7');
+    const extendedChord = sizeFor('F#7alt(#11,b13)');
+    debug.selectEvent(debug.state.activeIndex, false);
+    return { shortChord, extendedChord };
+  });
+  assert.deepEqual(
+    melodyWheelSizing.extendedChord,
+    melodyWheelSizing.shortChord,
+    'The wheel must keep one stable width and height across short and extended chord labels.'
+  );
+  const longMelodyWheelTexture = await page.evaluate(() => {
+    const wheel = document.querySelector('#melodyWheel');
+    const tread = wheel.querySelector('.melody-wheel-tread');
+    const bounds = element => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: Math.round(rect.left * 100) / 100,
+        right: Math.round(rect.right * 100) / 100,
+        width: Math.round(rect.width * 100) / 100
+      };
+    };
+    const originalRoll = wheel.style.getPropertyValue('--melody-wheel-roll');
+    const originalRolling = wheel.dataset.rolling;
+    const before = bounds(tread);
+    wheel.dataset.rolling = 'true';
+    wheel.style.setProperty('--melody-wheel-roll', '2800px');
+    const after = bounds(tread);
+    const backgroundPosition = getComputedStyle(tread).backgroundPosition;
+    wheel.style.setProperty('--melody-wheel-roll', originalRoll);
+    wheel.dataset.rolling = originalRolling;
+    return { before, after, backgroundPosition };
+  });
+  assert.deepEqual(
+    longMelodyWheelTexture.after,
+    longMelodyWheelTexture.before,
+    'A long global melody path must keep its tread physically inside the fixed wheel viewport.'
+  );
+  assert.match(longMelodyWheelTexture.backgroundPosition, /2800px/, 'Long paths should roll the repeating texture itself instead of translating the finite tread out of view.');
   assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="84"]').count(), 1);
   assert.equal(await page.locator('.piano-key.melody-tone .melody-octave').textContent(), 'C6');
   const midiSpans = await page.evaluate(() => {
@@ -705,14 +756,22 @@ const server = http.createServer((request, response) => {
       clientY,
       button: 0
     });
-    const before = wheel.style.getPropertyValue('--melody-wheel-roll');
+    const before = Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'));
     const beforeValue = Number(slider.value);
     surface.dispatchEvent(makePointer('pointerdown', 81, 100, 100));
     const fractionalMove = makePointer('pointermove', 81, 109, 100);
     surface.dispatchEvent(fractionalMove);
-    const during = wheel.style.getPropertyValue('--melody-wheel-roll');
+    const during = Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'));
     const duringValue = Number(slider.value);
+    const detentMove = makePointer('pointermove', 81, 137, 100);
+    surface.dispatchEvent(detentMove);
+    const afterDetent = Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'));
+    const afterDetentValue = Number(slider.value);
     surface.dispatchEvent(makePointer('pointerup', 81, 109, 100));
+
+    // Restore the preceding note before checking vertical scroll behavior.
+    slider.value = String(beforeValue);
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
 
     surface.dispatchEvent(makePointer('pointerdown', 82, 100, 100));
     const verticalMove = makePointer('pointermove', 82, 102, 132);
@@ -727,18 +786,63 @@ const server = http.createServer((request, response) => {
       during,
       beforeValue,
       duringValue,
+      afterDetent,
+      afterDetentValue,
       fractionalPrevented: fractionalMove.defaultPrevented,
+      detentPrevented: detentMove.defaultPrevented,
       verticalPrevented,
       afterVerticalValue,
       verticalWheelPrevented: verticalWheel.defaultPrevented
     };
   });
-  assert.notEqual(touchWheelAxisAndMotion.during, touchWheelAxisAndMotion.before, 'A fractional horizontal touch drag should visibly roll the tread before the next note detent.');
+  assert.ok(touchWheelAxisAndMotion.during > touchWheelAxisAndMotion.before, 'A fractional horizontal touch drag should visibly roll the tread before the next note detent.');
   assert.equal(touchWheelAxisAndMotion.duringValue, touchWheelAxisAndMotion.beforeValue, 'A fractional drag must not advance the note until it crosses a detent.');
+  assert.ok(
+    touchWheelAxisAndMotion.afterDetent > touchWheelAxisAndMotion.during,
+    'Crossing a note detent should continue the reel forward instead of modulo-resetting its surface.'
+  );
+  assert.equal(touchWheelAxisAndMotion.afterDetentValue, touchWheelAxisAndMotion.beforeValue + 1, 'A full encoder detent should advance exactly one melody note.');
   assert.equal(touchWheelAxisAndMotion.fractionalPrevented, true, 'Horizontal touch drags should be claimed by the melody encoder.');
+  assert.equal(touchWheelAxisAndMotion.detentPrevented, true, 'A continued horizontal drag should remain claimed by the melody encoder.');
   assert.equal(touchWheelAxisAndMotion.verticalPrevented, false, 'Vertical touch drags over the melody wheel must remain available for page scrolling.');
   assert.equal(touchWheelAxisAndMotion.afterVerticalValue, touchWheelAxisAndMotion.beforeValue, 'A vertical scroll gesture must not change the selected melody note.');
   assert.equal(touchWheelAxisAndMotion.verticalWheelPrevented, false, 'An ordinary vertical mouse wheel should scroll the page instead of changing the melody.');
+
+  const horizontalWheelBoundary = await page.evaluate(() => {
+    const wheel = document.querySelector('#melodyWheel');
+    const surface = wheel.querySelector('.melody-wheel-surface');
+    const slider = document.querySelector('#melodySlider');
+    const before = {
+      activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+      value: Number(slider.value),
+      roll: Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll'))
+    };
+    const sidewaysWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaX: 32
+    });
+    surface.dispatchEvent(sidewaysWheel);
+    const crossed = {
+      activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+      value: Number(slider.value),
+      roll: Number.parseFloat(wheel.style.getPropertyValue('--melody-wheel-roll')),
+      prevented: sidewaysWheel.defaultPrevented,
+      chord: document.querySelector('#selectedChord').textContent
+    };
+    slider.value = String(before.value);
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    return { before, crossed };
+  });
+  assert.equal(horizontalWheelBoundary.crossed.prevented, true, 'A horizontal trackpad/mouse-wheel gesture should be captured by the encoder.');
+  assert.equal(horizontalWheelBoundary.crossed.value, horizontalWheelBoundary.before.value + 1, 'One sideways wheel detent should advance exactly one melody note.');
+  assert.equal(horizontalWheelBoundary.crossed.activeIndex, 2, 'A sideways wheel should carry the global melody path through the next chord/bar.');
+  assert.equal(horizontalWheelBoundary.crossed.chord, 'D7', 'Crossing the boundary must select the next chord rather than restarting the wheel.');
+  assert.ok(
+    horizontalWheelBoundary.crossed.roll > horizontalWheelBoundary.before.roll,
+    'A boundary-crossing sideways wheel gesture should retain its forward physical roll instead of rebasing the tread.'
+  );
+  await page.waitForTimeout(120);
 
   // The wheel surface itself is an encoder. A real rightward drag must cross
   // the barline to D7, rather than bubbling into the study-card swipe handler

@@ -178,9 +178,14 @@
   let melodyWheelDrag = null;
   let melodyWheelScrollRemainder = 0;
   let melodyWheelRollPosition = null;
+  let melodyWheelPathKey = '';
+  let melodyWheelScrollActive = false;
+  let melodyWheelInstantFrame = 0;
   let melodyWheelScrollSettleTimer = null;
-  const MELODY_WHEEL_NOTCH_PIXELS = 18;
-  const MELODY_WHEEL_TREAD_PERIOD = 24;
+  // The encoder's surface is allowed to travel in real pixels. The musical
+  // cursor only moves at these detents, which avoids making a new card/bar
+  // render feel like the physical wheel was rebuilt under the finger.
+  const MELODY_WHEEL_NOTCH_PIXELS = 28;
 
   const safeText = value => String(value == null ? '' : value).trim();
 
@@ -1983,46 +1988,64 @@
     return `${event.chord?.display || 'chord'} · bar ${event.barIndex + 1}`;
   }
 
-  function normalizedMelodyWheelRoll(position) {
-    const roll = Number(position);
-    if (!Number.isFinite(roll)) return 0;
-    // The tread repeats every 24px. Normalizing keeps the translated layer
-    // near its resting position forever while retaining a continuous-looking
-    // roll (the start/end of the pattern are identical).
-    const wrapped = roll % MELODY_WHEEL_TREAD_PERIOD;
-    return wrapped > MELODY_WHEEL_TREAD_PERIOD / 2
-      ? wrapped - MELODY_WHEEL_TREAD_PERIOD
-      : wrapped < -MELODY_WHEEL_TREAD_PERIOD / 2
-        ? wrapped + MELODY_WHEEL_TREAD_PERIOD
-        : wrapped;
+  function melodyWheelPathSignature(entries) {
+    const first = entries[0]?.note;
+    const last = entries[entries.length - 1]?.note;
+    return [
+      state.chartSource,
+      entries.length,
+      first?.id || first?.startBeat || '',
+      last?.id || last?.startBeat || ''
+    ].join('|');
   }
 
-  function paintMelodyWheelRoll(position, { rolling = false } = {}) {
+  function melodyWheelRestPosition(index) {
+    return Math.max(0, Number(index) || 0) * MELODY_WHEEL_NOTCH_PIXELS;
+  }
+
+  function paintMelodyWheelRoll(position, { rolling = false, instant = false } = {}) {
     if (!elements.melodyWheel) return;
     melodyWheelRollPosition = Number.isFinite(Number(position)) ? Number(position) : 0;
-    elements.melodyWheel.style.setProperty('--melody-wheel-roll', `${normalizedMelodyWheelRoll(melodyWheelRollPosition)}px`);
+    if (melodyWheelInstantFrame) window.cancelAnimationFrame(melodyWheelInstantFrame);
     elements.melodyWheel.dataset.rolling = String(rolling);
+    elements.melodyWheel.dataset.instant = String(instant);
+    elements.melodyWheel.style.setProperty('--melody-wheel-roll', `${melodyWheelRollPosition}px`);
+    if (instant) {
+      melodyWheelInstantFrame = window.requestAnimationFrame(() => {
+        melodyWheelInstantFrame = 0;
+        if (elements.melodyWheel && elements.melodyWheel.dataset.rolling !== 'true') {
+          elements.melodyWheel.dataset.instant = 'false';
+        }
+      });
+    }
   }
 
   function resetMelodyWheelVisual() {
     if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
+    if (melodyWheelInstantFrame) window.cancelAnimationFrame(melodyWheelInstantFrame);
     melodyWheelScrollSettleTimer = null;
+    melodyWheelInstantFrame = 0;
     melodyWheelRollPosition = null;
+    melodyWheelPathKey = '';
+    melodyWheelScrollActive = false;
     if (!elements.melodyWheel) return;
     elements.melodyWheel.style.removeProperty('--melody-wheel-roll');
     elements.melodyWheel.dataset.rolling = 'false';
+    elements.melodyWheel.dataset.instant = 'false';
     elements.melodyWheel.dataset.disabled = 'true';
   }
 
   function settleMelodyWheelVisual() {
     if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
     melodyWheelScrollSettleTimer = null;
+    melodyWheelScrollActive = false;
     if (melodyWheelDrag || !elements.melodySlider || elements.melodySlider.disabled) return;
-    paintMelodyWheelRoll(Number(elements.melodySlider.value) * MELODY_WHEEL_NOTCH_PIXELS);
+    paintMelodyWheelRoll(melodyWheelRestPosition(elements.melodySlider.value));
   }
 
   function scheduleMelodyWheelSettle() {
     if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
+    melodyWheelScrollActive = true;
     melodyWheelScrollSettleTimer = window.setTimeout(settleMelodyWheelVisual, 96);
   }
 
@@ -2033,9 +2056,18 @@
       resetMelodyWheelVisual();
       return;
     }
-    // While a finger is moving, paint every fractional pixel immediately.
-    // Once released, the wheel settles onto the note's visual detent.
-    if (!melodyWheelDrag) paintMelodyWheelRoll(index * MELODY_WHEEL_NOTCH_PIXELS);
+    const pathChanged = melodyWheelPathKey !== melodyWheelPathSignature(entries);
+    melodyWheelPathKey = melodyWheelPathSignature(entries);
+    const restPosition = melodyWheelRestPosition(index);
+    // A song/source swap can legitimately reset the encoder. Normal bar and
+    // chord renders must never do this: the continuous reel remains where
+    // the finger/trackpad left it until it settles on its next detent.
+    if (pathChanged || !Number.isFinite(melodyWheelRollPosition)) {
+      paintMelodyWheelRoll(restPosition, { instant: true });
+      return;
+    }
+    if (melodyWheelDrag || melodyWheelScrollActive) return;
+    paintMelodyWheelRoll(restPosition);
   }
 
   function selectMelodyWheelIndex(index, { audition = true } = {}) {
@@ -3096,8 +3128,6 @@
     const slider = elements.melodySlider;
     const surface = elements.melodyWheel?.querySelector('.melody-wheel-surface');
     if (!slider || !surface) return;
-    const pixelsPerStep = 24;
-    const scrollPixelsPerStep = 36;
     const axisThreshold = 6;
 
     const beginHorizontalMelodyWheelDrag = drag => {
@@ -3109,7 +3139,7 @@
       paintMelodyWheelRoll(
         Number.isFinite(melodyWheelRollPosition)
           ? melodyWheelRollPosition
-          : Number(slider.value) * MELODY_WHEEL_NOTCH_PIXELS,
+          : melodyWheelRestPosition(slider.value),
         { rolling: true }
       );
     };
@@ -3157,9 +3187,9 @@
       // to detents. It feels like a wheel rolling rather than a range thumb.
       paintMelodyWheelRoll((melodyWheelRollPosition || 0) + delta, { rolling: true });
       drag.remainder += delta;
-      const steps = Math.trunc(drag.remainder / pixelsPerStep);
+      const steps = Math.trunc(drag.remainder / MELODY_WHEEL_NOTCH_PIXELS);
       if (steps) {
-        if (stepMelodyWheel(steps)) drag.remainder -= steps * pixelsPerStep;
+        if (stepMelodyWheel(steps)) drag.remainder -= steps * MELODY_WHEEL_NOTCH_PIXELS;
         else drag.remainder = 0;
       }
       event.preventDefault();
@@ -3186,11 +3216,20 @@
       if (!delta) return;
       const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? 160 : 1;
       const pixelDelta = delta * unit;
-      paintMelodyWheelRoll((melodyWheelRollPosition || 0) + pixelDelta * .42, { rolling: true });
+      // Keep the physical reel tied to the actual trackpad/wheel travel.
+      // Music advances only after a full detent, so a light scroll feels
+      // continuous without prematurely changing the note.
+      melodyWheelScrollActive = true;
+      paintMelodyWheelRoll(
+        (Number.isFinite(melodyWheelRollPosition)
+          ? melodyWheelRollPosition
+          : melodyWheelRestPosition(slider.value)) + pixelDelta,
+        { rolling: true }
+      );
       melodyWheelScrollRemainder += pixelDelta;
-      const steps = Math.trunc(melodyWheelScrollRemainder / scrollPixelsPerStep);
+      const steps = Math.trunc(melodyWheelScrollRemainder / MELODY_WHEEL_NOTCH_PIXELS);
       if (steps) {
-        if (stepMelodyWheel(steps)) melodyWheelScrollRemainder -= steps * scrollPixelsPerStep;
+        if (stepMelodyWheel(steps)) melodyWheelScrollRemainder -= steps * MELODY_WHEEL_NOTCH_PIXELS;
         else melodyWheelScrollRemainder = 0;
       }
       scheduleMelodyWheelSettle();
