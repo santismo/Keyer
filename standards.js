@@ -71,8 +71,6 @@
     selectedChord: document.querySelector('#selectedChord'),
     scaleName: document.querySelector('#scaleName'),
     toggleMelody: document.querySelector('#toggleMelody'),
-    loadMidi: document.querySelector('#loadMidi'),
-    midiFileInput: document.querySelector('#midiFileInput'),
     midiStatus: document.querySelector('#midiStatus'),
     chartSourceLabel: document.querySelector('#chartSourceLabel'),
     chartSource: document.querySelector('#chartSource'),
@@ -144,6 +142,9 @@
     melodyCursorEventKey: '',
     melodyNavigationEventKey: '',
     activeMelodyNote: null,
+    // Split mode keeps its melody range stable across a phrase instead of
+    // recentering around every newly selected note.
+    splitMelodyRange: null,
     transport: {
       playing: false,
       session: 0,
@@ -509,7 +510,7 @@
     return Math.max(1, Math.round((Number(midi?.ppq) || 120) * meter.beats * 4 / meter.beatUnit));
   }
 
-  function buildMidiChart(midi) {
+  function buildMidiChart(midi, melodyNotes = []) {
     if (!midi || !MiditarMidi || !Array.isArray(midi.markers)) return null;
     const markers = midi.markers
       .filter(marker => marker?.type === 'marker')
@@ -521,9 +522,19 @@
     const ppq = Number(midi.ppq) || 120;
     const initialBarTicks = midiBarTicks(midi, 0);
     const finalTick = Math.max(Number(midi.durationTicks) || 0, markers[markers.length - 1].tick + initialBarTicks);
-    const barCount = Math.max(1, Math.ceil(finalTick / initialBarTicks));
+    const pickupNotes = (melodyNotes || []).filter(note => (
+      Number(note?.tick) < markers[0].tick && Number(note?.endTick) > 0
+    ));
+    const pickupTicks = pickupNotes.length && markers[0].tick > 0 && markers[0].tick <= initialBarTicks
+      ? markers[0].tick
+      : 0;
+    const regularBarCount = Math.max(1, Math.ceil((finalTick - pickupTicks) / initialBarTicks));
+    const barCount = regularBarCount + Number(Boolean(pickupTicks));
     const bars = Array.from({ length: barCount }, (_, barIndex) => {
-      const tick = barIndex * initialBarTicks;
+      const pickup = Boolean(pickupTicks && barIndex === 0);
+      const regularIndex = barIndex - Number(Boolean(pickupTicks));
+      const tick = pickup ? 0 : pickupTicks + regularIndex * initialBarTicks;
+      const endTick = pickup ? pickupTicks : tick + initialBarTicks;
       const meter = midiMeterAtTick(midi, tick);
       const label = 'MIDI';
       return {
@@ -534,17 +545,21 @@
         overflowChords: [],
         sectionId: 'MIDI@0',
         sectionLabel: label,
-        sectionStarts: barIndex === 0,
-        explicitSection: barIndex === 0 ? label : '',
+        sectionStarts: !pickup && regularIndex === 0,
+        explicitSection: !pickup && regularIndex === 0 ? label : '',
         annotationsText: '',
         roadmapMarks: [],
         endingText: '',
         timeSignature: meter,
-        timeSignatureText: barIndex === 0 ? `${meter.beats}/${meter.beatUnit}` : '',
+        timeSignatureText: !pickup && regularIndex === 0 ? `${meter.beats}/${meter.beatUnit}` : '',
         repeatStart: false,
         repeatEnd: false,
         noChord: false,
-        pause: false
+        pause: false,
+        pickup,
+        pickupNotes: pickup ? pickupNotes : [],
+        startTick: tick,
+        endTick
       };
     });
 
@@ -561,15 +576,16 @@
     // A MIDI marker is a harmony span, not just a label at a single barline.
     // Slice a span into every visual bar it crosses so the Real Book chart
     // shows a continuation mark instead of incorrectly inventing N.C.
+    const barIndexForTick = tick => {
+      const index = bars.findIndex(bar => tick >= bar.startTick && tick < bar.endTick);
+      return index >= 0 ? index : bars.length - 1;
+    };
     markerSpans.forEach(span => {
-      const firstBar = Math.max(0, Math.floor(span.startTick / initialBarTicks));
-      const lastBar = Math.min(
-        bars.length - 1,
-        Math.floor(Math.max(span.startTick, span.endTick - .001) / initialBarTicks)
-      );
+      const firstBar = barIndexForTick(span.startTick);
+      const lastBar = barIndexForTick(Math.max(span.startTick, span.endTick - .001));
       for (let barIndex = firstBar; barIndex <= lastBar; barIndex += 1) {
-        const barStartTick = barIndex * initialBarTicks;
-        const barEndTick = barStartTick + initialBarTicks;
+        const barStartTick = bars[barIndex].startTick;
+        const barEndTick = bars[barIndex].endTick;
         const sliceStartTick = Math.max(span.startTick, barStartTick);
         const sliceEndTick = Math.min(span.endTick, barEndTick);
         if (sliceEndTick <= sliceStartTick) continue;
@@ -613,7 +629,7 @@
       playbackOrder: bars.map((_, index) => index),
       tempoBpm: Number(midi.tempos?.[0]?.bpm) || null,
       sourceKey: '',
-      title: midi.title || state.song?.title || 'Miditar MIDI'
+      title: midi.title || state.song?.title || 'MIDI'
     };
   }
 
@@ -834,6 +850,14 @@
       if (bar.barIndex >= finalRowStart) measure.classList.add('last-row');
       if (bar.repeatStart) measure.classList.add('repeat-start');
       if (bar.repeatEnd) measure.classList.add('repeat-end');
+      if (bar.pickup) measure.classList.add('pickup-measure');
+
+      if (bar.pickup) {
+        const pickup = document.createElement('span');
+        pickup.className = 'pickup-mark';
+        pickup.textContent = 'Pickup';
+        measure.appendChild(pickup);
+      }
 
       if (bar.sectionStarts) {
         const marker = document.createElement('span');
@@ -940,7 +964,13 @@
       } else {
         const empty = document.createElement('div');
         empty.className = 'empty-measure';
-        empty.textContent = bar.noChord || bar.noChordText ? 'N.C.' : '—';
+        if (bar.pickup) {
+          const names = (bar.pickupNotes || []).slice(0, 4).map(note => Theory.midiName(note.midi, state.preferFlats));
+          empty.classList.add('pickup-notes');
+          empty.textContent = names.length ? names.join(' · ') : '—';
+        } else {
+          empty.textContent = bar.noChord || bar.noChordText ? 'N.C.' : '—';
+        }
         measure.appendChild(empty);
       }
       fragment.appendChild(measure);
@@ -1103,25 +1133,31 @@
   }
 
   function validToneMode(mode) {
-    return ['scale', 'chord', 'voicing'].includes(mode) ? mode : 'scale';
+    return ['scale', 'chord', 'voicing', 'none'].includes(mode) ? mode : 'scale';
   }
 
-  function oneOctaveRangeForVoicing(voicing) {
-    const midis = (voicing || []).map(note => Number(note?.midi)).filter(Number.isFinite);
-    const lowest = midis.length ? Math.min(...midis) : DISPLAY_LOW;
-    const low = Math.max(0, Math.min(115, Math.floor(lowest / 12) * 12));
-    return { low, high: low + 12, span: 13, octaves: 1, voicing: true };
-  }
-
-  function twoOctaveRangeForMelody(melodyNote) {
+  function splitMelodyRangeFor(melodyNote) {
     const midi = Number(melodyNote?.midi);
-    if (!Number.isFinite(midi)) return { low: DISPLAY_LOW, high: DISPLAY_HIGH };
-    const low = Math.max(0, Math.min(103, Math.floor(midi / 12) * 12));
-    return { low, high: low + 24, span: 25, octaves: 2, melody: true };
+    const previous = state.splitMelodyRange;
+    if (!Number.isFinite(midi)) return previous || { low: DISPLAY_LOW, high: DISPLAY_HIGH, octaves: 2, melody: true };
+    const clampLow = value => Math.max(0, Math.min(103, value));
+    const targetLow = clampLow(Math.round((midi - 12) / 12) * 12);
+    if (!previous) {
+      state.splitMelodyRange = { low: targetLow, high: targetLow + 24, octaves: 2, melody: true };
+      return state.splitMelodyRange;
+    }
+    // Keep the current two-octave window stable until a melody note would
+    // leave it. When it must move, shift only enough to retain that note at
+    // the edge, preserving as much of the previous view as possible.
+    if (midi >= previous.low && midi <= previous.high) return previous;
+    const shift = midi < previous.low ? midi - previous.low : midi - previous.high;
+    const low = clampLow(previous.low + shift);
+    state.splitMelodyRange = { low, high: low + 24, octaves: 2, melody: true };
+    return state.splitMelodyRange;
   }
 
   function addToneClass(element, pc, toneMode, rootBassSet, chordSet, scaleSet, sounding) {
-    if (toneMode === 'voicing' && !sounding) return;
+    if (toneMode === 'none' || (toneMode === 'voicing' && !sounding)) return;
     if (rootBassSet.has(pc)) element.classList.add('root-tone');
     else if (chordSet.has(pc)) element.classList.add('chord-tone');
     else if (toneMode === 'scale' && scaleSet.has(pc)) element.classList.add('scale-tone');
@@ -1264,19 +1300,17 @@
         updateDisplayState: true
       });
       renderKeyboardSurface(elements.melodyPiano, chord, scale, {
-        range: twoOctaveRangeForMelody(melodyNote),
+        range: splitMelodyRangeFor(melodyNote),
         rangeMode: 'compact',
-        toneMode: 'voicing',
+        toneMode: 'none',
         voicing: [],
         melodyNote,
         label: state.showMelody ? 'Melody' : 'Melody (enable melody to show a note)'
       });
     } else {
-      const range = toneMode === 'voicing' ? oneOctaveRangeForVoicing(soundingVoicing) : baseRange;
-      const surfaceRangeMode = toneMode === 'voicing' ? 'voicing' : rangeMode;
       renderKeyboardSurface(elements.piano, chord, scale, {
-        range,
-        rangeMode: surfaceRangeMode,
+        range: baseRange,
+        rangeMode,
         toneMode,
         voicing: soundingVoicing,
         melodyNote,
@@ -1383,13 +1417,6 @@
         const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
         const foldedMelody = Boolean(melodyHere && melodyPosition.midi !== melodyNote.midi);
         cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, suggested ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
-        if (stringIndex === 0) {
-          const fretLabel = document.createElement('span');
-          fretLabel.className = 'fretboard-fret-label';
-          fretLabel.textContent = String(fret);
-          fretLabel.setAttribute('aria-hidden', 'true');
-          cell.appendChild(fretLabel);
-        }
         if (state.showNoteNames && toneVisible) {
           const noteLabel = document.createElement('span');
           noteLabel.className = 'fretboard-note';
@@ -1413,6 +1440,16 @@
       }
       board.appendChild(row);
     });
+    const positionMarkers = document.createElement('div');
+    positionMarkers.className = 'fretboard-position-markers';
+    [3, 5, 7, 9, 12].forEach(fret => {
+      const marker = document.createElement('i');
+      marker.className = `fretboard-position-marker${fret === 12 ? ' double' : ''}`;
+      marker.style.left = `${(fret + .5) / (FRETBOARD_MAX_FRET + 1) * 100}%`;
+      marker.setAttribute('aria-hidden', 'true');
+      positionMarkers.appendChild(marker);
+    });
+    board.appendChild(positionMarkers);
     elements.fretboard.replaceChildren(board);
     pressedCounts.forEach((count, midi) => {
       if (!count) return;
@@ -1434,9 +1471,11 @@
   function syncMelodyControls(event, notes, melodyNote) {
     const ready = Boolean(state.midi && state.melodyNotes.length);
     const melodyMatchesActiveChart = melodyMatchesChart();
-    elements.toggleMelody.textContent = state.showMelody ? 'Hide melody' : ready || state.midiEntry ? 'Show melody' : 'Add melody MIDI';
+    const canShowMelody = ready || Boolean(state.midiEntry);
+    elements.toggleMelody.textContent = state.showMelody ? 'Hide melody' : canShowMelody ? 'Show melody' : 'No melody MIDI';
     elements.toggleMelody.setAttribute('aria-pressed', String(state.showMelody));
-    elements.toggleMelody.setAttribute('aria-label', state.showMelody ? 'Hide melody from the piano' : ready || state.midiEntry ? 'Show melody over the chord' : 'Import a MIDI melody');
+    elements.toggleMelody.setAttribute('aria-label', state.showMelody ? 'Hide melody from the piano' : canShowMelody ? 'Show melody over the chord' : 'No matching melody MIDI is available');
+    elements.toggleMelody.disabled = !canShowMelody && state.midiCatalogReady;
     elements.playMelody.disabled = !ready || !melodyMatchesActiveChart;
     elements.playMelody.checked = state.transport.playMelody;
     elements.chartSourceLabel.hidden = !state.midiChart;
@@ -1561,23 +1600,19 @@
         : 'melody over iReal timing';
       const tempo = Number(state.midi.tempos?.[0]?.bpm);
       const caution = !state.midiChart ? ' · check the form matches' : '';
-      elements.midiStatus.textContent = `Miditar MIDI · ${markerText}${Number.isFinite(tempo) ? ` · ${Math.round(tempo)} BPM` : ''}${caution}`;
-      elements.loadMidi.textContent = 'Replace MIDI';
+      elements.midiStatus.textContent = `MIDI · ${markerText}${Number.isFinite(tempo) ? ` · ${Math.round(tempo)} BPM` : ''}${caution}`;
       return;
     }
     if (state.midiCatalogLoading) {
-      elements.midiStatus.textContent = 'Looking for a matching Miditar MIDI…';
-      elements.loadMidi.textContent = 'MIDI source';
+      elements.midiStatus.textContent = 'Looking for a matching MIDI…';
       return;
     }
     if (state.midiEntry) {
-      elements.midiStatus.textContent = 'Matching Miditar MIDI available · markers, melody, and tempo';
-      elements.loadMidi.textContent = 'Load Miditar MIDI';
+      elements.midiStatus.textContent = 'Matching melody MIDI available · markers, melody, and tempo';
       return;
     }
     if (state.midiCatalogReady) {
-      elements.midiStatus.textContent = 'No matching Miditar MIDI · import your own melody MIDI';
-      elements.loadMidi.textContent = 'Import MIDI';
+      elements.midiStatus.textContent = 'No matching melody MIDI available for this standard';
     }
   }
 
@@ -1596,6 +1631,7 @@
     state.activeIndex = 0;
     state.activeAlternateCellId = null;
     state.activeAlternateIndex = -1;
+    state.splitMelodyRange = null;
     resetMelodySelection();
     if (!melodyMatchesChart(source)) state.showMelody = false;
     state.preferFlats = Theory.preferFlatsForKey(chart.sourceKey || state.song?.key);
@@ -1774,6 +1810,7 @@
     } finally {
       state.midiCatalogLoading = false;
       syncMidiSourceStatus();
+      if (state.song) renderStudy({ keepVisible: false });
     }
   }
 
@@ -1793,10 +1830,10 @@
   }
 
   function installMidiSource(midi, entry = null) {
-    const chart = buildMidiChart(midi);
     const melodyTrack = MiditarMidi?.chooseMelodyTrack?.(midi);
     const melodyNotes = buildMelodyNotes(midi, melodyTrack);
     if (!melodyNotes.length) throw new Error('This MIDI has no readable melody track.');
+    const chart = buildMidiChart(midi, melodyNotes);
     state.midi = midi;
     state.midiEntry = entry || state.midiEntry;
     state.melodyTrack = melodyTrack;
@@ -1817,33 +1854,15 @@
 
   async function loadMatchedMiditarMidi() {
     if (!MiditarMidi) throw new Error('The MIDI melody reader did not load.');
-    if (!state.midiEntry) throw new Error('No matching Miditar MIDI was found.');
-    elements.loadMidi.disabled = true;
+    if (!state.midiEntry) throw new Error('No matching melody MIDI was found.');
     elements.toggleMelody.disabled = true;
-    elements.midiStatus.textContent = `Loading ${state.midiEntry.title} from Miditar…`;
+    elements.midiStatus.textContent = `Loading melody MIDI for ${state.midiEntry.title}…`;
     try {
       const buffer = await fetchFirst(midiUrlsForEntry(state.midiEntry), 'arrayBuffer');
       installMidiSource(MiditarMidi.parseMidi(buffer, state.midiEntry.name), state.midiEntry);
     } finally {
-      elements.loadMidi.disabled = false;
       elements.toggleMelody.disabled = false;
       syncMidiSourceStatus();
-    }
-  }
-
-  async function loadImportedMidi(file) {
-    if (!file || !MiditarMidi) return;
-    elements.loadMidi.disabled = true;
-    elements.toggleMelody.disabled = true;
-    elements.midiStatus.textContent = `Reading ${file.name}…`;
-    try {
-      const buffer = await file.arrayBuffer();
-      installMidiSource(MiditarMidi.parseMidi(buffer, file.name), { name: file.name, title: titleFromMidiFileName(file.name) });
-    } finally {
-      elements.loadMidi.disabled = false;
-      elements.toggleMelody.disabled = false;
-      syncMidiSourceStatus();
-      elements.midiFileInput.value = '';
     }
   }
 
@@ -1863,7 +1882,7 @@
         await loadMatchedMiditarMidi();
         return;
       }
-      elements.midiFileInput.click();
+      elements.midiStatus.textContent = 'No matching melody MIDI is available for this standard.';
     } catch (error) {
       console.error(error);
       elements.midiStatus.textContent = error?.message || 'Could not load this MIDI source.';
@@ -2300,18 +2319,6 @@
     renderStudy({ keepVisible: false });
   });
   elements.toggleMelody.addEventListener('click', () => { toggleMelody(); });
-  elements.loadMidi.addEventListener('click', () => {
-    if (state.midi) elements.midiFileInput.click();
-    else requestMidiSource();
-  });
-  elements.midiFileInput.addEventListener('change', event => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    loadImportedMidi(file).catch(error => {
-      console.error(error);
-      elements.midiStatus.textContent = error?.message || 'Could not read this MIDI file.';
-    });
-  });
   elements.chartSource.addEventListener('change', () => {
     if (elements.chartSource.value === state.chartSource) return;
     activateChartSource(elements.chartSource.value);
