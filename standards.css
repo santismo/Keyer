@@ -96,16 +96,16 @@ input[type="search"]::placeholder { color: #7f8999; }
 .measure-chords { height: 100%; display: grid; grid-template-columns: repeat(var(--chord-count, 1), minmax(0, 1fr)); align-items: center; }
 .chord-stack { width: 100%; min-width: 0; height: 100%; display: grid; align-content: center; justify-content: stretch; justify-items: stretch; }
 .chart-alternates { width: 100%; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 2px; }
-.chart-chord, .chart-hold { min-width: 0; min-height: 48px; display: grid; place-items: center; overflow: hidden; padding: 3px 2px; color: var(--paper-ink); text-overflow: ellipsis; background: transparent; border: 0; border-radius: 5px; font: 850 clamp(.78rem, 1.8vw, 1.08rem)/1 "Marker Felt", "Comic Sans MS", ui-rounded, system-ui, sans-serif; white-space: nowrap; }
+.chart-chord, .chart-hold, .chart-pickup { min-width: 0; min-height: 48px; display: grid; place-items: center; overflow: hidden; padding: 3px 2px; color: var(--paper-ink); text-overflow: ellipsis; background: transparent; border: 0; border-radius: 5px; font: 850 clamp(.78rem, 1.8vw, 1.08rem)/1 "Marker Felt", "Comic Sans MS", ui-rounded, system-ui, sans-serif; white-space: nowrap; }
 .chart-chord.long-symbol { font-size: clamp(.66rem, 1.52vw, .9rem); letter-spacing: -.03em; }
 .chart-hold { color: #a7b0bf; font-size: clamp(1rem, 2.2vw, 1.35rem); font-weight: 700; letter-spacing: .14em; }
 .chart-alternate { min-width: 0; min-height: 28px; overflow: hidden; padding: 2px; color: #b6bfcd; text-overflow: ellipsis; background: transparent; border: 0; border-radius: 5px; font: italic 750 clamp(.55rem, 1.25vw, .76rem)/1 Georgia, serif; white-space: nowrap; }
 .chart-alternate.long-symbol { font-size: clamp(.5rem, 1.1vw, .66rem); letter-spacing: -.03em; }
 .chart-chord.optional { color: #b6bfcd; font-style: italic; }
-.chart-chord:hover, .chart-hold:hover, .chart-alternate:hover { background: #202b38; }
-.chart-chord.active, .chart-alternate.active { color: #080b10; background: var(--gold); box-shadow: inset 0 -3px 0 #9b7929; }
+.chart-chord:hover, .chart-hold:hover, .chart-alternate:hover, .chart-pickup:hover { background: #202b38; }
+.chart-chord.active, .chart-alternate.active, .chart-pickup.active { color: #080b10; background: var(--gold); box-shadow: inset 0 -3px 0 #9b7929; }
 .chart-chord.unsupported::after { content: "?"; margin-left: 2px; color: #ff7b82; font: 900 .55em ui-sans-serif, sans-serif; }
-.empty-measure { height: 100%; display: grid; place-items: center; color: #8e98a8; font-size: 1.2rem; }
+.empty-measure { width: 100%; height: 100%; display: grid; place-items: center; color: #8e98a8; font-size: 1.2rem; }
 .empty-measure.pickup-notes { padding-top: 10px; color: #726034; font: 800 clamp(.58rem, 1.8vw, .76rem)/1.25 ui-sans-serif, system-ui, sans-serif; text-align: center; }
 
 .study-card { position: sticky; top: 8px; padding-bottom: 0; }
@@ -155,11 +155,27 @@ input[type="search"]::placeholder { color: #7f8999; }
 .melody-panel-head output { max-width: 55%; overflow: hidden; color: var(--ink); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .melody-panel input { width: 100%; margin: 7px 0 0; accent-color: var(--melody-tone); }
 .melody-panel input:disabled { opacity: .55; }
+.melody-wheel { position: relative; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.16fr) minmax(0, .9fr); align-items: center; min-height: 40px; margin-top: 5px; overflow: hidden; isolation: isolate; color: #d9c7f8; border: 1px solid #7b55a9; border-radius: 999px; background: linear-gradient(90deg, #21162f, #43245f 23%, #2d1941 50%, #43245f 77%, #21162f); box-shadow: inset 0 1px #ffffff1d, inset 0 -5px 9px #09050f99, 0 2px 6px #0005; touch-action: none; }
+.melody-wheel::before { content: ""; position: absolute; z-index: -1; inset: 3px 8px; border-radius: inherit; background: repeating-linear-gradient(90deg, transparent 0 8px, #ead9ff22 8px 10px, transparent 10px 17px); opacity: .9; }
+.melody-wheel::after { content: ""; position: absolute; z-index: 0; top: 3px; bottom: 3px; left: 50%; width: min(39%, 108px); translate: -50% 0; border: 1px solid #e6d5ff; border-radius: 999px; background: linear-gradient(180deg, #8e58c8bb, #522c7aaa 52%, #2d1647cc); box-shadow: inset 0 1px #fff8, inset 0 -5px 6px #160b2399, 0 0 0 1px #12091d; }
+.melody-wheel-note { position: relative; z-index: 1; min-width: 0; overflow: hidden; padding: 0 5px; color: #b99bd9; text-overflow: ellipsis; white-space: nowrap; font: 800 .57rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; }
+.melody-wheel-previous { padding-right: 9px; text-align: right; }
+.melody-wheel-previous::before { content: "‹ "; color: #d9bdff; }
+.melody-wheel-current { color: #fff8ff; text-align: center; font-size: .68rem; text-shadow: 0 1px #21112e; }
+.melody-wheel-next { padding-left: 9px; text-align: left; }
+.melody-wheel-next::after { content: " ›"; color: #d9bdff; }
+.melody-wheel[data-disabled="true"] { filter: grayscale(.72); opacity: .57; }
+.melody-wheel-input { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; margin: 0 !important; appearance: none; -webkit-appearance: none; cursor: ew-resize; opacity: .001; touch-action: none; }
+.melody-wheel-input::-webkit-slider-runnable-track { height: 100%; background: transparent; }
+.melody-wheel-input::-webkit-slider-thumb { width: 1px; height: 1px; appearance: none; -webkit-appearance: none; opacity: 0; }
+.melody-wheel-input::-moz-range-track { height: 100%; background: transparent; }
+.melody-wheel-input::-moz-range-thumb { width: 1px; height: 1px; border: 0; opacity: 0; }
+.melody-wheel:has(.melody-wheel-input:focus-visible) { outline: 3px solid var(--gold); outline-offset: 3px; }
 /* Keep melody scrubbing glued to the chord it belongs to instead of making
    the learner look down through the transport controls for it. */
 .chord-identity .chord-melody-panel { width: min(100%, 330px); margin: 7px auto 0; padding: 6px 8px 5px; border: 0; border-top: 1px solid #6b4b9a80; border-radius: 7px; background: linear-gradient(90deg, transparent, #4b1c7a55, transparent); }
 .chord-identity .melody-panel-head { color: #d7bcff; font-size: .55rem; }
-.chord-identity .melody-panel input { margin-top: 4px; }
+.chord-identity .melody-panel > input:not(.melody-wheel-input) { margin-top: 4px; }
 .piano { position: relative; width: 100%; height: 106px; overflow: hidden; background: #07090d; border: 0; border-bottom: 1px solid #596474; border-radius: 0; touch-action: none; }
 .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) { width: max(100%, var(--full-keyboard-width, 100%)); min-width: var(--full-keyboard-width, 100%); height: clamp(100px, 30vw, 126px); min-height: 100px; }
 .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]), .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) .piano-key { touch-action: manipulation; }
@@ -190,12 +206,14 @@ input[type="search"]::placeholder { color: #7f8999; }
 .key-role { z-index: 2; min-width: 16px; height: 16px; display: grid; place-items: center; padding: 0 2px; color: #fff; background: #111722; border: 1px solid #fff; border-radius: 999px; font: 950 .5rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .piano-key.white .key-role { bottom: 20px; }
 .piano-key.black .key-role { top: 6px; }
-/* A compact, playable first-position guitar view. The renderer supplies six
-   rows of thirteen cells (open through fret 12); this stays inside the phone. */
-.fretboard { position: relative; width: 100%; min-width: 0; max-width: 100%; height: clamp(126px, 37vw, 158px); min-height: 126px; overflow: hidden; color: #dce3ef; background: linear-gradient(180deg, #2b211b 0%, #15100e 100%); border-bottom: 1px solid #765f50; isolation: isolate; touch-action: manipulation; }
+/* A compact, playable first-position guitar view. When a song's written MIDI
+   melody reaches beyond fret 12, the renderer adds real frets and the existing
+   instrument stage scrolls sideways instead of squeezing the guitar smaller. */
+.fretboard { --fretboard-column-count: 13; --fretboard-min-width: 351px; position: relative; width: 100%; min-width: 0; max-width: 100%; height: clamp(126px, 37vw, 158px); min-height: 126px; overflow: hidden; color: #dce3ef; background: linear-gradient(180deg, #2b211b 0%, #15100e 100%); border-bottom: 1px solid #765f50; isolation: isolate; touch-action: manipulation; }
+.fretboard[data-extended="true"] { width: var(--fretboard-min-width); min-width: 100%; max-width: none; }
 .fretboard::before { content: ""; position: absolute; z-index: 0; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 15px, #ffffff05 16px 17px); opacity: .45; pointer-events: none; }
 .fretboard-grid { position: relative; z-index: 1; width: 100%; min-width: 0; height: 100%; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); padding: 17px 3px 4px; }
-.fretboard-string { position: relative; min-width: 0; display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); align-items: stretch; }
+.fretboard-string { position: relative; min-width: 0; display: grid; grid-template-columns: repeat(var(--fretboard-column-count, 13), minmax(0, 1fr)); align-items: stretch; }
 .fretboard-string::before { content: ""; position: absolute; z-index: 0; top: 50%; right: 0; left: 0; height: 1px; translate: 0 -50%; background: linear-gradient(90deg, #aa9172, #e5cf9e 48%, #92775a); box-shadow: 0 1px #0009; pointer-events: none; }
 .fretboard-string-label { position: absolute; z-index: 6; top: 50%; left: 1px; translate: 0 -50%; min-width: 9px; padding: 1px; color: #2c190f; text-align: center; text-shadow: none; background: #e7d6b4; border: 1px solid #92775a; border-radius: 3px; font: 900 .4rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; }
 .fretboard-string:nth-child(2)::before { height: 1.25px; }
@@ -257,7 +275,7 @@ input[type="search"]::placeholder { color: #7f8999; }
   .song-meta { max-width: 42%; font-size: .6rem; }
   .chart-scroll { height: clamp(176px, 28vh, 230px); height: clamp(176px, 28svh, 230px); min-height: 0; padding: 3px; }
   .measure { min-height: 72px; padding: 18px 0 4px; }
-  .chart-chord, .chart-hold { min-height: 44px; padding-inline: 1px; }
+  .chart-chord, .chart-hold, .chart-pickup { min-height: 44px; padding-inline: 1px; }
   .chart-chord { font-size: clamp(.62rem, 2.8vw, .82rem); letter-spacing: -.02em; }
   .chart-hold { font-size: 1.04rem; }
   .chart-chord.long-symbol { font-size: clamp(.53rem, 2.3vw, .68rem); }

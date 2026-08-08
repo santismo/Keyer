@@ -78,7 +78,11 @@ function melodyMidiFixture() {
     note(720, 0x80, 84, 0),
     note(0, 0x90, 81, 100),
     note(240, 0x80, 81, 0),
-    note(360, 0x90, 79, 100),
+    // A second Am7 note keeps the within-chord slider/grip regression
+    // meaningful now that the C6 lead-in belongs to its own pickup event.
+    note(0, 0x90, 83, 100),
+    note(120, 0x80, 83, 0),
+    note(240, 0x90, 79, 100),
     note(720, 0x80, 79, 0),
   ]);
   return Buffer.from([
@@ -318,6 +322,11 @@ const server = http.createServer((request, response) => {
     ));
     return {
       firstTimeline: state.timeline.slice(0, 3).map(entry => ({ type: entry.type, start: entry.startBeat, end: entry.endBeat })),
+      events: state.events.slice(0, 2).map(event => ({
+        kind: event.kind,
+        chord: event.chord?.display || null,
+        ownedMelody: debug.melodyNotesForEvent(event).map(note => note.midi)
+      })),
       ordered: state.timeline.every((entry, index, timeline) => (
         !index || entry.startBeat >= timeline[index - 1].endBeat - .001
       )),
@@ -331,11 +340,31 @@ const server = http.createServer((request, response) => {
       }
     };
   });
-  assert.deepEqual(midiSpans.firstTimeline[0], { type: 'rest', start: 0, end: 2 }, 'Pickup should keep its real lead-in before the first marker');
+  assert.deepEqual(midiSpans.firstTimeline[0], { type: 'pickup', start: 0, end: 2 }, 'Pickup should be a real lead-in event before the first marker');
+  assert.deepEqual(midiSpans.events, [
+    { kind: 'pickup', chord: null, ownedMelody: [84] },
+    { kind: 'chord', chord: 'Am7', ownedMelody: [81, 83] }
+  ], 'Pickup notes must be owned by a zero/pickup event, never by the first chord.');
   assert.equal(midiSpans.ordered, true, 'MIDI marker spans must not create overlapping or zero-time rests');
   assert.ok(midiSpans.holds.some(title => /Hold D7/.test(title)), 'A chord held over a barline should render a carry mark, not N.C.');
   assert.ok(midiSpans.pickupMeasures.some(text => /Pickup.*C6/.test(text)), 'A melody pickup should receive its own labeled chart bar before the first chord');
   assert.ok(midiSpans.crossingPickup && midiSpans.crossingPickup.duration > midiSpans.crossingPickup.markerStart - midiSpans.crossingPickup.start, 'A pickup crossing a marker needs its full held duration');
+  await page.locator('.chart-pickup').click();
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    kind: window.KeyerStandardsDebug.state.events[window.KeyerStandardsDebug.state.activeIndex]?.kind,
+    selectedChord: document.querySelector('#selectedChord').textContent,
+    scale: document.querySelector('#scaleName').textContent,
+    progress: document.querySelector('#chordProgress').textContent,
+    pickupActive: document.querySelector('.chart-pickup')?.getAttribute('aria-current')
+  })), {
+    activeIndex: 0,
+    kind: 'pickup',
+    selectedChord: 'Pickup',
+    scale: 'Melody pickup',
+    progress: '0 / 3',
+    pickupActive: 'true'
+  }, 'The visible blank pickup measure should be selectable as zero/pickup chord.');
   const distantPickup = await page.evaluate(() => {
     const chart = window.KeyerStandardsDebug.buildMidiChart({
       title: 'Distant pickup',
@@ -360,6 +389,33 @@ const server = http.createServer((request, response) => {
     { pickup: true, startTick: 1920, endTick: 3840, chords: [] },
     { pickup: false, startTick: 3840, endTick: 5760, chords: ['Ebmaj7'] }
   ], 'A pickup near a later first downbeat should still get its own chart bar.');
+  const multiBarPickup = await page.evaluate(() => {
+    const chart = window.KeyerStandardsDebug.buildMidiChart({
+      title: 'Two-bar pickup',
+      ppq: 120,
+      durationTicks: 1440,
+      markers: [
+        { type: 'marker', text: 'Cmaj7', tick: 960 }
+      ],
+      tempos: [],
+      timeSignatures: [{ tick: 0, numerator: 4, denominator: 4 }]
+    }, [
+      { midi: 60, tick: 240, endTick: 360 },
+      { midi: 62, tick: 720, endTick: 840 }
+    ]);
+    return chart.bars.slice(0, 3).map(bar => ({
+      pickup: bar.pickup,
+      pickupNotes: bar.pickupNotes.map(note => note.midi),
+      startTick: bar.startTick,
+      endTick: bar.endTick,
+      chords: bar.chords.map(chord => chord.raw)
+    }));
+  });
+  assert.deepEqual(multiBarPickup, [
+    { pickup: true, pickupNotes: [60], startTick: 0, endTick: 480, chords: [] },
+    { pickup: true, pickupNotes: [62], startTick: 480, endTick: 960, chords: [] },
+    { pickup: false, pickupNotes: [], startTick: 960, endTick: 1440, chords: ['Cmaj7'] }
+  ], 'Every bar containing a multi-bar lead-in needs its own zero/pickup event.');
   await page.locator('#keyboardRangeMode').selectOption('split');
   const splitIsolation = await page.evaluate(() => ({
     chordMelody: document.querySelectorAll('#piano .melody-tone').length,
@@ -421,13 +477,17 @@ const server = http.createServer((request, response) => {
   assert.ok(fullRegister.documentOverflow <= 1, 'A full keyboard must not widen the mobile document');
   assert.ok(fullRegister.stageOverflow > 1, 'A long keyboard should scroll only inside its own stage');
 
-  // The guitar view is a fixed standard-tuning, open-to-12th-fret board.
+  // The guitar view shows the pickup as melody only: it must not invent a
+  // first-chord grip underneath the lead-in.
   await page.locator('#instrumentView').selectOption('fretboard');
   const fretboard = await page.evaluate(() => {
     const board = document.querySelector('#fretboard');
+    const stage = document.querySelector('.instrument-stage');
     const rows = [...board.querySelectorAll('.fretboard-string')];
     const openMidis = rows.map(row => Number(row.querySelector('.fretboard-cell[data-fret="0"]')?.dataset.midi));
     const octaveMidis = rows.map(row => Number(row.querySelector('.fretboard-cell[data-fret="12"]')?.dataset.midi));
+    const lastFret = Number(board.dataset.lastFret);
+    const highMidis = rows.map(row => Number(row.querySelector(`.fretboard-cell[data-fret="${lastFret}"]`)?.dataset.midi));
     const melody = board.querySelector('.fretboard-cell.melody-tone');
     const melodyNote = melody?.querySelector('.fretboard-note');
     const voicing = [...board.querySelectorAll('.fretboard-cell.voicing')];
@@ -445,8 +505,11 @@ const server = http.createServer((request, response) => {
       arrangement: board.dataset.arrangement,
       rowCount: rows.length,
       cellCount: board.querySelectorAll('.fretboard-cell').length,
+      lastFret,
+      colCount: Number(board.getAttribute('aria-colcount')),
       openMidis,
       octaveMidis,
+      highMidis,
       melodyMidi: melody?.dataset.melodyMidi,
       melodyBadge: melody?.querySelector('.melody-octave')?.textContent || '',
       melodyColor: melodyNote ? getComputedStyle(melodyNote).backgroundColor : '',
@@ -455,32 +518,47 @@ const server = http.createServer((request, response) => {
       voices,
       voicingStrings: voicing.map(cell => Number(cell.dataset.string)),
       fretSpan: frettedVoicing.length ? Math.max(...frettedVoicing) - Math.min(...frettedVoicing) : 0,
-      documentOverflow: document.documentElement.scrollWidth - window.innerWidth
+      documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
+      stageOverflow: stage.scrollWidth - stage.clientWidth,
+      stageScrollLeft: stage.scrollLeft
     };
   });
   assert.equal(fretboard.hidden, false);
   assert.equal(fretboard.pianoHidden, true);
-  assert.equal(fretboard.arrangement, 'chord-melody');
+  assert.equal(fretboard.arrangement, 'melody-pickup');
   assert.equal(fretboard.rowCount, 6);
-  assert.equal(fretboard.cellCount, 78, 'Six strings with open through fret 12 should give 78 cells');
+  assert.equal(fretboard.lastFret, 20, 'C6 should extend high E from fret 12 through its real fret 20.');
+  assert.equal(fretboard.colCount, 21, 'Open through fret 20 needs 21 accessible fret columns.');
+  assert.equal(fretboard.cellCount, 126, 'Six strings with open through fret 20 should give 126 cells');
   assert.deepEqual(fretboard.openMidis, [64, 59, 55, 50, 45, 40]);
   assert.deepEqual(fretboard.octaveMidis, [76, 71, 67, 62, 57, 52]);
+  assert.deepEqual(fretboard.highMidis, [84, 79, 75, 70, 65, 60]);
   assert.equal(fretboard.melodyMidi, '84');
-  assert.equal(fretboard.melodyBadge, 'C6', 'A melody beyond the fixed guitar octave should retain its real octave label');
+  assert.equal(fretboard.melodyBadge, '', 'An extended neck should show the C6 melody in its real guitar octave, not as a folded badge.');
   assert.equal(fretboard.melodyColor, 'rgb(165, 102, 255)', 'The fretboard melody marker should be purple');
   assert.ok(fretboard.melodyString <= 2, `The melody should prefer one of the top three guitar strings, got string ${fretboard.melodyString}`);
-  assert.ok(
-    fretboard.voices.filter(voice => !voice.melody).every(voice => voice.midi <= fretboard.melodyPhysicalMidi),
-    `Chord accompaniment must stay under the displayed melody: ${JSON.stringify(fretboard.voices)}`
-  );
-  const orderedGuitarVoices = fretboard.voices.slice().sort((left, right) => left.string - right.string);
-  assert.ok(
-    orderedGuitarVoices.every((voice, index) => !index || voice.midi <= orderedGuitarVoices[index - 1].midi),
-    `A chord-melody shape must not cross voices between strings: ${JSON.stringify(orderedGuitarVoices)}`
-  );
-  assert.equal(new Set(fretboard.voicingStrings).size, fretboard.voicingStrings.length, 'A displayed guitar voicing must not put two held notes on one string');
-  assert.ok(fretboard.fretSpan <= 5, `A displayed guitar voicing should stay within a practical fret stretch, got ${fretboard.fretSpan}`);
-  assert.ok(fretboard.documentOverflow <= 1, 'The fixed 12-fret board must fit the mobile document');
+  assert.equal(fretboard.melodyPhysicalMidi, 84, 'C6 should occupy its literal physical fretboard MIDI.');
+  assert.equal(fretboard.voices.length, 0, 'A pickup must not borrow or render the first chord voicing.');
+  assert.equal(await page.locator('#fretboard .root-tone, #fretboard .chord-tone, #fretboard .scale-tone').count(), 0, 'Pickup view should show only the purple melody note.');
+  assert.ok(fretboard.documentOverflow <= 1, 'An extended fretboard must not widen the mobile document');
+  assert.ok(fretboard.stageOverflow > 1, 'An extended neck should scroll inside the instrument stage instead of shrinking its frets.');
+  assert.ok(fretboard.stageScrollLeft > 0, 'The current high purple melody should be brought into the extended-neck viewport.');
+  const extendedFretPan = await page.evaluate(() => {
+    const board = document.querySelector('#fretboard');
+    const highFret = board.querySelector('.fretboard-cell[data-string="0"][data-fret="20"]');
+    const down = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 901, clientX: 270, clientY: 180 });
+    highFret.dispatchEvent(down);
+    const result = {
+      prevented: down.defaultPrevented,
+      captured: board.hasPointerCapture?.(901) || false
+    };
+    highFret.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, cancelable: true, pointerId: 901, clientX: 220, clientY: 180 }));
+    return result;
+  });
+  assert.deepEqual(extendedFretPan, {
+    prevented: false,
+    captured: false
+  }, 'An extended guitar neck must defer a drag to the horizontal stage instead of capturing it as a held fret.');
 
   // A chord-melody grip is chosen for the chord occurrence, not revoiced for
   // every note the learner scrubs through. The purple marker is free to move
@@ -513,18 +591,25 @@ const server = http.createServer((request, response) => {
     });
   }
 
-  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
+  // Chord-melody work starts only at the first actual marker/downbeat.
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
   const firstMelodyGrip = await guitarChordMelodySnapshot();
   await page.locator('#melodySlider').evaluate(element => {
-    element.value = '1';
+    element.value = '2';
     element.dispatchEvent(new Event('input', { bubbles: true }));
   });
   const laterMelodyGrip = await guitarChordMelodySnapshot();
-  assert.equal(firstMelodyGrip.slider, 0, 'The first chord-melody snapshot should start at its first melody note');
-  assert.equal(laterMelodyGrip.slider, 1, 'The second chord-melody snapshot should advance within the same chord');
+  assert.equal(firstMelodyGrip.slider, 1, 'The song-wide melody wheel should start on Am7’s first note after the pickup.');
+  assert.equal(laterMelodyGrip.slider, 2, 'The song-wide melody wheel should advance to Am7’s second note.');
   assert.equal(laterMelodyGrip.activeIndex, firstMelodyGrip.activeIndex, 'Melody scrubbing must stay on the same chart chord');
   assert.equal(laterMelodyGrip.chord, firstMelodyGrip.chord, 'Melody scrubbing must not replace the current chord');
   assert.equal(firstMelodyGrip.melody.length, 1, 'A chord-melody grip should have one purple melody marker');
+  assert.deepEqual(firstMelodyGrip.melody[0], {
+    string: 0,
+    fret: 17,
+    midi: 81,
+    sourceMidi: 81
+  }, 'The extended-neck chord-melody solver must retain A5 at its literal fret 17.');
   assert.equal(laterMelodyGrip.melody.length, 1, 'Only one purple melody marker should move at a time');
   assert.notDeepEqual(laterMelodyGrip.melody[0], firstMelodyGrip.melody[0], 'The purple melody marker should follow the newly selected melody note');
   assert.deepEqual(
@@ -533,12 +618,12 @@ const server = http.createServer((request, response) => {
     'Advancing melody notes inside one chord must keep the chosen guitar chord grip fixed'
   );
 
-  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(2, false));
   const nextChordGrip = await guitarChordMelodySnapshot();
   assert.notEqual(nextChordGrip.activeIndex, laterMelodyGrip.activeIndex, 'Selecting the next harmony should leave the prior chord occurrence');
   assert.notEqual(nextChordGrip.chord, laterMelodyGrip.chord, 'The next chart event should be a different chord');
   assert.notDeepEqual(nextChordGrip.heldGrip, firstMelodyGrip.heldGrip, 'A new chord should receive its own playable chord-melody grip');
-  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(1, false));
 
   // Return the rest of the MIDI interaction regressions to their default
   // compact piano surface.
@@ -546,40 +631,35 @@ const server = http.createServer((request, response) => {
   await page.locator('#keyboardRangeMode').selectOption('compact');
 
   await page.locator('#melodySlider').evaluate(element => {
+    element.value = '2';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="83"]').count(), 1, 'Slider should move the actual melody note');
+  assert.ok(await page.locator('.piano-key.playing').count() >= 1, 'Scrubbing a melody note should audition it');
+
+  // The melody wheel is song-wide. Moving from its pickup note into index 1
+  // must select the first marker chord, rather than putting both notes under
+  // that chord’s local slider.
+  await page.locator('#melodySlider').evaluate(element => {
+    element.value = '0';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    chord: document.querySelector('#selectedChord').textContent,
+    melody: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    slider: Number(document.querySelector('#melodySlider').value)
+  })), { activeIndex: 0, chord: 'Pickup', melody: 84, slider: 0 }, 'Wheel index zero must select and audition the separate pickup.');
+  await page.locator('#melodySlider').evaluate(element => {
     element.value = '1';
     element.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="81"]').count(), 1, 'Slider should move the actual melody note');
-  assert.ok(await page.locator('.piano-key.playing').count() >= 1, 'Scrubbing a melody note should audition it');
-
-  // This must be a native pointer drag instead of a synthetic `input` event:
-  // a range lives inside the swipeable study card, and a rightward drag used
-  // to bubble up as a card swipe and select the previous chart event.
-  await page.locator('#melodySlider').evaluate(element => {
-    element.value = '0';
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-  await page.locator('#melodySlider').scrollIntoViewIfNeeded();
-  const activeIndexBeforeSliderDrag = await page.evaluate(() => window.KeyerStandardsDebug.state.activeIndex);
-  const sliderBox = await page.locator('#melodySlider').boundingBox();
-  assert.ok(sliderBox, 'Melody slider should have a visible pointer target');
-  await page.mouse.move(sliderBox.x + 6, sliderBox.y + sliderBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(sliderBox.x + sliderBox.width - 6, sliderBox.y + sliderBox.height / 2, { steps: 8 });
-  await page.mouse.up();
-  assert.equal(
-    await page.evaluate(() => window.KeyerStandardsDebug.state.activeIndex),
-    activeIndexBeforeSliderDrag,
-    'Dragging the melody slider must not change the active chord or bar'
-  );
-  // Headless Chromium does not consistently move a native range thumb via
-  // raw mouse coordinates. Verify its input behavior separately with the
-  // native keyboard interaction, while preserving the real pointer-drag
-  // assertion above for the swipe regression.
-  await page.locator('#melodySlider').evaluate(element => {
-    element.value = '0';
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    chord: document.querySelector('#selectedChord').textContent,
+    melody: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    slider: Number(document.querySelector('#melodySlider').value)
+  })), { activeIndex: 1, chord: 'Am7', melody: 81, slider: 1 }, 'Wheel index one must enter the first chord on its own first melody onset.');
   await page.locator('#melodySlider').focus();
   await page.keyboard.press('ArrowRight');
   const sliderKeyboardResult = await page.evaluate(() => ({
@@ -588,57 +668,92 @@ const server = http.createServer((request, response) => {
     max: Number(document.querySelector('#melodySlider').max),
     melodyMidi: document.querySelector('#piano').dataset.melodyMidi
   }));
-  assert.equal(sliderKeyboardResult.value, sliderKeyboardResult.max, 'Native keyboard range input should reach the later melody note');
-  assert.equal(sliderKeyboardResult.melodyMidi, '81', 'Native keyboard range input should show the later melody note');
-  assert.equal(sliderKeyboardResult.activeIndex, activeIndexBeforeSliderDrag, 'Range keyboard input must not change the active chord or bar');
+  assert.equal(sliderKeyboardResult.value, 2, 'Native keyboard range input should advance one note through the global melody wheel.');
+  assert.equal(sliderKeyboardResult.melodyMidi, '83', 'Native keyboard range input should show the later melody note');
+  assert.equal(sliderKeyboardResult.activeIndex, 1, 'The second Am7 melody note should stay in the first chord.');
+
+  // The wheel surface itself is an encoder. A real rightward drag must cross
+  // the barline to D7, rather than bubbling into the study-card swipe handler
+  // and accidentally going backward to the pickup.
+  await page.locator('#melodySlider').scrollIntoViewIfNeeded();
+  const wheelBox = await page.locator('#melodySlider').boundingBox();
+  assert.ok(wheelBox, 'Melody wheel should have a visible pointer target.');
+  await page.mouse.move(wheelBox.x + wheelBox.width / 2, wheelBox.y + wheelBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(wheelBox.x + wheelBox.width - 6, wheelBox.y + wheelBox.height / 2, { steps: 5 });
+  await page.mouse.up();
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    slider: Number(document.querySelector('#melodySlider').value),
+    melody: document.querySelector('#piano').dataset.melodyMidi,
+    chord: document.querySelector('#selectedChord').textContent
+  })), {
+    activeIndex: 2,
+    slider: 3,
+    melody: '79',
+    chord: 'D7'
+  }, 'A rightward encoder drag should advance into the next chord, never back into the pickup.');
 
   // With MIDI markers selected, the chord arrows become a phrase navigator:
-  // one note at a time inside a chord, then the next harmony's downbeat.
+  // pickup notes first, then one note at a time inside each chord.
   await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(0, false));
-  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Play this chord and first melody note');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Play pickup melody');
   await page.locator('#nextChord').click();
   const firstMidiArrow = await page.evaluate(() => ({
     activeIndex: window.KeyerStandardsDebug.state.activeIndex,
     melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
     cursor: window.KeyerStandardsDebug.state.melodyCursor
   }));
-  assert.deepEqual(firstMidiArrow, { activeIndex: 0, melodyMidi: 84, cursor: 0 }, 'First MIDI arrow should sound the chord downbeat with its first melody note');
-  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next melody note');
+  assert.deepEqual(firstMidiArrow, { activeIndex: 0, melodyMidi: 84, cursor: 0 }, 'First MIDI arrow should play the pickup without a chord.');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord and first melody note');
   await page.locator('#nextChord').click();
   const secondMidiArrow = await page.evaluate(() => ({
     activeIndex: window.KeyerStandardsDebug.state.activeIndex,
     melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
     cursor: window.KeyerStandardsDebug.state.melodyCursor
   }));
-  assert.deepEqual(secondMidiArrow, { activeIndex: 0, melodyMidi: 81, cursor: 1 }, 'Second MIDI arrow should advance within the same chord');
-  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord and first melody note');
+  assert.deepEqual(secondMidiArrow, { activeIndex: 1, melodyMidi: 81, cursor: 0 }, 'Second MIDI arrow should enter the first chord at its own downbeat.');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next melody note');
   await page.locator('#nextChord').click();
   const nextChordMidiArrow = await page.evaluate(() => ({
     activeIndex: window.KeyerStandardsDebug.state.activeIndex,
     melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
     cursor: window.KeyerStandardsDebug.state.melodyCursor
   }));
-  assert.deepEqual(nextChordMidiArrow, { activeIndex: 1, melodyMidi: 79, cursor: 0 }, 'Only after the final note should MIDI navigation enter the next chord');
+  assert.deepEqual(nextChordMidiArrow, { activeIndex: 1, melodyMidi: 83, cursor: 1 }, 'Second note should remain inside the first chord.');
+  assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord and first melody note');
+  await page.locator('#nextChord').click();
+  const followingChordMidiArrow = await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  }));
+  assert.deepEqual(followingChordMidiArrow, { activeIndex: 2, melodyMidi: 79, cursor: 0 }, 'Only after the final first-chord note should MIDI navigation enter the next harmony.');
   await page.locator('#previousChord').click();
   const reverseMidiArrow = await page.evaluate(() => ({
     activeIndex: window.KeyerStandardsDebug.state.activeIndex,
     melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
     cursor: window.KeyerStandardsDebug.state.melodyCursor
   }));
-  assert.deepEqual(reverseMidiArrow, { activeIndex: 0, melodyMidi: 81, cursor: 1 }, 'Previous MIDI arrow should return to the prior chord’s last melody note');
+  assert.deepEqual(reverseMidiArrow, { activeIndex: 1, melodyMidi: 83, cursor: 1 }, 'Previous MIDI arrow should return to the prior chord’s last melody note');
   await page.locator('#previousChord').click();
   assert.deepEqual(await page.evaluate(() => ({
     activeIndex: window.KeyerStandardsDebug.state.activeIndex,
     melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
     cursor: window.KeyerStandardsDebug.state.melodyCursor
-  })), { activeIndex: 0, melodyMidi: 84, cursor: 0 }, 'Previous MIDI arrow should continue note-by-note inside a chord');
-  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(2, false));
-  assert.equal(await page.locator('#previousChord').getAttribute('aria-label'), 'Previous chord');
+  })), { activeIndex: 1, melodyMidi: 81, cursor: 0 }, 'Previous MIDI arrow should continue note-by-note inside a chord');
+  await page.locator('#previousChord').click();
+  assert.deepEqual(await page.evaluate(() => ({
+    activeIndex: window.KeyerStandardsDebug.state.activeIndex,
+    melodyMidi: window.KeyerStandardsDebug.state.activeMelodyNote?.midi,
+    cursor: window.KeyerStandardsDebug.state.melodyCursor
+  })), { activeIndex: 0, melodyMidi: 84, cursor: 0 }, 'Previous MIDI arrow should return from the first chord to the separate pickup.');
+  await page.evaluate(() => window.KeyerStandardsDebug.selectEvent(3, false));
   assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Play this chord');
   await page.locator('#nextChord').click();
   assert.equal(
     await page.evaluate(() => window.KeyerStandardsDebug.state.activeIndex),
-    2,
+    3,
     'The first MIDI arrow on a chord under a melody rest should sound that chord instead of skipping it'
   );
   assert.equal(await page.locator('#nextChord').getAttribute('aria-label'), 'Next chord');
@@ -648,6 +763,20 @@ const server = http.createServer((request, response) => {
   assert.equal(await page.locator('#playChart').textContent(), 'Stop chart');
   assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), true);
   assert.equal(await page.locator('.piano-key.melody-tone').count(), 0, 'Transport must wait for the real melody onset instead of previewing a future note');
+  await page.waitForFunction(() => (
+    window.KeyerStandardsDebug.state.activeIndex === 1
+    && window.KeyerStandardsDebug.state.activeMelodyNote?.midi === 84
+  ), undefined, { timeout: 2200 });
+  const pickupTransition = await page.evaluate(() => ({
+    chord: document.querySelector('#selectedChord').textContent,
+    voicingCount: window.KeyerStandardsDebug.state.voicing.length,
+    sliderMelody: document.querySelector('#melodyReadout').textContent,
+    visibleMelody: document.querySelector('#piano').dataset.melodyMidi
+  }));
+  assert.equal(pickupTransition.chord, 'Am7');
+  assert.ok(pickupTransition.voicingCount > 0, 'The first marker should start its chord accompaniment.');
+  assert.match(pickupTransition.sliderMelody, /^C6 · pickup · 1 \/ 4$/);
+  assert.equal(pickupTransition.visibleMelody, '84', 'The held pickup should remain visible through the first chord marker.');
   await page.locator('#playChart').click();
   assert.equal(await page.evaluate(() => window.KeyerStandardsDebug.state.transport.playing), false);
   await page.locator('#useChartTempo').click();
@@ -706,29 +835,30 @@ const server = http.createServer((request, response) => {
   assert.ok(Math.max(...lowMelodyRegister.voicing) < lowMelodyRegister.melody, 'Low melody notes shift the audible root-bass voicing underneath the melody');
   assert.ok(lowMelodyRegister.voicing.every(midi => midi >= lowMelodyRegister.range.low && midi <= lowMelodyRegister.range.high), 'The shifted card shows the exact audible voicing');
 
-  // Chord-melody planning must also lift a genuinely low source melody into
-  // a playable top voice instead of leaving it below the accompaniment.
+  // A melody already inside the 0–12-fret board should retain its actual
+  // sounding octave; only out-of-board notes receive an octave-equivalent
+  // display with a badge.
   await page.locator('#instrumentView').selectOption('fretboard');
   const lowMelodyFretboard = await page.evaluate(() => {
     const board = document.querySelector('#fretboard');
     const melody = board.querySelector('.fretboard-cell.melody-tone');
-    const voices = [...board.querySelectorAll('.fretboard-cell.voicing')].map(cell => ({
-      midi: Number(cell.dataset.midi),
-      melody: cell.classList.contains('melody-tone')
-    }));
     return {
       midi: melody?.dataset.melodyMidi,
       string: Number(melody?.dataset.string),
       physicalMidi: Number(melody?.dataset.midi),
       badge: melody?.querySelector('.melody-octave')?.textContent || '',
-      accompanimentUnderMelody: voices.filter(voice => !voice.melody).every(voice => voice.midi <= Number(melody?.dataset.midi))
+      lastFret: Number(board.dataset.lastFret),
+      cellCount: board.querySelectorAll('.fretboard-cell').length,
+      extended: board.dataset.extended
     };
   });
   assert.equal(lowMelodyFretboard.midi, '45');
-  assert.ok(lowMelodyFretboard.string <= 2, 'A low MIDI melody should octave-fit onto a top guitar string for chord melody');
-  assert.ok(lowMelodyFretboard.physicalMidi > 45, 'The guitar display should raise an unplayable low melody octave');
-  assert.equal(lowMelodyFretboard.badge, 'A2', 'The lifted guitar melody must retain its true source octave');
-  assert.equal(lowMelodyFretboard.accompanimentUnderMelody, true, 'The guitar accompaniment should remain underneath a lifted melody');
+  assert.ok(lowMelodyFretboard.string >= 3, 'A2 should remain on a physically appropriate lower guitar string.');
+  assert.equal(lowMelodyFretboard.physicalMidi, 45, 'An in-board melody note must stay in its written/sounding octave.');
+  assert.equal(lowMelodyFretboard.badge, '', 'A literal in-board melody needs no displaced-octave badge.');
+  assert.equal(lowMelodyFretboard.lastFret, 12, 'A song without a high melody should retain the compact first-position neck.');
+  assert.equal(lowMelodyFretboard.cellCount, 78, 'The normal neck remains six strings by open-through-12 frets.');
+  assert.equal(lowMelodyFretboard.extended, 'false');
 
   if (process.env.KEYER_SCREENSHOT) await page.screenshot({ path: process.env.KEYER_SCREENSHOT, fullPage: true });
   await browser.close();
