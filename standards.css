@@ -70,8 +70,11 @@ input[type="search"]::placeholder { color: #7f8999; }
 
 .lesson { margin-top: 12px; }
 .song-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 0 5px 9px; }
+.song-heading-title { min-width: 0; display: flex; align-items: center; gap: 8px; }
 .song-heading h2 { margin: 0; font: 800 clamp(1.35rem, 4vw, 2rem) Georgia, "Times New Roman", serif; letter-spacing: -.02em; }
 .song-heading p { margin: 2px 0 0; color: var(--muted); font-size: .72rem; }
+.favorite-song-button { width: 36px; min-width: 36px; height: 36px; padding: 0; color: #9ea9ba; background: #151d29; border: 1px solid #3b4b60; border-radius: 10px; font: 900 1.38rem/1 ui-rounded, system-ui, sans-serif; }
+.favorite-song-button[aria-pressed="true"] { color: #231a08; background: var(--gold); border-color: #ffe5a3; box-shadow: 0 0 0 2px #ffd36e24; }
 .song-meta { max-width: 48%; color: var(--green); text-align: right; font: 750 .67rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .workspace { display: grid; grid-template-columns: minmax(0, 1.48fr) minmax(320px, .82fr); gap: 10px; align-items: start; }
 .chart-panel, .study-card { min-width: 0; border-radius: 16px; overflow: hidden; }

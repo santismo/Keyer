@@ -29,6 +29,7 @@
   const FRETBOARD_POSITION_STORAGE_KEY = 'keyer-jazz-fretboard-position';
   const PIANO_VOICING_STORAGE_KEY = 'keyer-jazz-piano-voicing-style';
   const REHARM_LEVEL_STORAGE_KEY = 'keyer-jazz-reharm-level';
+  const FAVORITES_STORAGE_KEY = 'keyer-jazz-standard-favorites';
   const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
   const DISPLAY_LOW = 48;
   const DISPLAY_HIGH = 72;
@@ -73,6 +74,7 @@
     searchResults: document.querySelector('#searchResults'),
     songAvailabilityFilter: document.querySelector('#songAvailabilityFilter'),
     randomSong: document.querySelector('#randomSong'),
+    favoriteSong: document.querySelector('#favoriteSong'),
     libraryStatus: document.querySelector('#libraryStatus'),
     lesson: document.querySelector('#lesson'),
     songTitle: document.querySelector('#songTitle'),
@@ -130,7 +132,9 @@
     activeIndex: 0,
     preferFlats: true,
     searchIndex: -1,
+    searchPickerPrimed: false,
     songAvailabilityFilter: 'all',
+    favoriteSongKeys: new Set(),
     voicing: [],
     displayVoicing: [],
     fretboardVoicing: [],
@@ -2675,7 +2679,9 @@
     elements.songTitle.textContent = song.title || 'Untitled standard';
     elements.songComposer.textContent = song.composer || 'Unknown composer';
     elements.songMeta.textContent = [song.style, song.key ? `Key ${song.key}` : '', `${bars.length} bars`].filter(Boolean).join(' · ');
-    elements.search.value = song.title || '';
+    elements.search.value = '';
+    state.searchPickerPrimed = false;
+    syncFavoriteSongButton();
     elements.lesson.hidden = false;
     elements.errorCard.hidden = true;
     hideSearchResults();
@@ -2685,10 +2691,44 @@
     return true;
   }
 
+  function favoriteKeyForSong(song) {
+    return [song?.title, song?.composer, song?.key].map(value => safeText(value).trim().toLocaleLowerCase()).join('::');
+  }
+
+  function isFavoriteSong(song) {
+    return Boolean(song && state.favoriteSongKeys.has(favoriteKeyForSong(song)));
+  }
+
+  function persistFavoriteSongs() {
+    try { localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...state.favoriteSongKeys])); } catch (_) {}
+  }
+
+  function syncFavoriteSongButton() {
+    const button = elements.favoriteSong;
+    if (!button) return;
+    const favorite = isFavoriteSong(state.song);
+    button.disabled = !state.song;
+    button.textContent = favorite ? '★' : '☆';
+    button.setAttribute('aria-pressed', String(favorite));
+    button.setAttribute('aria-label', favorite ? 'Remove this standard from favorites' : 'Add this standard to favorites');
+    button.title = favorite ? 'Remove from favorites' : 'Add to favorites';
+  }
+
+  function toggleFavoriteSong() {
+    if (!state.song) return;
+    const key = favoriteKeyForSong(state.song);
+    if (state.favoriteSongKeys.has(key)) state.favoriteSongKeys.delete(key);
+    else state.favoriteSongKeys.add(key);
+    persistFavoriteSongs();
+    syncFavoriteSongButton();
+    if (state.songAvailabilityFilter === 'favorites' && !elements.searchResults.hidden) renderSearchResults();
+  }
+
   function matchingSongs(query) {
     const q = safeText(query).toLowerCase();
     const source = q ? state.songs.filter(song => `${song.title} ${song.composer} ${song.style}`.toLowerCase().includes(q)) : state.songs;
     if (state.songAvailabilityFilter === 'all') return source;
+    if (state.songAvailabilityFilter === 'favorites') return source.filter(isFavoriteSong);
     if (!state.midiCatalogReady) return [];
     return source.filter(song => {
       const title = MiditarMidi?.normalizeCatalogTitle?.(song.title) || '';
@@ -2736,7 +2776,7 @@
     if (state.songAvailabilityFilter !== 'all' && !state.midiCatalogReady) {
       elements.libraryStatus.textContent = 'Finding MIDI melody availability…';
     } else {
-      const label = state.songAvailabilityFilter === 'melody' ? 'with MIDI melody' : state.songAvailabilityFilter === 'chords' ? 'chord charts only' : '';
+      const label = state.songAvailabilityFilter === 'favorites' ? 'favorite standards' : state.songAvailabilityFilter === 'melody' ? 'with MIDI melody' : state.songAvailabilityFilter === 'chords' ? 'chord charts only' : '';
       elements.libraryStatus.textContent = `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'}${label ? ` ${label}` : ''} · ${state.songs.length.toLocaleString()} charts available`;
     }
   }
@@ -2745,6 +2785,7 @@
     elements.searchResults.hidden = true;
     elements.search.setAttribute('aria-expanded', 'false');
     state.searchIndex = -1;
+    state.searchPickerPrimed = false;
     if (state.songs.length) elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz-standard charts · search by title or composer`;
   }
 
@@ -3364,10 +3405,24 @@
     renderStudy({ keepVisible: false });
   }
 
-  elements.search.addEventListener('focus', renderSearchResults);
+  elements.search.addEventListener('pointerdown', event => {
+    if (document.activeElement === elements.search || state.searchPickerPrimed) {
+      state.searchPickerPrimed = false;
+      return;
+    }
+    // On touch devices the first tap is a browse gesture: show the song list
+    // without focusing the input and bringing up the software keyboard.
+    event.preventDefault();
+    state.searchPickerPrimed = true;
+    renderSearchResults();
+  });
+  elements.search.addEventListener('focus', () => {
+    state.searchPickerPrimed = false;
+    renderSearchResults();
+  });
   elements.search.addEventListener('input', () => { state.searchIndex = -1; renderSearchResults(); });
   elements.songAvailabilityFilter?.addEventListener('change', () => {
-    state.songAvailabilityFilter = ['melody', 'chords'].includes(elements.songAvailabilityFilter.value)
+    state.songAvailabilityFilter = ['favorites', 'melody', 'chords'].includes(elements.songAvailabilityFilter.value)
       ? elements.songAvailabilityFilter.value
       : 'all';
     state.searchIndex = -1;
@@ -3388,13 +3443,17 @@
     elements.searchResults.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
   });
   document.addEventListener('pointerdown', event => {
-    if (!event.target.closest('.search-wrap')) hideSearchResults();
+    if (!event.target.closest('.search-wrap')) {
+      state.searchPickerPrimed = false;
+      hideSearchResults();
+    }
   });
   elements.randomSong.addEventListener('click', () => {
     const songs = randomSelectionSongs();
     if (!songs.length) return;
     loadSong(songs[Math.floor(Math.random() * songs.length)]);
   });
+  elements.favoriteSong?.addEventListener('click', toggleFavoriteSong);
   elements.previousChord.addEventListener('click', () => navigateChord(-1));
   elements.nextChord.addEventListener('click', () => navigateChord(1));
   elements.toggleNoteNames.addEventListener('click', toggleNoteNames);
@@ -3574,6 +3633,10 @@
   try { state.fretboardToneMode = validToneMode(localStorage.getItem(FRETBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try { state.pianoVoicingStyle = validPianoVoicingStyle(localStorage.getItem(PIANO_VOICING_STORAGE_KEY)); } catch (_) {}
   try { state.reharmLevel = Reharm?.normalizeLevel?.(localStorage.getItem(REHARM_LEVEL_STORAGE_KEY)) ?? 0; } catch (_) {}
+  try {
+    const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
+    state.favoriteSongKeys = new Set(Array.isArray(savedFavorites) ? savedFavorites.filter(value => typeof value === 'string') : []);
+  } catch (_) {}
   try { state.fretboardPositionAnchor = validFretboardPositionAnchor(localStorage.getItem(FRETBOARD_POSITION_STORAGE_KEY)); } catch (_) {}
   try {
     const savedView = localStorage.getItem(INSTRUMENT_VIEW_STORAGE_KEY);

@@ -149,6 +149,31 @@ const server = http.createServer((request, response) => {
     };
   });
   assert.deepEqual(libraryActionLayout, { sameLeft: true, sameWidth: true, belowRandom: true }, 'Play chart should sit directly under Random in the library controls.');
+  assert.equal(await page.locator('#songSearch').inputValue(), '', 'The selected standard must not occupy the search field.');
+  await page.locator('#songSearch').click();
+  await page.waitForSelector('#searchResults:not([hidden])');
+  assert.deepEqual(await page.evaluate(() => ({
+    open: !document.querySelector('#searchResults').hidden,
+    focused: document.activeElement === document.querySelector('#songSearch')
+  })), { open: true, focused: false }, 'The first tap should browse standards without opening the mobile keyboard.');
+  await page.locator('#songSearch').click();
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'songSearch', 'A second tap should enter normal typing mode.');
+  await page.locator('#songSearch').fill('autumn');
+  assert.ok(await page.locator('#searchResults .result-button').count() >= 1, 'Typing after the second tap should filter the open song list.');
+  await page.locator('#searchResults .result-button').first().click();
+  assert.equal(await page.locator('#songSearch').inputValue(), '', 'Choosing a standard must clear the search text instead of replacing it with the song title.');
+  assert.equal(await page.locator('#favoriteSong').getAttribute('aria-pressed'), 'false');
+  await page.locator('#favoriteSong').click();
+  assert.deepEqual(await page.evaluate(() => ({
+    pressed: document.querySelector('#favoriteSong').getAttribute('aria-pressed'),
+    glyph: document.querySelector('#favoriteSong').textContent,
+    favorites: JSON.parse(localStorage.getItem('keyer-jazz-standard-favorites') || '[]')
+  })), { pressed: 'true', glyph: '★', favorites: ['autumn leaves::kosma joseph::g-'] }, 'Starring a standard should persist a stable favorite identity.');
+  await page.locator('#songAvailabilityFilter').selectOption('favorites');
+  await page.waitForSelector('#searchResults:not([hidden])');
+  assert.equal(await page.locator('#searchResults .result-button').count(), 1, 'Favorites should be available as their own library bank.');
+  await page.locator('#songAvailabilityFilter').selectOption('all');
+  await page.keyboard.press('Escape');
   assert.ok(await page.locator('.chart-chord').count() >= 4);
   assert.equal(await page.locator('.chart-chord[aria-current="true"]').count(), 1);
   assert.equal(await page.locator('.piano-key.white').count(), 15);
@@ -367,6 +392,11 @@ const server = http.createServer((request, response) => {
     debug.state.songs = [original, { ...original, title: 'Chart Only Random', composer: 'Keyer test' }];
     Math.random = () => .99;
   });
+  await page.locator('#songAvailabilityFilter').selectOption('favorites');
+  await page.locator('#songSearch').fill('not this favorite');
+  await page.locator('#randomSong').click();
+  assert.equal(await page.locator('#songTitle').textContent(), 'Autumn Leaves', 'Favorites Random should draw from remembered favorites, never the search text.');
+  await page.locator('#songAvailabilityFilter').selectOption('all');
   await page.locator('#songSearch').fill('this search has no matching song');
   await page.locator('#randomSong').click();
   assert.equal(await page.locator('#songTitle').textContent(), 'Chart Only Random', 'All-bank Random must ignore a non-matching search query.');
