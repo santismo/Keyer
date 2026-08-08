@@ -2413,6 +2413,7 @@
   function syncTransportControls() {
     elements.playChart.textContent = state.transport.playing ? 'Stop chart' : 'Play chart';
     elements.playChart.setAttribute('aria-pressed', String(state.transport.playing));
+    elements.playChart.disabled = !state.transport.playing && !state.timeline.length;
     syncTempoControls();
   }
 

@@ -32,7 +32,10 @@
           <input id="songSearch" type="search" inputmode="search" autocomplete="off" placeholder="Find a standard or composer…" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false">
           <div class="search-results" id="searchResults" role="listbox" hidden></div>
         </div>
-        <button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button>
+        <div class="library-actions">
+          <button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button>
+          <button class="random-standard-button performance-button primary library-play-button" id="playChart" type="button" aria-label="Play the current chart" aria-pressed="false" disabled>Play chart</button>
+        </div>
       </div>
       <label class="library-filter" for="songAvailabilityFilter"><span>Show</span>
         <select id="songAvailabilityFilter" aria-label="Filter standards by melody availability">
@@ -148,9 +151,8 @@
             </label>
           </div>
 
-          <div class="performance-toolbar" aria-label="Melody and chart playback">
+          <div class="performance-toolbar" aria-label="Melody display">
             <button class="performance-button" id="toggleMelody" type="button" aria-pressed="false">Show melody</button>
-            <button class="performance-button primary" id="playChart" type="button" aria-pressed="false">Play chart</button>
           </div>
           <div class="performance-options">
             <label class="tempo-mode"><input id="useChartTempo" type="checkbox" checked> Chart tempo</label>
