@@ -82,9 +82,6 @@
     chartSource: document.querySelector('#chartSource'),
     melodyPanel: document.querySelector('#melodyPanel'),
     melodyWheel: document.querySelector('#melodyWheel'),
-    melodyWheelPrevious: document.querySelector('#melodyWheelPrevious'),
-    melodyWheelCurrent: document.querySelector('#melodyWheelCurrent'),
-    melodyWheelNext: document.querySelector('#melodyWheelNext'),
     melodySlider: document.querySelector('#melodySlider'),
     melodyReadout: document.querySelector('#melodyReadout'),
     playChart: document.querySelector('#playChart'),
@@ -180,6 +177,10 @@
   let swipe = null;
   let melodyWheelDrag = null;
   let melodyWheelScrollRemainder = 0;
+  let melodyWheelRollPosition = null;
+  let melodyWheelScrollSettleTimer = null;
+  const MELODY_WHEEL_NOTCH_PIXELS = 18;
+  const MELODY_WHEEL_TREAD_PERIOD = 24;
 
   const safeText = value => String(value == null ? '' : value).trim();
 
@@ -1982,18 +1983,59 @@
     return `${event.chord?.display || 'chord'} · bar ${event.barIndex + 1}`;
   }
 
-  function melodyWheelShortLabel(entry) {
-    return entry ? melodyLabel(entry.note) : '—';
+  function normalizedMelodyWheelRoll(position) {
+    const roll = Number(position);
+    if (!Number.isFinite(roll)) return 0;
+    // The tread repeats every 24px. Normalizing keeps the translated layer
+    // near its resting position forever while retaining a continuous-looking
+    // roll (the start/end of the pattern are identical).
+    const wrapped = roll % MELODY_WHEEL_TREAD_PERIOD;
+    return wrapped > MELODY_WHEEL_TREAD_PERIOD / 2
+      ? wrapped - MELODY_WHEEL_TREAD_PERIOD
+      : wrapped < -MELODY_WHEEL_TREAD_PERIOD / 2
+        ? wrapped + MELODY_WHEEL_TREAD_PERIOD
+        : wrapped;
   }
 
-  function syncMelodyWheelWindow(entries, index) {
+  function paintMelodyWheelRoll(position, { rolling = false } = {}) {
+    if (!elements.melodyWheel) return;
+    melodyWheelRollPosition = Number.isFinite(Number(position)) ? Number(position) : 0;
+    elements.melodyWheel.style.setProperty('--melody-wheel-roll', `${normalizedMelodyWheelRoll(melodyWheelRollPosition)}px`);
+    elements.melodyWheel.dataset.rolling = String(rolling);
+  }
+
+  function resetMelodyWheelVisual() {
+    if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
+    melodyWheelScrollSettleTimer = null;
+    melodyWheelRollPosition = null;
+    if (!elements.melodyWheel) return;
+    elements.melodyWheel.style.removeProperty('--melody-wheel-roll');
+    elements.melodyWheel.dataset.rolling = 'false';
+    elements.melodyWheel.dataset.disabled = 'true';
+  }
+
+  function settleMelodyWheelVisual() {
+    if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
+    melodyWheelScrollSettleTimer = null;
+    if (melodyWheelDrag || !elements.melodySlider || elements.melodySlider.disabled) return;
+    paintMelodyWheelRoll(Number(elements.melodySlider.value) * MELODY_WHEEL_NOTCH_PIXELS);
+  }
+
+  function scheduleMelodyWheelSettle() {
+    if (melodyWheelScrollSettleTimer) window.clearTimeout(melodyWheelScrollSettleTimer);
+    melodyWheelScrollSettleTimer = window.setTimeout(settleMelodyWheelVisual, 96);
+  }
+
+  function syncMelodyWheelVisual(entries, index) {
     const active = entries[index] || null;
-    const previous = index > 0 ? entries[index - 1] : null;
-    const next = index >= 0 && index < entries.length - 1 ? entries[index + 1] : null;
     if (elements.melodyWheel) elements.melodyWheel.dataset.disabled = String(!active);
-    if (elements.melodyWheelPrevious) elements.melodyWheelPrevious.textContent = melodyWheelShortLabel(previous);
-    if (elements.melodyWheelCurrent) elements.melodyWheelCurrent.textContent = melodyWheelShortLabel(active);
-    if (elements.melodyWheelNext) elements.melodyWheelNext.textContent = melodyWheelShortLabel(next);
+    if (!active) {
+      resetMelodyWheelVisual();
+      return;
+    }
+    // While a finger is moving, paint every fractional pixel immediately.
+    // Once released, the wheel settles onto the note's visual detent.
+    if (!melodyWheelDrag) paintMelodyWheelRoll(index * MELODY_WHEEL_NOTCH_PIXELS);
   }
 
   function selectMelodyWheelIndex(index, { audition = true } = {}) {
@@ -2052,7 +2094,7 @@
       melodyWheelDrag = null;
       melodyWheelScrollRemainder = 0;
       elements.melodySlider.disabled = true;
-      syncMelodyWheelWindow([], -1);
+      syncMelodyWheelVisual([], -1);
       syncMelodyNavigationLabels(event, notes);
       return;
     }
@@ -2068,7 +2110,7 @@
       elements.melodySlider.setAttribute('aria-valuenow', '0');
       elements.melodySlider.setAttribute('aria-valuetext', 'No melody notes in this chart');
       melodyWheelScrollRemainder = 0;
-      syncMelodyWheelWindow([], -1);
+      syncMelodyWheelVisual([], -1);
       syncMelodyNavigationLabels(event, notes);
       return;
     }
@@ -2089,7 +2131,7 @@
     elements.melodySlider.setAttribute('aria-valuenow', String(index));
     elements.melodySlider.setAttribute('aria-valuetext', `${melodyLabel(selected)} · ${melodyWheelContext(selectedEntry)} · note ${index + 1} of ${entries.length}`);
     elements.melodyReadout.textContent = `${melodyLabel(selected)} · ${melodyWheelContext(selectedEntry)} · ${index + 1} / ${entries.length}`;
-    syncMelodyWheelWindow(entries, index);
+    syncMelodyWheelVisual(entries, index);
     syncMelodyNavigationLabels(event, notes);
   }
 
@@ -3052,25 +3094,68 @@
 
   function bindMelodyWheel() {
     const slider = elements.melodySlider;
-    if (!slider) return;
+    const surface = elements.melodyWheel?.querySelector('.melody-wheel-surface');
+    if (!slider || !surface) return;
     const pixelsPerStep = 24;
     const scrollPixelsPerStep = 36;
+    const axisThreshold = 6;
 
-    slider.addEventListener('pointerdown', event => {
-      if (slider.disabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
-      melodyWheelDrag = { pointerId: event.pointerId, x: event.clientX, remainder: 0, moved: false };
+    const beginHorizontalMelodyWheelDrag = drag => {
+      if (!drag || drag.started) return;
+      drag.axis = 'horizontal';
+      drag.started = true;
       slider.focus({ preventScroll: true });
-      try { slider.setPointerCapture(event.pointerId); } catch (_) {}
-      // Treat the surface as an encoder: distance rolled, rather than a tiny
-      // absolute thumb position, decides how many melody notes to advance.
-      event.preventDefault();
+      try { surface.setPointerCapture(drag.pointerId); } catch (_) {}
+      paintMelodyWheelRoll(
+        Number.isFinite(melodyWheelRollPosition)
+          ? melodyWheelRollPosition
+          : Number(slider.value) * MELODY_WHEEL_NOTCH_PIXELS,
+        { rolling: true }
+      );
+    };
+
+    surface.addEventListener('pointerdown', event => {
+      if (slider.disabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      melodyWheelDrag = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+        remainder: 0,
+        moved: false,
+        axis: event.pointerType === 'mouse' ? 'horizontal' : null
+      };
+      // A mouse is already a deliberate encoder interaction. Touch/pen waits
+      // for a horizontal intention so the page can still scroll vertically.
+      if (melodyWheelDrag.axis === 'horizontal') beginHorizontalMelodyWheelDrag(melodyWheelDrag);
     });
-    slider.addEventListener('pointermove', event => {
+    surface.addEventListener('pointermove', event => {
       const drag = melodyWheelDrag;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      drag.lastX = event.clientX;
+      drag.lastY = event.clientY;
+      if (!drag.axis) {
+        const totalX = event.clientX - drag.startX;
+        const totalY = event.clientY - drag.startY;
+        if (Math.max(Math.abs(totalX), Math.abs(totalY)) < axisThreshold) return;
+        if (Math.abs(totalY) > Math.abs(totalX) * 1.15) {
+          drag.axis = 'vertical';
+          return;
+        }
+        beginHorizontalMelodyWheelDrag(drag);
+      }
+      if (drag.axis !== 'horizontal') return;
       const delta = event.clientX - drag.x;
       drag.x = event.clientX;
+      drag.y = event.clientY;
+      if (!delta) return;
       if (Math.abs(delta) >= 2) drag.moved = true;
+      // Paint every fractional pixel, then keep the musical action quantized
+      // to detents. It feels like a wheel rolling rather than a range thumb.
+      paintMelodyWheelRoll((melodyWheelRollPosition || 0) + delta, { rolling: true });
       drag.remainder += delta;
       const steps = Math.trunc(drag.remainder / pixelsPerStep);
       if (steps) {
@@ -3081,24 +3166,34 @@
     });
     const finishMelodyWheelDrag = event => {
       if (!melodyWheelDrag || melodyWheelDrag.pointerId !== event.pointerId) return;
+      const wasHorizontal = melodyWheelDrag.axis === 'horizontal';
       melodyWheelDrag = null;
-      if (slider.hasPointerCapture?.(event.pointerId)) slider.releasePointerCapture(event.pointerId);
-      event.preventDefault?.();
+      if (surface.hasPointerCapture?.(event.pointerId)) surface.releasePointerCapture(event.pointerId);
+      if (wasHorizontal) {
+        event.preventDefault?.();
+        window.requestAnimationFrame(settleMelodyWheelVisual);
+      }
     };
-    slider.addEventListener('pointerup', finishMelodyWheelDrag);
-    slider.addEventListener('pointercancel', finishMelodyWheelDrag);
-    slider.addEventListener('lostpointercapture', finishMelodyWheelDrag);
-    slider.addEventListener('wheel', event => {
+    surface.addEventListener('pointerup', finishMelodyWheelDrag);
+    surface.addEventListener('pointercancel', finishMelodyWheelDrag);
+    surface.addEventListener('lostpointercapture', finishMelodyWheelDrag);
+    surface.addEventListener('wheel', event => {
       if (slider.disabled) return;
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      // Let ordinary vertical mouse-wheel / trackpad scrolling pass through
+      // to the page. A horizontal trackpad gesture (or Shift + wheel) rolls
+      // the encoder just like a left/right drag.
+      const delta = event.shiftKey ? event.deltaY : event.deltaX;
       if (!delta) return;
       const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? 160 : 1;
-      melodyWheelScrollRemainder += delta * unit;
+      const pixelDelta = delta * unit;
+      paintMelodyWheelRoll((melodyWheelRollPosition || 0) + pixelDelta * .42, { rolling: true });
+      melodyWheelScrollRemainder += pixelDelta;
       const steps = Math.trunc(melodyWheelScrollRemainder / scrollPixelsPerStep);
       if (steps) {
         if (stepMelodyWheel(steps)) melodyWheelScrollRemainder -= steps * scrollPixelsPerStep;
         else melodyWheelScrollRemainder = 0;
       }
+      scheduleMelodyWheelSettle();
       event.preventDefault();
     }, { passive: false });
   }

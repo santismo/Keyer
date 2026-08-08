@@ -311,6 +311,26 @@ const server = http.createServer((request, response) => {
     sliderInIdentity: true,
     afterChord: true
   }, 'The melody slider should sit directly below the selected chord readout.');
+  const melodyWheelChrome = await page.evaluate(() => {
+    const wheel = document.querySelector('#melodyWheel');
+    const readout = document.querySelector('#melodyReadout');
+    return {
+      visibleText: wheel.textContent.trim(),
+      oldTextLabels: wheel.querySelectorAll('.melody-wheel-note').length,
+      hasTread: Boolean(wheel.querySelector('.melody-wheel-tread')),
+      hasSurface: Boolean(wheel.querySelector('.melody-wheel-surface')),
+      readoutHidden: readout.classList.contains('sr-only'),
+      surfaceTouchAction: getComputedStyle(wheel.querySelector('.melody-wheel-surface')).touchAction
+    };
+  });
+  assert.deepEqual(melodyWheelChrome, {
+    visibleText: '',
+    oldTextLabels: 0,
+    hasTread: true,
+    hasSurface: true,
+    readoutHidden: true,
+    surfaceTouchAction: 'pan-y'
+  }, 'The melody wheel should be a text-free tactile encoder while retaining hidden accessible status.');
   assert.equal(await page.locator('.piano-key.melody-tone[data-melody-midi="84"]').count(), 1);
   assert.equal(await page.locator('.piano-key.melody-tone .melody-octave').textContent(), 'C6');
   const midiSpans = await page.evaluate(() => {
@@ -671,6 +691,54 @@ const server = http.createServer((request, response) => {
   assert.equal(sliderKeyboardResult.value, 2, 'Native keyboard range input should advance one note through the global melody wheel.');
   assert.equal(sliderKeyboardResult.melodyMidi, '83', 'Native keyboard range input should show the later melody note');
   assert.equal(sliderKeyboardResult.activeIndex, 1, 'The second Am7 melody note should stay in the first chord.');
+
+  const touchWheelAxisAndMotion = await page.evaluate(() => {
+    const wheel = document.querySelector('#melodyWheel');
+    const surface = wheel.querySelector('.melody-wheel-surface');
+    const slider = document.querySelector('#melodySlider');
+    const makePointer = (type, pointerId, clientX, clientY) => new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId,
+      pointerType: 'touch',
+      clientX,
+      clientY,
+      button: 0
+    });
+    const before = wheel.style.getPropertyValue('--melody-wheel-roll');
+    const beforeValue = Number(slider.value);
+    surface.dispatchEvent(makePointer('pointerdown', 81, 100, 100));
+    const fractionalMove = makePointer('pointermove', 81, 109, 100);
+    surface.dispatchEvent(fractionalMove);
+    const during = wheel.style.getPropertyValue('--melody-wheel-roll');
+    const duringValue = Number(slider.value);
+    surface.dispatchEvent(makePointer('pointerup', 81, 109, 100));
+
+    surface.dispatchEvent(makePointer('pointerdown', 82, 100, 100));
+    const verticalMove = makePointer('pointermove', 82, 102, 132);
+    surface.dispatchEvent(verticalMove);
+    const verticalPrevented = verticalMove.defaultPrevented;
+    const afterVerticalValue = Number(slider.value);
+    surface.dispatchEvent(makePointer('pointerup', 82, 102, 132));
+    const verticalWheel = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 });
+    surface.dispatchEvent(verticalWheel);
+    return {
+      before,
+      during,
+      beforeValue,
+      duringValue,
+      fractionalPrevented: fractionalMove.defaultPrevented,
+      verticalPrevented,
+      afterVerticalValue,
+      verticalWheelPrevented: verticalWheel.defaultPrevented
+    };
+  });
+  assert.notEqual(touchWheelAxisAndMotion.during, touchWheelAxisAndMotion.before, 'A fractional horizontal touch drag should visibly roll the tread before the next note detent.');
+  assert.equal(touchWheelAxisAndMotion.duringValue, touchWheelAxisAndMotion.beforeValue, 'A fractional drag must not advance the note until it crosses a detent.');
+  assert.equal(touchWheelAxisAndMotion.fractionalPrevented, true, 'Horizontal touch drags should be claimed by the melody encoder.');
+  assert.equal(touchWheelAxisAndMotion.verticalPrevented, false, 'Vertical touch drags over the melody wheel must remain available for page scrolling.');
+  assert.equal(touchWheelAxisAndMotion.afterVerticalValue, touchWheelAxisAndMotion.beforeValue, 'A vertical scroll gesture must not change the selected melody note.');
+  assert.equal(touchWheelAxisAndMotion.verticalWheelPrevented, false, 'An ordinary vertical mouse wheel should scroll the page instead of changing the melody.');
 
   // The wheel surface itself is an encoder. A real rightward drag must cross
   // the barline to D7, rather than bubbling into the study-card swipe handler
