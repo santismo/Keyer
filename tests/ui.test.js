@@ -284,6 +284,40 @@ const server = http.createServer((request, response) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => window.KeyerStandardsDebug.state.midiEntry !== null);
   assert.match(await page.locator('#midiStatus').textContent(), /Matching melody MIDI available/);
+
+  // Random must ignore the text currently being searched for while honoring
+  // the selected library bank. A search miss should never make Random inert
+  // or force it to load the typed title.
+  await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const original = debug.state.songs[0];
+    window.__keyerRandomTest = { original, random: Math.random };
+    debug.state.songs = [original, { ...original, title: 'Chart Only Random', composer: 'Keyer test' }];
+    Math.random = () => .99;
+  });
+  await page.locator('#songSearch').fill('this search has no matching song');
+  await page.locator('#randomSong').click();
+  assert.equal(await page.locator('#songTitle').textContent(), 'Chart Only Random', 'All-bank Random must ignore a non-matching search query.');
+
+  await page.locator('#songAvailabilityFilter').selectOption('melody');
+  await page.locator('#songSearch').fill('still not a matching title');
+  await page.locator('#randomSong').click();
+  assert.equal(await page.locator('#songTitle').textContent(), 'Autumn Leaves', 'MIDI-bank Random should choose from MIDI-available songs, not the search text.');
+
+  await page.locator('#songAvailabilityFilter').selectOption('chords');
+  await page.locator('#songSearch').fill('another search miss');
+  await page.locator('#randomSong').click();
+  assert.equal(await page.locator('#songTitle').textContent(), 'Chart Only Random', 'Chord-chart Random should honor its bank even with text in Search.');
+  await page.evaluate(() => {
+    const debug = window.KeyerStandardsDebug;
+    const saved = window.__keyerRandomTest;
+    Math.random = saved.random;
+    debug.state.songs = [saved.original];
+    debug.loadSong(saved.original);
+  });
+  await page.locator('#songAvailabilityFilter').selectOption('all');
+  assert.equal(await page.locator('#songTitle').textContent(), 'Autumn Leaves');
+
   await page.locator('#toggleMelody').click();
   await page.waitForFunction(() => (
     window.KeyerStandardsDebug.state.chartSource === 'midi'
