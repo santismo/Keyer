@@ -104,7 +104,7 @@ assert.match(css, /--scale-tone:\s*#4aa8ff/);
 assert.match(css, /--melody-tone:\s*#a566ff/);
 assert.match(css, /\.melody-wheel\s*\{/);
 assert.match(css, /\.melody-wheel-surface\s*\{[^}]*touch-action:\s*pan-y/);
-assert.match(css, /\.melody-wheel-tread\s*\{[^}]*translate3d\(var\(--melody-wheel-roll\)/);
+assert.match(css, /\.melody-wheel-tread\s*\{[^}]*background-position:\s*var\(--melody-wheel-roll\)/);
 assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.melody-wheel-tread\s*\{[^}]*transition:\s*none/);
 assert.match(css, /html, body\s*\{[^}]*touch-action:\s*manipulation/);
 assert.match(css, /\.instrument-stage\s*\{[^}]*overflow-x:\s*auto/);
