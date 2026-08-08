@@ -23,8 +23,13 @@
   const TEMPO_STORAGE_KEY = 'keyer-jazz-tempo';
   const KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-keyboard-range';
   const INSTRUMENT_VIEW_STORAGE_KEY = 'keyer-jazz-instrument-view';
+  const KEYBOARD_TONE_STORAGE_KEY = 'keyer-jazz-keyboard-tone-mode';
+  const FRETBOARD_TONE_STORAGE_KEY = 'keyer-jazz-fretboard-tone-mode';
+  const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
   const DISPLAY_LOW = 48;
   const DISPLAY_HIGH = 72;
+  const WIDE_LOW = 36;
+  const WIDE_HIGH = 96;
   const ACCOMPANIMENT_LOW = 24;
   const ACCOMPANIMENT_HIGH = 72;
   const DEFAULT_TEMPO = 120;
@@ -80,8 +85,13 @@
     tempoValue: document.querySelector('#tempoValue'),
     playMelody: document.querySelector('#playMelody'),
     piano: document.querySelector('#piano'),
+    melodyPiano: document.querySelector('#melodyPiano'),
+    keyboardStack: document.querySelector('#keyboardStack'),
+    melodyKeyboardPane: document.querySelector('#melodyKeyboardPane'),
     fretboard: document.querySelector('#fretboard'),
     keyboardRangeMode: document.querySelector('#keyboardRangeMode'),
+    keyboardToneMode: document.querySelector('#keyboardToneMode'),
+    fretboardToneMode: document.querySelector('#fretboardToneMode'),
     instrumentView: document.querySelector('#instrumentView'),
     studyCard: document.querySelector('.study-card'),
     errorCard: document.querySelector('#errorCard'),
@@ -108,7 +118,9 @@
     voicing: [],
     displayVoicing: [],
     displayRange: { low: DISPLAY_LOW, high: DISPLAY_HIGH },
-    keyboardRangeMode: 'compact',
+    keyboardRangeMode: document.body.classList.contains('desktop-mode') ? 'wide' : 'compact',
+    keyboardToneMode: 'scale',
+    fretboardToneMode: 'scale',
     instrumentView: 'piano',
     // The full keyboard must remain stable while stepping through a chart.
     // It is rebuilt only when the selected chart/melody data changes.
@@ -1020,8 +1032,13 @@
     return state.fullSongKeyboard;
   }
 
+  function keyboardRangeStorageKey() {
+    return document.body.classList.contains('desktop-mode') ? DESKTOP_KEYBOARD_RANGE_STORAGE_KEY : KEYBOARD_RANGE_STORAGE_KEY;
+  }
+
   function activeKeyboardRangeMode() {
-    return state.keyboardRangeMode === 'full' && fullSongKeyboardData()?.range ? 'full' : 'compact';
+    if (state.keyboardRangeMode === 'full') return fullSongKeyboardData()?.range ? 'full' : 'compact';
+    return ['compact', 'split', 'wide'].includes(state.keyboardRangeMode) ? state.keyboardRangeMode : 'compact';
   }
 
   function syncInstrumentControls() {
@@ -1032,9 +1049,11 @@
       if (!fullAvailable && state.keyboardRangeMode === 'full') state.keyboardRangeMode = 'compact';
       elements.keyboardRangeMode.value = state.keyboardRangeMode;
       elements.keyboardRangeMode.setAttribute('aria-label', fullAvailable
-        ? 'Keyboard range: compact or full song register'
-        : 'Keyboard range: load a matching MIDI to use the full song register');
+        ? 'Keyboard range: compact, split, wide, or full song register'
+        : 'Keyboard range: compact, split, or wide; load a matching MIDI to use the full song register');
     }
+    if (elements.keyboardToneMode) elements.keyboardToneMode.value = state.keyboardToneMode;
+    if (elements.fretboardToneMode) elements.fretboardToneMode.value = state.fretboardToneMode;
     const view = state.instrumentView === 'fretboard' && elements.fretboard ? 'fretboard' : 'piano';
     state.instrumentView = view;
     if (elements.instrumentView) elements.instrumentView.value = view;
@@ -1042,6 +1061,11 @@
       elements.piano.hidden = view !== 'piano';
       elements.piano.dataset.instrumentView = view;
     }
+    if (elements.keyboardStack) elements.keyboardStack.dataset.rangeMode = activeKeyboardRangeMode();
+    if (elements.melodyKeyboardPane) {
+      elements.melodyKeyboardPane.hidden = view !== 'piano' || activeKeyboardRangeMode() !== 'split';
+    }
+    if (elements.melodyPiano) elements.melodyPiano.dataset.instrumentView = view;
     if (elements.fretboard) {
       elements.fretboard.hidden = view !== 'fretboard';
       elements.fretboard.dataset.instrumentView = view;
@@ -1078,73 +1102,104 @@
       || { low: DISPLAY_LOW, high: DISPLAY_HIGH };
   }
 
-  function renderPiano(chord, scale, voicing, melodyNote = null, melodyNotes = []) {
-    const scaleSet = new Set(scale.pcs.map(pc => Theory.mod(pc)));
+  function validToneMode(mode) {
+    return ['scale', 'chord', 'voicing'].includes(mode) ? mode : 'scale';
+  }
+
+  function oneOctaveRangeForVoicing(voicing) {
+    const midis = (voicing || []).map(note => Number(note?.midi)).filter(Number.isFinite);
+    const lowest = midis.length ? Math.min(...midis) : DISPLAY_LOW;
+    const low = Math.max(0, Math.min(115, Math.floor(lowest / 12) * 12));
+    return { low, high: low + 12, span: 13, octaves: 1, voicing: true };
+  }
+
+  function twoOctaveRangeForMelody(melodyNote) {
+    const midi = Number(melodyNote?.midi);
+    if (!Number.isFinite(midi)) return { low: DISPLAY_LOW, high: DISPLAY_HIGH };
+    const low = Math.max(0, Math.min(103, Math.floor(midi / 12) * 12));
+    return { low, high: low + 24, span: 25, octaves: 2, melody: true };
+  }
+
+  function addToneClass(element, pc, toneMode, rootBassSet, chordSet, scaleSet, sounding) {
+    if (toneMode === 'voicing' && !sounding) return;
+    if (rootBassSet.has(pc)) element.classList.add('root-tone');
+    else if (chordSet.has(pc)) element.classList.add('chord-tone');
+    else if (toneMode === 'scale' && scaleSet.has(pc)) element.classList.add('scale-tone');
+  }
+
+  function renderKeyboardSurface(surface, chord, scale, {
+    range,
+    rangeMode = 'compact',
+    toneMode = 'scale',
+    voicing = [],
+    melodyNote = null,
+    label = 'piano',
+    updateDisplayState = false
+  } = {}) {
+    if (!surface || !range) return [];
+    toneMode = validToneMode(toneMode);
+    const scaleSet = new Set((scale?.pcs || []).map(pc => Theory.mod(pc)));
     const chordSet = new Set(Theory.chordPitchClasses(chord));
     const rootBassSet = new Set([Theory.mod(chord.root)]);
     if (chord.slash != null) rootBassSet.add(Theory.mod(chord.slash));
     const scaleSpellingByPc = new Map();
-    (scale.notes || []).forEach(note => {
+    (scale?.notes || []).forEach(note => {
       const parsed = Theory.parseNoteSpelling(note);
       if (parsed) scaleSpellingByPc.set(parsed.pc, note);
     });
-    (scale.pcs || []).forEach(pc => {
+    (scale?.pcs || []).forEach(pc => {
       const pitchClass = Theory.mod(pc);
       if (!scaleSpellingByPc.has(pitchClass)) scaleSpellingByPc.set(pitchClass, Theory.noteName(pitchClass, state.preferFlats));
     });
     const chordSpellingByPc = new Map((chord.spelledTones || []).map(tone => [Theory.mod(tone.pc), tone.spelling]));
-    const melodyMidis = melodyMidiValues(melodyNotes);
-    const soundingVoicing = soundingVoicingForMelody(voicing, melodyMidis);
-    const rangeMode = activeKeyboardRangeMode();
-    const fullSongRange = rangeMode === 'full' ? fullSongKeyboardData()?.range : null;
-    const range = fullSongRange || displayRangeForVoicing(soundingVoicing, melodyMidis);
     const LOW = range.low;
     const HIGH = range.high;
     const whiteMidis = [];
     for (let midi = LOW; midi <= HIGH; midi += 1) if (!BLACK_PCS.has(Theory.mod(midi))) whiteMidis.push(midi);
     const whiteCount = whiteMidis.length;
-    const displayVoicing = rangeMode === 'full' || soundingVoicing.every(note => note.midi >= LOW && note.midi <= HIGH)
-      ? soundingVoicing
-      : Theory.fitVoicingToRange(soundingVoicing, LOW, HIGH);
+    const literalRegister = rangeMode === 'full';
+    const wideSurface = rangeMode === 'full' || rangeMode === 'wide';
+    const displayVoicing = literalRegister || voicing.every(note => note.midi >= LOW && note.midi <= HIGH)
+      ? voicing
+      : Theory.fitVoicingToRange(voicing, LOW, HIGH);
     const voicingByMidi = new Map(displayVoicing.map(note => [note.midi, note]));
-    // A full song keyboard is deliberately literal: never fold its melody
-    // to an adjacent octave just to fit the card.
     const melodyDisplayMidi = melodyNote
-      ? rangeMode === 'full' ? Number(melodyNote.midi) : foldedMidiForDisplay(melodyNote.midi, LOW, HIGH)
+      ? literalRegister ? Number(melodyNote.midi) : foldedMidiForDisplay(melodyNote.midi, LOW, HIGH)
       : null;
     const melodyFolded = Boolean(melodyNote && melodyDisplayMidi !== melodyNote.midi);
-    state.displayVoicing = displayVoicing;
-    state.displayRange = range;
-    elements.piano.dataset.voicingCount = String(displayVoicing.length);
-    elements.piano.dataset.lowMidi = String(LOW);
-    elements.piano.dataset.highMidi = String(HIGH);
-    elements.piano.dataset.rangeMode = rangeMode;
-    elements.piano.dataset.keyboardSpan = String(HIGH - LOW + 1);
-    elements.piano.dataset.whiteKeyCount = String(whiteCount);
-    elements.piano.style.setProperty('--key-count', String(HIGH - LOW + 1));
-    elements.piano.style.setProperty('--white-key-count', String(whiteCount));
-    elements.piano.style.setProperty('--full-keyboard-width', rangeMode === 'full' ? `${Math.max(264, whiteCount * 22)}px` : '');
-    elements.piano.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
-    elements.piano.dataset.melodyDisplayMidi = melodyDisplayMidi == null ? '' : String(melodyDisplayMidi);
-    const rangeLabel = rangeMode === 'full' ? 'Full-song piano' : 'Two-octave piano';
-    elements.piano.setAttribute('aria-label', `${rangeLabel} from ${Theory.midiName(LOW, state.preferFlats)} to ${Theory.midiName(HIGH, state.preferFlats)} showing the chord, scale, suggested fingering, and optional melody`);
-    elements.piano.closest('.study-card')?.querySelector('.color-legend')?.setAttribute('data-melody-visible', String(Boolean(melodyNote)));
+    if (updateDisplayState) {
+      state.displayVoicing = displayVoicing;
+      state.displayRange = range;
+    }
+    surface.dataset.voicingCount = String(displayVoicing.length);
+    surface.dataset.lowMidi = String(LOW);
+    surface.dataset.highMidi = String(HIGH);
+    surface.dataset.rangeMode = rangeMode;
+    surface.dataset.toneMode = toneMode;
+    surface.dataset.keyboardSpan = String(HIGH - LOW + 1);
+    surface.dataset.whiteKeyCount = String(whiteCount);
+    surface.style.setProperty('--key-count', String(HIGH - LOW + 1));
+    surface.style.setProperty('--white-key-count', String(whiteCount));
+    surface.style.setProperty('--full-keyboard-width', wideSurface ? `${Math.max(264, whiteCount * 24)}px` : '');
+    surface.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
+    surface.dataset.melodyDisplayMidi = melodyDisplayMidi == null ? '' : String(melodyDisplayMidi);
+    const rangeLabel = rangeMode === 'full' ? 'Full-song piano' : rangeMode === 'wide' ? 'Wide piano' : range.octaves === 1 ? 'One-octave piano' : 'Two-octave piano';
+    surface.setAttribute('aria-label', `${label}: ${rangeLabel} from ${Theory.midiName(LOW, state.preferFlats)} to ${Theory.midiName(HIGH, state.preferFlats)}`);
     const fragment = document.createDocumentFragment();
     let whitesBefore = 0;
 
     for (let midi = LOW; midi <= HIGH; midi += 1) {
       const pc = Theory.mod(midi);
       const black = BLACK_PCS.has(pc);
+      const sounding = voicingByMidi.get(midi);
+      const melodyHere = melodyDisplayMidi === midi;
+      const toneVisible = toneMode === 'scale' || Boolean(sounding) || melodyHere || (toneMode === 'chord' && (rootBassSet.has(pc) || chordSet.has(pc)));
       const key = document.createElement('button');
       key.type = 'button';
       key.className = `piano-key ${black ? 'black' : 'white'}`;
-      if (rootBassSet.has(pc)) key.classList.add('root-tone');
-      else if (chordSet.has(pc)) key.classList.add('chord-tone');
-      else if (scaleSet.has(pc)) key.classList.add('scale-tone');
-      const sounding = voicingByMidi.get(midi);
+      addToneClass(key, pc, toneMode, rootBassSet, chordSet, scaleSet, sounding);
       if (sounding) key.classList.add('voicing');
       if (sounding?.bass) key.classList.add('bass');
-      const melodyHere = melodyDisplayMidi === midi;
       if (melodyHere) {
         key.classList.add('melody-tone');
         key.dataset.melodyMidi = String(melodyNote.midi);
@@ -1160,15 +1215,13 @@
       }
       key.dataset.midi = String(midi);
       const spelling = sounding?.spelling || chordSpellingByPc.get(pc) || scaleSpellingByPc.get(pc) || Theory.noteName(pc, state.preferFlats);
-      const name = spelling
-        ? Theory.spelledMidiName(midi, spelling, state.preferFlats)
-        : Theory.midiName(midi, state.preferFlats);
+      const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
       key.setAttribute('aria-label', `${name}${sounding ? `, suggested ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${melodyFolded ? ', shown in this two-octave view' : ''}` : ''}`);
-      if (state.showNoteNames) {
-        const label = document.createElement('span');
-        label.className = 'key-name';
-        label.textContent = Theory.displayNoteSpelling(spelling);
-        key.appendChild(label);
+      if (state.showNoteNames && toneVisible) {
+        const noteLabel = document.createElement('span');
+        noteLabel.className = 'key-name';
+        noteLabel.textContent = Theory.displayNoteSpelling(spelling);
+        key.appendChild(noteLabel);
       }
       if (sounding) {
         const role = document.createElement('span');
@@ -1185,10 +1238,53 @@
       }
       fragment.appendChild(key);
     }
-    elements.piano.replaceChildren(fragment);
+    surface.replaceChildren(fragment);
     pressedCounts.forEach((count, midi) => {
-      if (count > 0) elements.piano.querySelector(`[data-midi="${midi}"]`)?.classList.add('playing');
+      if (count > 0) surface.querySelector(`[data-midi="${midi}"]`)?.classList.add('playing');
     });
+    return displayVoicing;
+  }
+
+  function renderPiano(chord, scale, voicing, melodyNote = null, melodyNotes = []) {
+    const melodyMidis = melodyMidiValues(melodyNotes);
+    const soundingVoicing = soundingVoicingForMelody(voicing, melodyMidis);
+    const rangeMode = activeKeyboardRangeMode();
+    const toneMode = validToneMode(state.keyboardToneMode);
+    const fullSongRange = rangeMode === 'full' ? fullSongKeyboardData()?.range : null;
+    const baseRange = fullSongRange || (rangeMode === 'wide' ? { low: WIDE_LOW, high: WIDE_HIGH, octaves: 5, wide: true } : displayRangeForVoicing(soundingVoicing, melodyMidis));
+
+    if (rangeMode === 'split') {
+      const chordRange = displayRangeForVoicing(soundingVoicing, []);
+      renderKeyboardSurface(elements.piano, chord, scale, {
+        range: chordRange,
+        rangeMode: 'compact',
+        toneMode: 'voicing',
+        voicing: soundingVoicing,
+        label: 'Chord fingering',
+        updateDisplayState: true
+      });
+      renderKeyboardSurface(elements.melodyPiano, chord, scale, {
+        range: twoOctaveRangeForMelody(melodyNote),
+        rangeMode: 'compact',
+        toneMode: 'voicing',
+        voicing: [],
+        melodyNote,
+        label: state.showMelody ? 'Melody' : 'Melody (enable melody to show a note)'
+      });
+    } else {
+      const range = toneMode === 'voicing' ? oneOctaveRangeForVoicing(soundingVoicing) : baseRange;
+      const surfaceRangeMode = toneMode === 'voicing' ? 'voicing' : rangeMode;
+      renderKeyboardSurface(elements.piano, chord, scale, {
+        range,
+        rangeMode: surfaceRangeMode,
+        toneMode,
+        voicing: soundingVoicing,
+        melodyNote,
+        label: 'Chord and scale',
+        updateDisplayState: true
+      });
+    }
+    elements.piano.closest('.study-card')?.querySelector('.color-legend')?.setAttribute('data-melody-visible', String(Boolean(melodyNote)));
   }
 
   function fretboardPositionForMidi(value, { preferLowString = false } = {}) {
@@ -1216,6 +1312,7 @@
 
   function renderFretboard(chord, scale, voicing, melodyNote = null) {
     if (!elements.fretboard) return;
+    const toneMode = validToneMode(state.fretboardToneMode);
     const scaleSet = new Set((scale?.pcs || []).map(pc => Theory.mod(pc)));
     const chordSet = new Set(Theory.chordPitchClasses(chord));
     const rootBassSet = new Set([Theory.mod(chord.root)]);
@@ -1243,6 +1340,7 @@
     elements.fretboard.dataset.lowMidi = '40';
     elements.fretboard.dataset.highMidi = String(64 + FRETBOARD_MAX_FRET);
     elements.fretboard.dataset.rangeMode = 'fretboard';
+    elements.fretboard.dataset.toneMode = toneMode;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
     elements.fretboard.setAttribute('aria-label', 'Guitar fretboard from the open strings through the twelfth fret, showing chord, scale, voicing, and optional melody');
 
@@ -1265,14 +1363,13 @@
         const cellKey = `${stringIndex}:${fret}`;
         const sounding = voicingByPosition.get(cellKey);
         const melodyHere = cellKey === melodyPositionKey;
+        const toneVisible = toneMode === 'scale' || Boolean(sounding) || melodyHere || (toneMode === 'chord' && (rootBassSet.has(pc) || chordSet.has(pc)));
         const cell = document.createElement('button');
         cell.type = 'button';
         cell.className = 'fretboard-cell';
         cell.setAttribute('role', 'gridcell');
         if (fret === 0) cell.classList.add('open-string');
-        if (rootBassSet.has(pc)) cell.classList.add('root-tone');
-        else if (chordSet.has(pc)) cell.classList.add('chord-tone');
-        else if (scaleSet.has(pc)) cell.classList.add('scale-tone');
+        addToneClass(cell, pc, toneMode, rootBassSet, chordSet, scaleSet, sounding);
         if (sounding) cell.classList.add('voicing');
         if (sounding?.bass) cell.classList.add('bass');
         if (melodyHere) {
@@ -1293,7 +1390,7 @@
           fretLabel.setAttribute('aria-hidden', 'true');
           cell.appendChild(fretLabel);
         }
-        if (state.showNoteNames) {
+        if (state.showNoteNames && toneVisible) {
           const noteLabel = document.createElement('span');
           noteLabel.className = 'fretboard-note';
           noteLabel.textContent = Theory.displayNoteSpelling(spelling);
@@ -1841,7 +1938,9 @@
     const next = Math.max(0, (pressedCounts.get(midi) || 0) + direction);
     if (next) pressedCounts.set(midi, next);
     else pressedCounts.delete(midi);
-    elements.piano?.querySelectorAll(`[data-midi="${midi}"]`).forEach(key => key.classList.toggle('playing', next > 0));
+    [elements.piano, elements.melodyPiano].forEach(surface => {
+      surface?.querySelectorAll(`[data-midi="${midi}"]`).forEach(key => key.classList.toggle('playing', next > 0));
+    });
     const fretPosition = fretboardPositionForMidi(midi);
     if (fretPosition) {
       elements.fretboard?.querySelector(`[data-string="${fretPosition.stringIndex}"][data-fret="${fretPosition.fret}"]`)?.classList.toggle('playing', next > 0);
@@ -2180,9 +2279,19 @@
   elements.nextChord.addEventListener('click', () => navigateChord(1));
   elements.toggleNoteNames.addEventListener('click', toggleNoteNames);
   elements.keyboardRangeMode?.addEventListener('change', () => {
-    const selected = elements.keyboardRangeMode.value === 'full' || elements.keyboardRangeMode.value === 'full-song' ? 'full' : 'compact';
+    const selected = ['full', 'split', 'wide'].includes(elements.keyboardRangeMode.value) ? elements.keyboardRangeMode.value : 'compact';
     state.keyboardRangeMode = selected === 'full' && !fullSongKeyboardData()?.range ? 'compact' : selected;
-    try { localStorage.setItem(KEYBOARD_RANGE_STORAGE_KEY, state.keyboardRangeMode); } catch (_) {}
+    try { localStorage.setItem(keyboardRangeStorageKey(), state.keyboardRangeMode); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
+  elements.keyboardToneMode?.addEventListener('change', () => {
+    state.keyboardToneMode = validToneMode(elements.keyboardToneMode.value);
+    try { localStorage.setItem(KEYBOARD_TONE_STORAGE_KEY, state.keyboardToneMode); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
+  elements.fretboardToneMode?.addEventListener('change', () => {
+    state.fretboardToneMode = validToneMode(elements.fretboardToneMode.value);
+    try { localStorage.setItem(FRETBOARD_TONE_STORAGE_KEY, state.fretboardToneMode); } catch (_) {}
     renderStudy({ keepVisible: false });
   });
   elements.instrumentView?.addEventListener('change', () => {
@@ -2251,7 +2360,7 @@
     if (!key || !surface?.contains(key)) return;
     // In full mode a real horizontal swipe must scroll the internal keyboard,
     // not get captured as a held key.  A short release is still an audible tap.
-    if (surface === elements.piano && surface.dataset.rangeMode === 'full') {
+    if ((surface === elements.piano || surface === elements.melodyPiano) && ['full', 'wide'].includes(surface.dataset.rangeMode)) {
       deferredFullKeyboardTaps.set(event.pointerId, { midi: Number(key.dataset.midi), x: event.clientX, y: event.clientY });
       return;
     }
@@ -2279,6 +2388,7 @@
     surface.addEventListener('contextmenu', event => event.preventDefault());
   }
   bindInstrumentSurface(elements.piano);
+  bindInstrumentSurface(elements.melodyPiano);
   bindInstrumentSurface(elements.fretboard);
 
   elements.studyCard.addEventListener('pointerdown', event => {
@@ -2320,9 +2430,11 @@
 
   try { state.showNoteNames = localStorage.getItem(NOTE_NAMES_STORAGE_KEY) !== 'off'; } catch (_) {}
   try {
-    const savedRange = localStorage.getItem(KEYBOARD_RANGE_STORAGE_KEY);
-    if (savedRange === 'full' || savedRange === 'compact') state.keyboardRangeMode = savedRange;
+    const savedRange = localStorage.getItem(keyboardRangeStorageKey());
+    if (['full', 'compact', 'split', 'wide'].includes(savedRange)) state.keyboardRangeMode = savedRange;
   } catch (_) {}
+  try { state.keyboardToneMode = validToneMode(localStorage.getItem(KEYBOARD_TONE_STORAGE_KEY)); } catch (_) {}
+  try { state.fretboardToneMode = validToneMode(localStorage.getItem(FRETBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try {
     const savedView = localStorage.getItem(INSTRUMENT_VIEW_STORAGE_KEY);
     if (savedView === 'fretboard' || savedView === 'piano') state.instrumentView = savedView;

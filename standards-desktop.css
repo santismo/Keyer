@@ -1,0 +1,21 @@
+/* The desktop page deliberately keeps chart reading above the instruments. */
+.desktop-mode .app { width: min(100%, 1500px); padding-inline: 18px; }
+.desktop-mode .workspace { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.desktop-mode .study-card { position: static; }
+.desktop-mode .chart-scroll { height: min(55vh, 700px); min-height: 390px; padding: 16px; }
+.desktop-mode .realbook-chart { max-width: 1280px; margin: 0 auto; }
+.desktop-mode .measure { min-height: 104px; }
+.desktop-mode .piano { height: clamp(160px, 18vw, 230px); }
+.desktop-mode .keyboard-stack[data-range-mode="split"] .piano { height: clamp(135px, 15vw, 185px); }
+.desktop-mode .piano:is([data-range-mode="full"], [data-range-mode="wide"]) { height: clamp(180px, 22vw, 270px); }
+.desktop-mode .fretboard { height: clamp(240px, 29vw, 370px); min-height: 240px; }
+.desktop-mode .fretboard-grid { padding: 26px 8px 8px; }
+.desktop-mode .fretboard-note { width: min(40px, 80%); font-size: clamp(.56rem, 1.1vw, .8rem); }
+.desktop-mode .fretboard-role { min-width: 16px; height: 16px; font-size: .48rem; }
+.desktop-mode .fretboard-fret-label { top: -21px; font-size: .62rem; }
+.desktop-mode .chord-navigator { min-height: 94px; }
+.desktop-mode .display-options { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 9px 12px; }
+
+@media (max-width: 900px) {
+  .desktop-mode .display-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
