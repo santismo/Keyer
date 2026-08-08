@@ -380,6 +380,358 @@
     return priorities.find(interval => intervals.includes(interval));
   }
 
+  function findInterval(chord, choices, fallback = null) {
+    if (!chord || !Array.isArray(chord.intervals)) return fallback;
+    const list = Array.isArray(choices) ? choices : [choices];
+    for (const choice of list) {
+      const exact = chord.intervals.find(interval => interval === choice);
+      if (exact != null) return exact;
+    }
+    for (const choice of list) {
+      const match = chord.intervals.find(interval => mod(interval) === mod(choice));
+      if (match != null) return match;
+    }
+    return fallback;
+  }
+
+  function findExactInterval(chord, choices, fallback = null) {
+    if (!chord || !Array.isArray(chord.intervals)) return fallback;
+    const list = Array.isArray(choices) ? choices : [choices];
+    return chord.intervals.find(interval => list.includes(interval)) ?? fallback;
+  }
+
+  function normalizeMelodyMidis(melodyMidis) {
+    return (Array.isArray(melodyMidis) ? melodyMidis : [melodyMidis])
+      .map(note => note && typeof note === 'object' ? note.midi : note)
+      .filter(note => note != null && note !== '')
+      .map(Number)
+      .filter(Number.isFinite);
+  }
+
+  function scaleIntervalsForVoicing(chord, scaleOption) {
+    if (typeof scaleOption === 'string' && SCALES[scaleOption]) return SCALES[scaleOption].intervals.slice();
+    if (Array.isArray(scaleOption)) return scaleOption.slice();
+    if (Array.isArray(scaleOption?.intervals)) return scaleOption.intervals.slice();
+    return suggestScale(chord, {}).intervals.slice();
+  }
+
+  function compactInterval(interval) {
+    let value = Number(interval);
+    while (value > 11) value -= 12;
+    while (value < 0) value += 12;
+    return value;
+  }
+
+  function nearestMidiForPc(pc, preferred, low, high) {
+    let best = null;
+    for (let midi = Math.trunc(Number(low)); midi <= Math.trunc(Number(high)); midi += 1) {
+      if (mod(midi) !== mod(pc)) continue;
+      const score = Math.abs(midi - preferred);
+      if (!best || score < best.score || (score === best.score && midi < best.midi)) best = { midi, score };
+    }
+    return best?.midi ?? null;
+  }
+
+  function chooseBassTargetMidi(pc, low, high) {
+    const preferred = Math.min(Math.max(Number(low) + 2, 36 + mod(pc)), Number(low) + 10, Number(high));
+    return nearestMidiForPc(pc, preferred, low, high);
+  }
+
+  function intervalPalette(chord, scaleIntervals) {
+    const scale = Array.isArray(scaleIntervals) ? scaleIntervals : [];
+    const scaleSet = new Set(scale.map(interval => mod(interval)));
+    const chordSet = new Set((chord?.intervals || []).map(interval => mod(interval)));
+    const plainEleventh = findInterval(chord, [17], null);
+    const palette = {
+      root: 0,
+      third: findInterval(chord, [4, 3, 5], 4),
+      fifth: findInterval(chord, [7, 6, 8], 7),
+      seventh: findInterval(chord, [11, 10, 9], null),
+      ninth: findExactInterval(chord, [14, 13, 15], null),
+      eleventh: findExactInterval(chord, [18, 17, 16], null),
+      suspension: findInterval(chord, [5, 17, 18], null),
+      thirteenth: findExactInterval(chord, [21, 20, 22, 9, 8], null)
+    };
+    const scaleColors = scale
+      .filter(interval => interval !== 0 && !chordSet.has(mod(interval)))
+      .filter(interval => interval !== 7 || chord.family !== 'dom')
+      .filter(interval => interval !== 5 || chord.family !== 'dom' || /11|sus/.test(chord?.quality?.low || '') || findInterval(chord, [18], null) != null);
+    const preferredChordColors = [];
+    if (chord.family === 'dom') {
+      preferredChordColors.push(
+        palette.thirteenth,
+        findInterval(chord, [18, 20, 22, 8, 6], null),
+        palette.ninth,
+        findInterval(chord, [13, 15], null),
+        palette.fifth,
+        plainEleventh
+      );
+    } else if (chord.family === 'maj') {
+      preferredChordColors.push(palette.ninth, palette.thirteenth, findInterval(chord, [18], null), palette.fifth, findInterval(chord, [9], null));
+    } else if (chord.family === 'min' || chord.family === 'minmaj') {
+      preferredChordColors.push(palette.ninth, plainEleventh, palette.thirteenth, palette.fifth, findInterval(chord, [9], null));
+    } else if (chord.family === 'sus') {
+      preferredChordColors.push(palette.ninth, palette.thirteenth, plainEleventh, palette.fifth, findInterval(chord, [4], null));
+    } else if (chord.family === 'hdim' || chord.family === 'dim') {
+      preferredChordColors.push(palette.ninth, plainEleventh, palette.fifth, palette.seventh);
+    } else {
+      preferredChordColors.push(palette.ninth, palette.thirteenth, palette.eleventh, palette.fifth);
+    }
+    const unique = values => [...new Set(values.filter(value => value != null))];
+    return {
+      ...palette,
+      chordColors: unique(preferredChordColors),
+      scaleColors: unique(scaleColors)
+    };
+  }
+
+  function resolveTokenInterval(token, palette, style) {
+    const clusterNeighbor = palette.scaleColors.find(interval => {
+      const reduced = compactInterval(interval);
+      return reduced === 1 || reduced === 2 || reduced === 5 || reduced === 6 || reduced === 8 || reduced === 9 || reduced === 10;
+    });
+    const dissonantColor = findInterval({ intervals: palette.chordColors.concat(palette.scaleColors) }, [15, 13, 18, 16, 20, 22, 6, 8], null);
+    switch (token) {
+      case 'root': return palette.root;
+      case 'third': return palette.third;
+      case 'fifth': return palette.fifth;
+      case 'seventh': return palette.seventh ?? palette.fifth;
+      case 'ninth': {
+        const color = palette.ninth ?? palette.scaleColors.find(interval => compactInterval(interval) === 1 || compactInterval(interval) === 2 || compactInterval(interval) === 3);
+        return color != null ? color < 12 ? color + 12 : color : palette.chordColors[0] ?? palette.fifth;
+      }
+      case 'eleventh': {
+        const color = palette.eleventh
+          ?? palette.suspension
+          ?? palette.scaleColors.find(interval => compactInterval(interval) === 5 || compactInterval(interval) === 6);
+        return color != null ? color < 12 ? color + 12 : color : palette.fifth;
+      }
+      case 'thirteenth': {
+        const color = palette.thirteenth ?? palette.scaleColors.find(interval => compactInterval(interval) === 8 || compactInterval(interval) === 9 || compactInterval(interval) === 10);
+        return color != null ? color < 12 ? color + 12 : color : palette.ninth ?? palette.fifth;
+      }
+      case 'color1': return palette.chordColors[0] ?? palette.ninth ?? palette.fifth;
+      case 'color2': return palette.chordColors[1] ?? palette.scaleColors[0] ?? palette.fifth;
+      case 'scale1': return palette.scaleColors[0] ?? palette.chordColors[0] ?? palette.ninth ?? palette.fifth;
+      case 'scale2': return palette.scaleColors[1] ?? palette.scaleColors[0] ?? palette.chordColors[1] ?? palette.fifth;
+      case 'neighbor': return clusterNeighbor ?? palette.scaleColors[0] ?? palette.ninth ?? palette.fifth;
+      case 'outside': return dissonantColor ?? palette.scaleColors[0] ?? palette.chordColors[0] ?? palette.fifth;
+      default: return Number.isFinite(Number(token)) ? Number(token) : null;
+    }
+  }
+
+  function pianoStylePlan(style, chord, scaleIntervals) {
+    const family = chord?.family || 'maj';
+    const palette = intervalPalette(chord, scaleIntervals);
+    const isExtended = chord?.extended || definingExtension(chord) != null;
+    const normalizedStyle = String(style || 'root-shell').trim().toLowerCase();
+    const templates = {
+      'root-shell': ['seventh', 'third', isExtended ? 'color1' : 'fifth'],
+      shell: ['seventh', 'third', isExtended ? 'color1' : 'fifth'],
+      rootless: ['seventh', 'third', 'ninth', family === 'dom' ? 'thirteenth' : 'color1'],
+      closed: ['third', 'fifth', 'seventh', isExtended ? 'color1' : null],
+      spread: ['fifth', 'seventh', 'third', isExtended ? 'color1' : 'root'],
+      'upper-structure': ['seventh', 'ninth', 'eleventh', 'thirteenth'],
+      modern: ['seventh', 'ninth', 'eleventh', 'thirteenth'],
+      cluster: ['seventh', 'neighbor', 'third', family === 'sus' ? 'ninth' : 'scale1'],
+      'avant-garde': ['seventh', 'outside', 'third', 'scale2']
+    };
+    const tokens = (templates[normalizedStyle] || templates['root-shell']).filter(Boolean);
+    const seen = new Set();
+    const intervals = [];
+    tokens.forEach(token => {
+      const interval = resolveTokenInterval(token, palette, normalizedStyle);
+      const pitchClass = interval == null ? null : compactInterval(interval);
+      if (interval == null || seen.has(pitchClass)) return;
+      seen.add(pitchClass);
+      intervals.push(interval);
+    });
+    const desiredUpperCount = ['root-shell', 'shell', 'cluster'].includes(normalizedStyle)
+      || (normalizedStyle === 'closed' && !isExtended)
+      ? 3
+      : 4;
+    [
+      palette.third, palette.seventh, palette.fifth, palette.ninth, palette.eleventh, palette.thirteenth,
+      ...palette.chordColors, ...palette.scaleColors
+    ].filter(value => value != null).forEach(interval => {
+      const pitchClass = compactInterval(interval);
+      if (intervals.length < desiredUpperCount && !seen.has(pitchClass)) {
+        seen.add(pitchClass);
+        intervals.push(interval);
+      }
+    });
+    return {
+      style: normalizedStyle,
+      maxUpperSpan: normalizedStyle === 'cluster' ? 7 : 12,
+      includeRootBass: ['root-shell', 'closed', 'spread', 'upper-structure', 'avant-garde'].includes(normalizedStyle),
+      separateBass: ['spread', 'upper-structure', 'avant-garde'].includes(normalizedStyle),
+      upperIntervals: intervals.slice(0, desiredUpperCount)
+    };
+  }
+
+  function targetMidisForPlan(chord, upperIntervals, low, high, melodyMidis, plan) {
+    const floor = Math.trunc(Number(low));
+    const ceiling = Math.trunc(Number(high));
+    const melody = normalizeMelodyMidis(melodyMidis);
+    const bassPc = chord.slash == null ? chord.root : chord.slash;
+    const includeBass = Boolean(plan?.includeRootBass || chord.slash != null);
+    const bassMidi = includeBass ? chooseBassTargetMidi(bassPc, floor, ceiling) : null;
+    const melodyLimit = melody.length ? Math.min(...melody) - 4 : ceiling - 4;
+    const lowerAnchor = bassMidi == null ? Math.max(floor, 48) : bassMidi + (plan?.separateBass ? 12 : 2);
+    const anchorPreferred = Math.min(Math.max(lowerAnchor, 50 + mod(chord.root - 0)), melodyLimit, ceiling - 2);
+    const rootAnchor = nearestMidiForPc(chord.root, anchorPreferred, floor, ceiling) ?? Math.min(Math.max(floor + 12, 48 + chord.root), ceiling);
+    let previous = bassMidi == null ? floor - 1 : bassMidi + 1;
+    return {
+      bassMidi,
+      upperMidis: upperIntervals.map(interval => {
+        let midi = rootAnchor + compactInterval(interval);
+        while (midi <= previous) midi += 12;
+        while (midi > ceiling && (bassMidi == null || midi - 12 > bassMidi)) midi -= 12;
+        previous = midi;
+        return midi;
+      })
+    };
+  }
+
+  function finalizeVoicingNotes(chord, notes) {
+    return notes.map(note => {
+      const harmonicBass = note.bass && !note.anchorOnly;
+      const tone = harmonicBass ? null : spellChordTone(chord, note.interval);
+      const spelling = harmonicBass
+        ? displayNoteSpelling(chord.slashText || chord.rootText || noteName(note.pc, true))
+        : tone?.spelling || noteName(note.pc, preferFlatsForKey(chord.rootText));
+      return {
+        ...note,
+        spelling,
+        name: spelling,
+        display: spelledMidiName(note.midi, spelling)
+      };
+    });
+  }
+
+  function fitPianoVoicing(voicing, melodyMidis, low = 36, high = 72, options = {}) {
+    const notes = Array.isArray(voicing) ? voicing.filter(note => Number.isFinite(note?.midi)) : [];
+    const floor = Math.trunc(Number(low));
+    const ceiling = Math.trunc(Number(high));
+    if (!notes.length || !Number.isFinite(floor) || !Number.isFinite(ceiling) || ceiling < floor) return [];
+
+    const melody = normalizeMelodyMidis(melodyMidis);
+    const lowestMelody = melody.length ? Math.min(...melody) : null;
+    const maxUpperSpan = Math.max(1, Math.trunc(Number(options.maxUpperSpan) || 12));
+    const candidates = notes.map(note => {
+      const values = [];
+      for (let midi = floor; midi <= ceiling; midi += 1) {
+        if (mod(midi) === mod(note.pc ?? note.midi)) values.push(midi);
+      }
+      return values;
+    });
+    if (candidates.some(values => !values.length)) return [];
+
+    const bassIndex = notes.findIndex(note => note.bass && !note.anchorOnly);
+    const targets = notes.map(note => {
+      let midi = note.midi;
+      while (midi < floor) midi += 12;
+      while (midi > ceiling) midi -= 12;
+      return midi;
+    });
+    const bestByClearance = new Map([[3, null], [2, null], [1, null]]);
+    let bestCompact = null;
+
+    function visit(index, assigned, used) {
+      if (index < notes.length) {
+        candidates[index].forEach(midi => {
+          if (used.has(midi)) return;
+          assigned[index] = midi;
+          used.add(midi);
+          visit(index + 1, assigned, used);
+          used.delete(midi);
+        });
+        return;
+      }
+
+      const bassMidi = bassIndex >= 0 ? assigned[bassIndex] : null;
+      if (bassIndex >= 0 && assigned.some((midi, noteIndex) => noteIndex !== bassIndex && midi <= bassMidi)) return;
+      const upper = (bassIndex >= 0
+        ? assigned.filter((_, noteIndex) => noteIndex !== bassIndex)
+        : assigned.slice()
+      ).sort((a, b) => a - b);
+      if (!upper.length) return;
+      const grip = bassIndex >= 0 && options.separateBass ? upper : assigned.slice().sort((a, b) => a - b);
+      if (grip[grip.length - 1] - grip[0] > maxUpperSpan) return;
+      if (Math.max(...assigned) - Math.min(...assigned) > 23) return;
+
+      const topMidi = upper[upper.length - 1];
+      let score = assigned.reduce((sum, midi, noteIndex) => sum + Math.abs(midi - targets[noteIndex]), 0);
+      score += (topMidi - upper[0]) * 0.45;
+      if (bassMidi != null) {
+        score += (topMidi - bassMidi) * 0.08;
+        score += Math.max(0, bassMidi - (floor + 8)) * 0.25;
+      } else {
+        score += Math.max(0, upper[0] - (floor + 12)) * 0.08;
+      }
+      if (options.style === 'cluster') {
+        score += upper.slice(1).reduce((sum, midi, upperIndex) => sum + Math.abs(midi - upper[upperIndex] - 2), 0) * 0.12;
+      }
+      if (lowestMelody != null) {
+        const melodyGap = lowestMelody - topMidi;
+        score += melodyGap < 1 ? 24 : 0;
+        score += Math.abs(Math.min(6, Math.max(1, melodyGap)) - 4) * 0.15;
+      }
+
+      if (!bestCompact || score < bestCompact.score || (score === bestCompact.score && topMidi < bestCompact.topMidi)) {
+        bestCompact = { score, topMidi, midis: assigned.slice() };
+      }
+
+      if (lowestMelody == null) return;
+      [3, 2, 1].forEach(clearance => {
+        if (topMidi > lowestMelody - clearance) return;
+        const current = bestByClearance.get(clearance);
+        if (!current || score < current.score || (score === current.score && topMidi < current.topMidi)) {
+          bestByClearance.set(clearance, { score, topMidi, midis: assigned.slice() });
+        }
+      });
+    }
+
+    visit(0, new Array(notes.length), new Set());
+    const best = bestByClearance.get(3) || bestByClearance.get(2) || bestByClearance.get(1) || bestCompact;
+    if (!best) return [];
+    return notes.map((note, index) => ({
+      ...note,
+      midi: best.midis[index],
+      display: spelledMidiName(best.midis[index], note.spelling)
+    }));
+  }
+
+  function makePianoVoicing(chord, options = {}) {
+    if (!chord) return [];
+    const low = Number.isFinite(Number(options.low)) ? Math.trunc(Number(options.low)) : 36;
+    const high = Number.isFinite(Number(options.high)) ? Math.trunc(Number(options.high)) : 72;
+    if (high < low) return [];
+    const style = String(options.style || 'root-shell').trim().toLowerCase();
+    const scaleIntervals = scaleIntervalsForVoicing(chord, options.scale);
+    const plan = pianoStylePlan(style, chord, scaleIntervals);
+    // A written slash bass is a separate, literal bass instruction. Keep it
+    // exact without forcing a compact shell/cluster to stretch down to that
+    // register with the same hand.
+    if (chord.slash != null) plan.separateBass = true;
+    const includeBass = Boolean(plan.includeRootBass || chord.slash != null);
+    const targets = targetMidisForPlan(chord, plan.upperIntervals, low, high, options.melodyMidis, plan);
+    if (includeBass && targets.bassMidi == null) return [];
+    const bassPc = chord.slash == null ? chord.root : chord.slash;
+    const upperSource = plan.upperIntervals.map((interval, index) => ({
+        midi: targets.upperMidis[index],
+        pc: mod(chord.root + interval),
+        role: roleForInterval(interval, chord),
+        interval,
+        bass: false
+      })).filter(note => note.midi != null);
+    const sourceNotes = includeBass
+      ? [{ midi: targets.bassMidi, pc: bassPc, role: chord.slash != null && chord.slash !== chord.root ? 'Bass' : 'R', bass: true }, ...upperSource]
+      : upperSource.sort((left, right) => left.midi - right.midi).map(note => ({ ...note, bass: false, anchorOnly: false }));
+    const source = finalizeVoicingNotes(chord, sourceNotes);
+    return fitPianoVoicing(source, options.melodyMidis, low, high, plan);
+  }
+
   function makeVoicing(chord) {
     if (!chord) return [];
     const bassPc = chord.slash == null ? chord.root : chord.slash;
@@ -761,6 +1113,7 @@
     spellChordTone,
     spellChordTones,
     makeVoicing,
+    makePianoVoicing,
     fitVoicingToRange,
     fitVoicingForMelody,
     suggestScale,
