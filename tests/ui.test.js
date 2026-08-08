@@ -279,7 +279,7 @@ const server = http.createServer((request, response) => {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => window.KeyerStandardsDebug.state.midiEntry !== null);
-  assert.match(await page.locator('#midiStatus').textContent(), /Miditar MIDI available/);
+  assert.match(await page.locator('#midiStatus').textContent(), /Matching melody MIDI available/);
   await page.locator('#toggleMelody').click();
   await page.waitForFunction(() => (
     window.KeyerStandardsDebug.state.chartSource === 'midi'
@@ -304,6 +304,7 @@ const server = http.createServer((request, response) => {
         !index || entry.startBeat >= timeline[index - 1].endBeat - .001
       )),
       holds: [...document.querySelectorAll('.chart-hold')].map(button => button.title),
+      pickupMeasures: [...document.querySelectorAll('.pickup-measure')].map(measure => measure.textContent),
       crossingPickup: crossingPickup && {
         start: crossingPickup.startBeat,
         end: crossingPickup.endBeat,
@@ -315,6 +316,7 @@ const server = http.createServer((request, response) => {
   assert.deepEqual(midiSpans.firstTimeline[0], { type: 'rest', start: 0, end: 2 }, 'Pickup should keep its real lead-in before the first marker');
   assert.equal(midiSpans.ordered, true, 'MIDI marker spans must not create overlapping or zero-time rests');
   assert.ok(midiSpans.holds.some(title => /Hold D7/.test(title)), 'A chord held over a barline should render a carry mark, not N.C.');
+  assert.ok(midiSpans.pickupMeasures.some(text => /Pickup.*C6/.test(text)), 'A melody pickup should receive its own labeled chart bar before the first chord');
   assert.ok(midiSpans.crossingPickup && midiSpans.crossingPickup.duration > midiSpans.crossingPickup.markerStart - midiSpans.crossingPickup.start, 'A pickup crossing a marker needs its full held duration');
   const register = await page.evaluate(() => {
     const event = window.KeyerStandardsDebug.state.events[window.KeyerStandardsDebug.state.activeIndex];

@@ -32,7 +32,7 @@
           <input id="songSearch" type="search" inputmode="search" autocomplete="off" placeholder="Find a standard or composer…" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false">
           <div class="search-results" id="searchResults" role="listbox" hidden></div>
         </div>
-        <button class="square-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">↻</button>
+        <button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button>
       </div>
       <p class="library-status" id="libraryStatus" role="status">Loading jazz standards…</p>
     </section>
@@ -120,7 +120,6 @@
 
           <div class="performance-toolbar" aria-label="Melody and chart playback">
             <button class="performance-button" id="toggleMelody" type="button" aria-pressed="false">Show melody</button>
-            <button class="performance-button" id="loadMidi" type="button">MIDI source</button>
             <button class="performance-button primary" id="playChart" type="button" aria-pressed="false">Play chart</button>
           </div>
           <div class="performance-options">
@@ -129,15 +128,13 @@
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite">
-            <span id="midiStatus">Looking for a matching Miditar MIDI…</span>
+            <span id="midiStatus">Looking for a matching MIDI…</span>
             <label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label>
           </div>
           <div class="melody-panel" id="melodyPanel" hidden>
             <div class="melody-panel-head"><span>Melody during this chord</span><output id="melodyReadout">—</output></div>
             <input id="melodySlider" type="range" min="0" max="0" step="1" value="0" aria-label="Melody note during the selected chord" disabled>
           </div>
-          <input id="midiFileInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
-
           <div class="color-legend" aria-label="Instrument colors">
             <span><i class="root-swatch"></i>Root / bass</span>
             <span><i class="chord-swatch"></i>Chord</span>
