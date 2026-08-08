@@ -1559,6 +1559,17 @@
     return [...choices];
   }
 
+  function guitarMelodyAnchorPenalty(position, positionAnchor = state.fretboardPositionAnchor) {
+    const anchor = validFretboardPositionAnchor(positionAnchor);
+    if (anchor == null || !position) return 0;
+    const distance = Math.abs(position.fret - anchor);
+    // This is a preference tier, not a filter. A valid exact-pitch placement
+    // at/above the chosen fret wins; when none forms a playable grip, every
+    // below-anchor candidate remains available at its literal register.
+    if (position.fret >= anchor) return distance * .12;
+    return 32 + Math.min(3, distance * .18);
+  }
+
   function guitarSmartCandidates(voice, positionAnchor = state.fretboardPositionAnchor) {
     const target = Number(voice?.sourceMidi ?? voice?.midi);
     const anchor = validFretboardPositionAnchor(positionAnchor);
@@ -1579,7 +1590,8 @@
       if (voice.kind === 'melody') {
         // Guitar melody lives on the top three strings; do not default to an
         // open melody note when a fretted choice gives a usable hand shape.
-        return octaveDistance * 1.35 + position.stringIndex * .78 + (position.fret === 0 ? 2.6 : 0) + highFret;
+        return octaveDistance * 1.35 + position.stringIndex * .78 + (position.fret === 0 ? 2.6 : 0) + highFret
+          + guitarMelodyAnchorPenalty(position, anchor);
       }
       if (voice.kind === 'bass') {
         const anchorDistance = anchor == null ? 0 : Math.abs(position.fret - anchor) * 1.7;
@@ -1646,7 +1658,8 @@
     }, 0);
     const melodyStringPenalty = melody ? melody.position.stringIndex * 1.25 : 0;
     const melodyFretPenalty = melody && melody.position.fret > 0 ? Math.max(0, Math.abs(melody.position.fret - center) - 2) * 1.35 : 0;
-    return motion + anchorPenalty + span * 1.7 + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty;
+    const melodyAnchorPenalty = melody ? guitarMelodyAnchorPenalty(melody.position, anchor) : 0;
+    return motion + anchorPenalty + span * 1.7 + stringsSpread * .14 + octaveShift + openPenalty + melodyStringPenalty + melodyFretPenalty + melodyAnchorPenalty;
   }
 
   function chooseGuitarChordMelodyShape(voices, previousCenter = null, positionAnchor = state.fretboardPositionAnchor) {
@@ -1742,7 +1755,16 @@
       return !literalOnBoard || Number(note.displayMidi ?? note.midi) === targetMidi;
     });
     if (anchorEntry) return guitarPositionFromKey(anchorEntry[0]);
-    const occupiedStrings = new Set([...voicingByPosition.keys()].map(key => Number(key.split(':')[0])));
+    const accompanimentEntries = [...voicingByPosition.entries()]
+      .filter(([, note]) => !note.melody && note.kind !== 'melody');
+    const occupiedFretsByString = new Map(accompanimentEntries.map(([key]) => {
+      const position = guitarPositionFromKey(key);
+      return [position.stringIndex, position.fret];
+    }));
+    const occupiedStrings = new Set(occupiedFretsByString.keys());
+    const accompanimentStrings = accompanimentEntries
+      .map(([key]) => guitarPositionFromKey(key)?.stringIndex)
+      .filter(Number.isInteger);
     const heldMidis = [...voicingByPosition.values()].map(note => Number(note.displayMidi ?? note.midi)).filter(Number.isFinite);
     const topHeldMidi = heldMidis.length ? Math.max(...heldMidis) : Number(melodyNote.midi);
     // This is a live melodic cursor laid over a held grip. It may need to
@@ -1753,14 +1775,43 @@
     const candidates = guitarMidiChoices({ kind: 'melody', sourceMidi: targetMidi })
       .flatMap(midi => fretboardCandidatesForMidi(midi, { maxFret }).filter(position => !literalOnBoard || position.midi === midi))
       .filter((position, index, all) => all.findIndex(item => fretboardPositionKey(item) === fretboardPositionKey(position)) === index);
-    return candidates.sort((left, right) => {
+    const positionAnchor = validFretboardPositionAnchor(state.fretboardPositionAnchor);
+    const preferredCenter = Number.isFinite(handCenter)
+      ? handCenter
+      : positionAnchor == null ? null : positionAnchor + 1.75;
+    const topAccompanimentString = accompanimentStrings.length ? Math.min(...accompanimentStrings) : FRETBOARD_STRINGS.length;
+    const anchored = positionAnchor == null || !literalOnBoard ? [] : candidates.filter(position => {
+      const occupiedFret = occupiedFretsByString.get(position.stringIndex);
+      return position.fret >= positionAnchor
+        && (!Number.isFinite(preferredCenter) || Math.abs(position.fret - preferredCenter) <= FRETBOARD_MAX_FRETTED_SPAN)
+        && (occupiedFret == null || occupiedFret === position.fret);
+    });
+    const aboveAccompaniment = anchored.filter(position => (
+      occupiedFretsByString.get(position.stringIndex) === position.fret
+      || position.stringIndex < topAccompanimentString
+    ));
+    // Prefer a conventional top-string melody first. An exact same-fret
+    // chord-tone overlap is also useful; otherwise retain the natural literal
+    // fallback instead of forcing the melody onto a lower string for the fret.
+    const preferred = aboveAccompaniment;
+    const conventional = candidates.filter(position => {
+      const occupiedFret = occupiedFretsByString.get(position.stringIndex);
+      return occupiedFret == null || occupiedFret === position.fret;
+    });
+    // A later melody attack cannot share a string with a held chord tone at a
+    // different fret. If the soft anchor has no sensible top-voice placement,
+    // use a free conventional string (or the exact same chord-tone cell)
+    // before considering that physically conflicting last resort.
+    const pool = preferred.length ? preferred : conventional.length ? conventional : candidates;
+    return pool.sort((left, right) => {
       const score = position => {
         const belowTop = Math.max(0, topHeldMidi - position.midi);
         const upperString = Math.min(3, position.stringIndex);
         const occupied = occupiedStrings.has(position.stringIndex) ? 1 : 0;
         const handDistance = Number.isFinite(handCenter) && position.fret > 0 ? Math.abs(position.fret - handCenter) : 0;
         const octaveDistance = Math.abs(position.midi - targetMidi) / 12;
-        return belowTop * 2.8 + upperString * .72 + occupied * .45 + handDistance * .16 + octaveDistance * .35;
+        const anchorDistance = preferred.length ? Math.abs(position.fret - positionAnchor) : 0;
+        return belowTop * 2.8 + occupied * .45 + upperString * .72 + handDistance * .16 + anchorDistance * .12 + octaveDistance * .35;
       };
       return score(left) - score(right)
         || left.stringIndex - right.stringIndex
