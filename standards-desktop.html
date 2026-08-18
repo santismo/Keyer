@@ -31,7 +31,7 @@
         </div>
         <div class="library-actions"><button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button><button class="random-standard-button performance-button primary library-play-button" id="playChart" type="button" aria-label="Play the current chart" aria-pressed="false" disabled>Play chart</button></div>
       </div>
-      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span><select id="songAvailabilityFilter" aria-label="Choose a standards bank"><option value="all">All standards</option><option value="favorites">Favorites</option><option value="melody">With MIDI melody</option><option value="chords">Chord charts only</option></select></label>
+      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span><select id="songAvailabilityFilter" aria-label="Choose a standards bank"><option value="all">All standards</option><option value="solos">Jazz solos</option><option value="parker">Charlie Parker solos</option><option value="favorites">Favorites</option><option value="melody">With MIDI melody</option><option value="chords">Chord charts only</option></select></label>
       <p class="library-status" id="libraryStatus" role="status">Loading jazz standards…</p>
     </section>
 
@@ -90,7 +90,9 @@
             <label class="tempo-control" for="tempoRange"><span>Tempo <output id="tempoValue">120</output></span><input id="tempoRange" type="range" min="40" max="260" step="1" value="120" disabled></label>
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
           </div>
-          <div class="midi-source-line" id="midiSourceLine" aria-live="polite"><span id="midiStatus">Looking for a matching MIDI…</span><label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label></div>
+          <div class="midi-source-line" id="midiSourceLine" aria-live="polite"><span id="midiStatus">Looking for a matching MIDI…</span><a class="midi-attribution" id="midiAttribution" href="" target="_blank" rel="noopener noreferrer" hidden></a><label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label></div>
+          <label class="midi-chorus-control" id="midiStudyControl" for="midiStudy" hidden><span>Solo source</span><select id="midiStudy" aria-label="Choose a solo transcription"></select></label>
+          <label class="midi-chorus-control" id="midiChorusControl" for="midiChorus" hidden><span>Study chorus</span><select id="midiChorus" aria-label="Choose a MIDI chorus"></select></label>
           <div class="color-legend" aria-label="Instrument colors"><span><i class="root-swatch"></i>Root / bass</span><span><i class="chord-swatch"></i>Chord</span><span><i class="scale-swatch"></i>Scale</span><span class="melody-legend"><i class="melody-swatch"></i>Melody</span></div>
         </aside>
       </div>
@@ -101,6 +103,7 @@
   <script src="jazz-theory.js"></script>
   <script src="ireal.js"></script>
   <script src="miditar-midi.js"></script>
+  <script src="jazz-solo-catalog.js"></script>
   <script src="standards-reharm.js"></script>
   <script src="standards.js"></script>
 </body>
