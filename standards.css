@@ -164,8 +164,12 @@ input[type="search"]::placeholder { color: #7f8999; }
 .tempo-control input:disabled { opacity: .58; }
 .midi-source-line { min-height: 25px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 11px; color: var(--muted); border-bottom: 1px solid var(--line); font: 700 .56rem/1.15 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .midi-source-line > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.midi-attribution { flex: 0 1 auto; overflow: hidden; color: var(--violet); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.midi-attribution:hover { color: #e0d4ff; text-decoration: underline; }
 .midi-source-line label { display: inline-flex; align-items: center; gap: 4px; color: var(--green); white-space: nowrap; }
 .midi-source-line select { max-width: 105px; min-height: 22px; color: var(--ink); background: #1b2432; border: 1px solid #3b4b60; border-radius: 5px; font: inherit; }
+.midi-chorus-control { min-height: 33px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 11px; color: #d7bcff; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, #4b1c7a33, transparent); font: 800 .56rem/1.15 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; }
+.midi-chorus-control select { min-width: 0; max-width: 72%; min-height: 24px; padding: 0 6px; color: var(--ink); background: #1b2432; border: 1px solid #69538f; border-radius: 5px; font: 750 .58rem ui-rounded, "SF Pro Rounded", system-ui, sans-serif; text-transform: none; letter-spacing: 0; }
 .piano { position: relative; width: 100%; height: 106px; overflow: hidden; background: #07090d; border: 0; border-bottom: 1px solid #596474; border-radius: 0; touch-action: none; }
 .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) { width: max(100%, var(--full-keyboard-width, 100%)); min-width: var(--full-keyboard-width, 100%); height: clamp(100px, 30vw, 126px); min-height: 100px; }
 .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]), .piano:is([data-range-mode="full"], [data-range-mode="full-song"], [data-range-mode="wide"]) .piano-key { touch-action: manipulation; }
