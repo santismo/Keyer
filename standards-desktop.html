@@ -80,6 +80,7 @@
             <label class="display-control guitar-voicing-control" for="guitarVoicingStyle"><span>Guitar</span><select id="guitarVoicingStyle" aria-controls="fretboard" disabled><option value="chord-melody" selected>Chord melody</option><option value="adjacent-strings">Adjacent strings</option><option value="shell">Shell</option><option value="rootless">Rootless</option><option value="triads">Triads</option><option value="drop-2">Drop 2</option><option value="spread">Spread</option></select></label>
             <label class="display-control" for="keyboardToneMode"><span>Keys</span><select id="keyboardToneMode" aria-controls="piano melodyPiano"><option value="scale" selected>Scale + chord</option><option value="chord">Chord tones</option><option value="voicing">Voicing only</option></select></label>
             <label class="display-control" for="fretboardToneMode"><span>Frets</span><select id="fretboardToneMode" aria-controls="fretboard"><option value="scale" selected>Scale + chord</option><option value="chord">Chord tones</option><option value="voicing">Voicing only</option></select></label>
+            <button class="display-control solo-octave-control" id="fretboardSoloOctave" type="button" aria-controls="fretboard" aria-pressed="false" hidden>Solo: Written octave</button>
           </div>
 
           <div class="performance-toolbar" aria-label="Melody display">
@@ -89,6 +90,7 @@
             <label class="tempo-mode"><input id="useChartTempo" type="checkbox" checked> Chart tempo</label>
             <label class="tempo-control" for="tempoRange"><span>Tempo <output id="tempoValue">120</output></span><input id="tempoRange" type="range" min="40" max="260" step="1" value="120" disabled></label>
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
+            <label class="auto-advance-toggle" title="Off: loop this chart from the beginning. On: pick and play a random chart from the selected bank after each ending."><input id="autoAdvanceRandom" type="checkbox"> Random next chart</label>
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite"><span id="midiStatus">Looking for a matching MIDI…</span><a class="midi-attribution" id="midiAttribution" href="" target="_blank" rel="noopener noreferrer" hidden></a><label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label></div>
           <label class="midi-chorus-control" id="midiStudyControl" for="midiStudy" hidden><span>Solo source</span><select id="midiStudy" aria-label="Choose a solo transcription"></select></label>

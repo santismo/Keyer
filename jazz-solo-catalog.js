@@ -15,6 +15,7 @@
 
   var PARKER_DATASET_URL = 'https://huggingface.co/datasets/xavriley/CharlieParkerAlignedOmnibook';
   var PARKER_MIDI_BASE_URL = PARKER_DATASET_URL + '/resolve/main/midi_original/';
+  var PARKER_MUSICXML_BASE_URL = PARKER_DATASET_URL + '/resolve/main/musicxml/';
 
   function normalizeTitle(value) {
     var source = String(value || '').replace(/\\/g, '/').split('/').pop() || '';
@@ -33,32 +34,60 @@
       .replace(/\s+/g, ' ');
   }
 
-  function parkerSolo(standardTitle, soloTitle, fileName) {
+  function parkerSolo(standardTitle, soloTitle, fileName, options) {
+    var sourceFileStem = String(fileName || '').replace(/\.mid$/i, '');
+    var settings = options || {};
+    var xmlFileName = settings.xmlFile || sourceFileStem + '.xml';
     return Object.freeze({
       type: 'parker-solo',
+      id: sourceFileStem,
       title: standardTitle,
       standardTitle: standardTitle,
       soloTitle: soloTitle,
       name: 'Charlie Parker — ' + soloTitle + '.mid',
       urls: [PARKER_MIDI_BASE_URL + encodeURIComponent(fileName) + '?download=true'],
+      xmlUrl: PARKER_MUSICXML_BASE_URL + encodeURIComponent(xmlFileName) + '?download=true',
+      supplemental: Boolean(settings.supplemental),
+      relatedStandardTitles: Object.freeze(Array.isArray(settings.relatedStandardTitles) ? settings.relatedStandardTitles.slice() : []),
       sourceLabel: 'Charlie Parker Aligned Omnibook · MIT',
       sourceUrl: PARKER_DATASET_URL
     });
   }
 
   var parkerSolos = Object.freeze([
+    // The source collection has 50 Parker transcriptions. Entries marked
+    // supplemental are the pieces not already present in Keyer's iReal
+    // standard library; their source MusicXML supplies their own chord chart.
+    parkerSolo('An Oscar For Treadwell', 'An Oscar For Treadwell', 'myn4c.mid', { supplemental: true }),
+    parkerSolo('Another Hairdo', 'Another Hairdo', 'Rln4c.mid', { supplemental: true }),
     parkerSolo('Anthropology', 'Anthropology', '3zn4c.mid'),
+    parkerSolo('Back Home Blues', 'Back Home Blues', 'WS64c.mid', { supplemental: true }),
     parkerSolo('Au Privave', 'Au Privave', 'rCn4c.mid'),
     parkerSolo('Barbados', 'Barbados', '1p64c.mid'),
     parkerSolo("Billie's Bounce", "Billie's Bounce", 'Q6Ryc.mid'),
+    parkerSolo('Bird Gets The Worm', 'Bird Gets The Worm', 'Pq3yc.mid', { supplemental: true }),
     parkerSolo('Bloomdido', 'Bloomdido', 'WG3yc.mid'),
+    parkerSolo('Blue Bird', 'Blue Bird', 'lTXyc.mid', { supplemental: true }),
     parkerSolo('Blues For Alice', 'Blues For Alice', 'Qrqyc.mid'),
+    parkerSolo('Buzzy', 'Buzzy', 'mTHyc.mid', { supplemental: true }),
+    parkerSolo('Card Board', 'Card Board', 'wkTyc.mid', { supplemental: true }),
+    parkerSolo('Celerity', 'Celerity', '7XTyc.mid', { supplemental: true }),
+    parkerSolo('Chasing The Bird', 'Chasing The Bird', 'nvJyc.mid', { supplemental: true, relatedStandardTitles: ['I Got Rhythm'] }),
     parkerSolo('Cheryl', 'Cheryl', 't66yc.mid'),
+    parkerSolo('Chi Chi', 'Chi Chi', 'wv3wc.mid', { supplemental: true }),
     parkerSolo('Confirmation', 'Confirmation', 'yp3wc.mid'),
+    parkerSolo('Cosmic Rays', 'Cosmic Rays', '9THwc.mid', { supplemental: true }),
     parkerSolo('Dewey Square', 'Dewey Square', '6Cbwc.mid'),
     parkerSolo('Diverse', 'Diverse', '73bwc.mid'),
     parkerSolo('Donna Lee', 'Donna Lee', 'cXbwc.mid'),
+    parkerSolo('KC Blues', 'KC Blues', 'S1swc.mid', { supplemental: true }),
+    parkerSolo('Kim 1', 'Kim 1', 'N8swc.mid', { supplemental: true }),
+    parkerSolo('Kim 2', 'Kim 2', 'S5VYc.mid', { supplemental: true }),
     parkerSolo('Ko Ko', 'Ko Ko', 'tCfYc.mid'),
+    parkerSolo('Laird Baird', 'Laird Baird', '2RfYc.mid', { supplemental: true }),
+    parkerSolo('Marmaduke', 'Marmaduke', '3RfYc.mid', { supplemental: true, relatedStandardTitles: ['Honeysuckle Rose'] }),
+    parkerSolo('Mohawk 1', 'Mohawk 1', '7RfYc.mid', { supplemental: true }),
+    parkerSolo('Mohawk 2', 'Mohawk 2', 'WRfYc.mid', { supplemental: true }),
     parkerSolo('Moose The Mooche', 'Moose The Mooche', 'BRfYc.mid'),
     parkerSolo('My Little Suede Shoes', 'My Little Suede Shoes', 'LRfYc.mid'),
     parkerSolo("Now's The Time", "Now's The Time", 'PRfYc.mid'),
@@ -66,18 +95,18 @@
     parkerSolo('Ornithology', 'Ornithology', 'KRfYc.mid'),
     parkerSolo('Passport', 'Passport', 'xRfYc.mid'),
     parkerSolo('Perhaps', 'Perhaps', 'QRfYc.mid'),
+    parkerSolo('Red Cross', 'Red Cross', 'nRfYc.mid', { supplemental: true, relatedStandardTitles: ['I Got Rhythm'] }),
+    parkerSolo('Relaxing With Lee', 'Relaxing With Lee', 'FRfYc.mid', { supplemental: true }),
     parkerSolo('Scrapple From The Apple', 'Scrapple From The Apple', 'tRfYc.mid'),
-    parkerSolo('Segment', 'Segment', 'gRfYc-lower.mid'),
-    parkerSolo("Shaw 'Nuff", "Shaw 'Nuff", 'GRfYc.mid'),
+    parkerSolo('Segment', 'Segment', 'gRfYc-lower.mid', { xmlFile: 'gRfYc-Segment.xml' }),
+    parkerSolo("Shaw 'Nuff", "Shaw 'Nuff", 'GRfYc.mid', { xmlFile: 'GRfYc-Shaw-Nuff.xml' }),
     parkerSolo('Si Si', 'Si Si', 'rRfYc.mid'),
+    parkerSolo('Steeplechase', 'Steeplechase', 'mRfYc.mid', { supplemental: true, relatedStandardTitles: ['I Got Rhythm'] }),
+    parkerSolo('The Bird', 'The Bird', 'vRfYc.mid', { supplemental: true }),
     parkerSolo('Thriving From A Riff', 'Thriving From A Riff', 'SRfYc.mid'),
+    parkerSolo('Visa', 'Visa', 'N3fYc.mid', { supplemental: true }),
+    parkerSolo('Warming Up', 'Warming Up', 'V3fYc.mid', { supplemental: true }),
     parkerSolo('Yardbird Suite', 'Yardbird Suite', 'D3fYc.mid'),
-    // These are Parker contrafacts; Keyer supplies their documented standard
-    // form as the audible backing chart while the named Parker solo is shown.
-    parkerSolo('I Got Rhythm', 'Chasing The Bird', 'nvJyc.mid'),
-    parkerSolo('I Got Rhythm', 'Red Cross', 'nRfYc.mid'),
-    parkerSolo('I Got Rhythm', 'Steeplechase', 'mRfYc.mid'),
-    parkerSolo('Honeysuckle Rose', 'Marmaduke', '3RfYc.mid'),
     parkerSolo('Au Privave', 'Au Privave · alternate take', 'Nqn4c.mid')
   ]);
 
@@ -87,9 +116,28 @@
   return Object.freeze({
     parkerSolos: parkerSolos,
     parkerDatasetUrl: PARKER_DATASET_URL,
+    parkerSupplementalSongs: function parkerSupplementalSongs() {
+      return parkerSolos.filter(function find(entry) { return entry.supplemental; }).map(function create(entry) {
+        return {
+          title: entry.standardTitle,
+          composer: 'Charlie Parker',
+          style: 'Parker solo · original source changes',
+          key: '',
+          bpm: 0,
+          bars: [],
+          playbackOrder: [],
+          parkerSoloId: entry.id,
+          parkerXmlUrl: entry.xmlUrl,
+          parkerSourceUrl: entry.sourceUrl
+        };
+      });
+    },
     findParkerSolos: function findParkerSolos(title) {
       var key = normalizeTitle(title);
-      return parkerSolos.filter(function find(entry) { return normalizeTitle(entry.standardTitle) === key; });
+      return parkerSolos.filter(function find(entry) {
+        return normalizeTitle(entry.standardTitle) === key
+          || entry.relatedStandardTitles.some(function relatedTitle(value) { return normalizeTitle(value) === key; });
+      });
     },
     findParkerSolo: function findParkerSolo(title) {
       var key = normalizeTitle(title);
