@@ -166,6 +166,7 @@
                 <option value="voicing">Voicing only</option>
               </select>
             </label>
+            <button class="display-control solo-octave-control" id="fretboardSoloOctave" type="button" aria-controls="fretboard" aria-pressed="false" hidden>Solo: Written octave</button>
           </div>
 
           <div class="performance-toolbar" aria-label="Melody display">
@@ -175,6 +176,7 @@
             <label class="tempo-mode"><input id="useChartTempo" type="checkbox" checked> Chart tempo</label>
             <label class="tempo-control" for="tempoRange"><span>Tempo <output id="tempoValue">120</output></span><input id="tempoRange" type="range" min="40" max="260" step="1" value="120" disabled></label>
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
+            <label class="auto-advance-toggle" title="Off: loop this chart from the beginning. On: pick and play a random chart from the selected bank after each ending."><input id="autoAdvanceRandom" type="checkbox"> Random next chart</label>
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite">
             <span id="midiStatus">Looking for a matching MIDI…</span>

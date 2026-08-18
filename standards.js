@@ -28,9 +28,11 @@
   const KEYBOARD_TONE_STORAGE_KEY = 'keyer-jazz-keyboard-tone-mode';
   const FRETBOARD_TONE_STORAGE_KEY = 'keyer-jazz-fretboard-tone-mode';
   const FRETBOARD_POSITION_STORAGE_KEY = 'keyer-jazz-fretboard-position';
+  const FRETBOARD_SOLO_OCTAVE_STORAGE_KEY = 'keyer-jazz-fretboard-solo-octave-down';
   const PIANO_VOICING_STORAGE_KEY = 'keyer-jazz-piano-voicing-style';
   const GUITAR_VOICING_STORAGE_KEY = 'keyer-jazz-guitar-voicing-style';
   const MELODY_VISIBILITY_STORAGE_KEY = 'keyer-jazz-show-melody';
+  const AUTO_ADVANCE_RANDOM_STORAGE_KEY = 'keyer-jazz-auto-advance-random';
   const REHARM_LEVEL_STORAGE_KEY = 'keyer-jazz-reharm-level';
   const FAVORITES_STORAGE_KEY = 'keyer-jazz-standard-favorites';
   const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
@@ -111,6 +113,7 @@
     tempoRange: document.querySelector('#tempoRange'),
     tempoValue: document.querySelector('#tempoValue'),
     playMelody: document.querySelector('#playMelody'),
+    autoAdvanceRandom: document.querySelector('#autoAdvanceRandom'),
     piano: document.querySelector('#piano'),
     melodyPiano: document.querySelector('#melodyPiano'),
     keyboardStack: document.querySelector('#keyboardStack'),
@@ -121,6 +124,7 @@
     pianoVoicingStyle: document.querySelector('#pianoVoicingStyle'),
     guitarVoicingStyle: document.querySelector('#guitarVoicingStyle'),
     fretboardToneMode: document.querySelector('#fretboardToneMode'),
+    fretboardSoloOctave: document.querySelector('#fretboardSoloOctave'),
     instrumentView: document.querySelector('#instrumentView'),
     studyCard: document.querySelector('.study-card'),
     errorCard: document.querySelector('#errorCard'),
@@ -156,6 +160,7 @@
     keyboardToneMode: 'scale',
     fretboardToneMode: 'scale',
     fretboardPositionAnchor: null,
+    fretboardSoloOctaveDown: false,
     pianoVoicingStyle: 'root-shell',
     guitarVoicingStyle: 'chord-melody',
     reharmLevel: 0,
@@ -198,7 +203,8 @@
       timerIds: new Set(),
       useChartTempo: true,
       customBpm: DEFAULT_TEMPO,
-      playMelody: true
+      playMelody: true,
+      autoAdvanceRandom: false
     },
     loading: false
   };
@@ -214,6 +220,7 @@
   };
   const deferredFullKeyboardTaps = new Map();
   let swipe = null;
+  let songLoadSequence = 0;
   const safeText = value => String(value == null ? '' : value).trim();
 
   function validFretboardPositionAnchor(value) {
@@ -229,7 +236,7 @@
     const highStringMidi = FRETBOARD_STRINGS[0].midi;
     const highestMelodyMidi = state.melodyNotes.reduce((highest, note) => {
       const midi = Number(note?.midi);
-      return Number.isFinite(midi) ? Math.max(highest, midi) : highest;
+      return Number.isFinite(midi) ? Math.max(highest, fretboardSoloDisplayMidi(midi)) : highest;
     }, -Infinity);
     const melodyFret = Number.isFinite(highestMelodyMidi)
       ? Math.ceil(highestMelodyMidi - highStringMidi)
@@ -238,6 +245,21 @@
       ? state.fretboardPositionAnchor + FRETBOARD_MAX_FRETTED_SPAN
       : FRETBOARD_MAX_FRET;
     return Math.min(FRETBOARD_MIDI_MAX_FRET, Math.max(FRETBOARD_MAX_FRET, melodyFret, anchoredFret));
+  }
+
+  function fretboardSoloDisplayMidi(value) {
+    const midi = Number(value);
+    if (!Number.isFinite(midi) || !soloStudyActive() || !state.fretboardSoloOctaveDown) return midi;
+    const lowered = midi - 12;
+    // A standard guitar reaches E2. Keep the rare notes below that at their
+    // written octave instead of silently changing their pitch class or shape.
+    return lowered >= FRETBOARD_STRINGS[FRETBOARD_STRINGS.length - 1].midi ? lowered : midi;
+  }
+
+  function fretboardSoloDisplayNote(note) {
+    if (!note || !Number.isFinite(Number(note.midi))) return note;
+    const displayMidi = fretboardSoloDisplayMidi(note.midi);
+    return displayMidi === Number(note.midi) ? note : { ...note, midi: displayMidi, writtenMidi: Number(note.midi) };
   }
 
   function fretboardMarkerFrets(maxFret = fretboardMaxFret()) {
@@ -328,6 +350,8 @@
             parsed: Theory.parseChordSymbol(raw),
             source: entry,
             chordIndex,
+            startBeat: Number.isFinite(Number(entry?.startBeat)) ? Number(entry.startBeat) : undefined,
+            endBeat: Number.isFinite(Number(entry?.endBeat)) ? Number(entry.endBeat) : undefined,
             optionalOnly,
             attachedAlternate: attachedRaw ? { raw: attachedRaw, parsed: Theory.parseChordSymbol(attachedRaw), source: entry.alternate } : null
           };
@@ -1381,6 +1405,19 @@
     const view = state.instrumentView === 'fretboard' && elements.fretboard ? 'fretboard' : 'piano';
     state.instrumentView = view;
     if (elements.instrumentView) elements.instrumentView.value = view;
+    if (elements.fretboardSoloOctave) {
+      const available = view === 'fretboard' && soloFocus;
+      elements.fretboardSoloOctave.hidden = !available;
+      elements.fretboardSoloOctave.disabled = !available;
+      elements.fretboardSoloOctave.textContent = state.fretboardSoloOctaveDown
+        ? 'Solo: Visual octave down'
+        : 'Solo: Written octave';
+      elements.fretboardSoloOctave.setAttribute('aria-pressed', String(state.fretboardSoloOctaveDown));
+      elements.fretboardSoloOctave.setAttribute('aria-label', state.fretboardSoloOctaveDown
+        ? 'Show the solo at its written fretboard octave; MIDI playback stays unchanged'
+        : 'Show the solo one octave lower on the fretboard; MIDI playback stays unchanged');
+      elements.fretboardSoloOctave.title = elements.fretboardSoloOctave.getAttribute('aria-label');
+    }
     if (elements.pianoVoicingStyle) {
       elements.pianoVoicingStyle.value = validPianoVoicingStyle(state.pianoVoicingStyle);
       elements.pianoVoicingStyle.disabled = view === 'fretboard' || soloFocus;
@@ -2420,6 +2457,7 @@
     // triggers a fresh render through the instrument control handler.
     if (!elements.fretboard || state.instrumentView !== 'fretboard') return;
     const soloFocus = soloStudyActive();
+    const fretboardMelodyNote = soloFocus ? fretboardSoloDisplayNote(melodyNote) : melodyNote;
     const chord = soloFocus ? null : event?.chord || null;
     const toneMode = chord ? validToneMode(state.fretboardToneMode) : 'none';
     const guitarVoicingStyle = validGuitarVoicingStyle(state.guitarVoicingStyle);
@@ -2441,7 +2479,7 @@
     const chordMelody = chord ? guitarChordMelodyPlan(event) : { notes: new Map(), center: null };
     const voicingByPosition = chordMelody.notes;
     const melodyPosition = chordMelody.melodyPositions?.get(melodyNote?.id)
-      || guitarMelodyDisplayPosition(melodyNote, voicingByPosition, chordMelody.center);
+      || guitarMelodyDisplayPosition(fretboardMelodyNote, voicingByPosition, chordMelody.center);
     const melodyPositionKey = fretboardPositionKey(melodyPosition);
     const releasedVoicingKeys = new Set(melodyPosition?.releasedKeys || []);
     // The first-onset melody is part of the canonical grip. Once the purple
@@ -2486,11 +2524,13 @@
     elements.fretboard.dataset.toneMode = toneMode;
     elements.fretboard.dataset.voicingStyle = soloFocus ? 'solo-line' : guitarVoicingStyle;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
+    elements.fretboard.dataset.visualMelodyMidi = fretboardMelodyNote ? String(fretboardMelodyNote.midi) : '';
+    elements.fretboard.dataset.soloOctaveDown = String(Boolean(soloFocus && state.fretboardSoloOctaveDown));
     elements.fretboard.dataset.activeFretSpan = Number.isFinite(melodyPosition?.activeSpan)
       ? String(melodyPosition.activeSpan)
       : '';
     elements.fretboard.dataset.releasedVoicingKeys = [...releasedVoicingKeys].join(',');
-    elements.fretboard.dataset.positionAnchor = soloFocus || state.fretboardPositionAnchor == null
+    elements.fretboard.dataset.positionAnchor = state.fretboardPositionAnchor == null
       ? ''
       : String(state.fretboardPositionAnchor);
     elements.fretboard.dataset.gripEventKey = melodyEventKey(event) || `${state.chartSource}:${state.activeIndex}`;
@@ -2506,15 +2546,15 @@
     elements.fretboard.style.setProperty('--fretboard-min-width', `${columnCount * 27}px`);
     elements.fretboard.setAttribute('aria-colcount', String(columnCount));
     const positionDescription = state.fretboardPositionAnchor == null
-      ? 'automatic chord position'
-      : `chord position anchored at fret ${state.fretboardPositionAnchor}`;
+      ? soloFocus ? 'automatic solo position' : 'automatic chord position'
+      : `${soloFocus ? 'solo' : 'chord'} position anchored at fret ${state.fretboardPositionAnchor}`;
     const adjacentDescription = guitarVoicingStyle === 'adjacent-strings'
       ? chordMelody.adjacentFallback
         ? ' · closest playable fallback when an adjacent string block is impossible'
         : ' · neighboring-string chord block'
       : '';
     elements.fretboard.setAttribute('aria-label', soloFocus
-      ? `Guitar fretboard from the open strings through fret ${maxFret}, showing only the solo line; harmony remains audible in playback`
+      ? `Guitar fretboard from the open strings through fret ${maxFret}, showing only the solo line, ${positionDescription}${state.fretboardSoloOctaveDown ? '; visual octave down is on while MIDI playback remains at the written octave' : ''}; harmony remains audible in playback`
       : event?.kind === 'pickup'
       ? `Guitar fretboard from the open strings through fret ${maxFret}, showing the melody pickup only`
       : melodyNote
@@ -2523,26 +2563,24 @@
 
     const board = document.createElement('div');
     board.className = 'fretboard-grid';
-    if (!soloFocus) {
-      const positionSelector = document.createElement('div');
-      positionSelector.className = 'fret-position-selector';
-      positionSelector.setAttribute('role', 'toolbar');
-      positionSelector.setAttribute('aria-label', 'Choose the lowest fret for chord shapes');
-      for (let fret = 0; fret <= maxFret; fret += 1) {
-        const positionButton = document.createElement('button');
-        const selected = state.fretboardPositionAnchor === fret;
-        positionButton.type = 'button';
-        positionButton.className = 'fret-position-button';
-        positionButton.dataset.fret = String(fret);
-        positionButton.textContent = String(fret);
-        positionButton.setAttribute('aria-pressed', String(selected));
-        positionButton.setAttribute('aria-label', selected
-          ? `Fret ${fret} is the chord position; press again for automatic positioning`
-          : `Use fret ${fret} as the lowest chord position`);
-        positionSelector.appendChild(positionButton);
-      }
-      board.appendChild(positionSelector);
+    const positionSelector = document.createElement('div');
+    positionSelector.className = 'fret-position-selector';
+    positionSelector.setAttribute('role', 'toolbar');
+    positionSelector.setAttribute('aria-label', `Choose the ${soloFocus ? 'solo' : 'chord'} position; press the selected fret again for automatic positioning`);
+    for (let fret = 0; fret <= maxFret; fret += 1) {
+      const positionButton = document.createElement('button');
+      const selected = state.fretboardPositionAnchor === fret;
+      positionButton.type = 'button';
+      positionButton.className = 'fret-position-button';
+      positionButton.dataset.fret = String(fret);
+      positionButton.textContent = String(fret);
+      positionButton.setAttribute('aria-pressed', String(selected));
+      positionButton.setAttribute('aria-label', selected
+        ? `Fret ${fret} is the ${soloFocus ? 'solo' : 'chord'} position; press again for automatic positioning`
+        : `Use fret ${fret} as the ${soloFocus ? 'solo' : 'chord'} position`);
+      positionSelector.appendChild(positionButton);
     }
+    board.appendChild(positionSelector);
     FRETBOARD_STRINGS.forEach((string, stringIndex) => {
       const row = document.createElement('div');
       row.className = 'fretboard-string';
@@ -2584,8 +2622,9 @@
         cell.dataset.midi = String(midi);
         const spelling = sounding?.spelling || chordSpellingByPc.get(pc) || scaleSpellingByPc.get(pc) || Theory.noteName(pc, state.preferFlats);
         const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
-        const foldedMelody = Boolean(melodyHere && melodyPosition.midi !== melodyNote.midi);
-        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, chord-melody ${sounding.role}` : ''}${releasedForMelody ? ', released for the current melody note' : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
+        const visualOctaveDown = Boolean(melodyHere && fretboardMelodyNote && fretboardMelodyNote.midi !== melodyNote?.midi);
+        const foldedMelody = Boolean(melodyHere && melodyPosition.midi !== fretboardMelodyNote?.midi);
+        cell.setAttribute('aria-label', `${string.name} string, fret ${fret}, ${name}${sounding ? `, chord-melody ${sounding.role}` : ''}${releasedForMelody ? ', released for the current melody note' : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${visualOctaveDown ? ', displayed one octave lower; playback remains at written pitch' : foldedMelody ? ', shown on this fretboard octave' : ''}` : ''}`);
         if (state.showNoteNames && toneVisible) {
           const noteLabel = document.createElement('span');
           noteLabel.className = 'fretboard-note';
@@ -2598,10 +2637,10 @@
           role.textContent = sounding.role === 'Bass' ? 'B' : sounding.role;
           cell.appendChild(role);
         }
-        if (foldedMelody) {
+        if (foldedMelody || visualOctaveDown) {
           const octave = document.createElement('span');
           octave.className = 'melody-octave';
-          octave.textContent = melodyLabel(melodyNote);
+          octave.textContent = visualOctaveDown ? '8va↓' : melodyLabel(melodyNote);
           octave.setAttribute('aria-hidden', 'true');
           cell.appendChild(octave);
         }
@@ -2712,6 +2751,15 @@
     elements.playChart.textContent = state.transport.playing ? 'Stop chart' : 'Play chart';
     elements.playChart.setAttribute('aria-pressed', String(state.transport.playing));
     elements.playChart.disabled = !state.transport.playing && !state.timeline.length;
+    if (elements.autoAdvanceRandom) {
+      elements.autoAdvanceRandom.checked = state.transport.autoAdvanceRandom;
+      elements.autoAdvanceRandom.setAttribute('aria-label', state.transport.autoAdvanceRandom
+        ? 'At the end of the chart, choose a random chart from the selected bank and keep playing'
+        : 'At the end of the chart, loop this chart from the beginning');
+      elements.autoAdvanceRandom.parentElement.title = state.transport.autoAdvanceRandom
+        ? 'Random next chart is on: the selected bank supplies the next chart.'
+        : 'Random next chart is off: this chart loops from the beginning.';
+    }
     syncTempoControls();
   }
 
@@ -2974,13 +3022,168 @@
     if (preview) playCurrentVoicing();
   }
 
-  function loadSong(song) {
+  function directXmlChild(node, tagName) {
+    return [...(node?.children || [])].find(child => child.localName === tagName) || null;
+  }
+
+  function directXmlText(node, tagName) {
+    return safeText(directXmlChild(node, tagName)?.textContent);
+  }
+
+  function musicXmlPitchName(step, alter) {
+    const value = safeText(step).toUpperCase();
+    const adjustment = Number(alter) || 0;
+    if (!/^[A-G]$/.test(value)) return '';
+    if (adjustment === -1) return `${value}b`;
+    if (adjustment === 1) return `${value}#`;
+    return value;
+  }
+
+  function musicXmlHarmonySymbol(harmony) {
+    const root = directXmlChild(harmony, 'root');
+    const rootName = musicXmlPitchName(directXmlText(root, 'root-step'), directXmlText(root, 'root-alter'));
+    if (!rootName) return '';
+    const kind = directXmlChild(harmony, 'kind');
+    let quality = safeText(kind?.getAttribute('text'));
+    // The Omnibook export spells half-diminished chords in two compatible
+    // forms. Keyer's parser uses the latter form consistently.
+    if (quality === '-7b5') quality = 'm7b5';
+    const bass = directXmlChild(harmony, 'bass');
+    const bassName = musicXmlPitchName(directXmlText(bass, 'bass-step'), directXmlText(bass, 'bass-alter'));
+    if (quality.startsWith('/')) return `${rootName}${quality}`;
+    return `${rootName}${quality}${bassName ? `/${bassName}` : ''}`;
+  }
+
+  function musicXmlKeyFromFifths(value) {
+    const fifths = Number(value);
+    const names = ['Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D', 'A', 'E', 'B'];
+    return Number.isInteger(fifths) && fifths >= -6 && fifths <= 6 ? names[fifths + 6] : '';
+  }
+
+  function parseParkerMusicXmlSong(source, song) {
+    if (typeof DOMParser !== 'function') throw new Error('This browser cannot read the Parker source chart.');
+    const document = new DOMParser().parseFromString(source, 'application/xml');
+    if (document.querySelector('parsererror')) throw new Error('The Parker source chord chart could not be read.');
+    const measures = [...document.querySelectorAll('part > measure')];
+    if (!measures.length) throw new Error('The Parker source chord chart has no measures.');
+    let divisions = 1;
+    let meter = { beats: 4, beatUnit: 4 };
+    let cursorBeat = 0;
+    let key = '';
+    let bpm = 0;
+    let previousChord = '';
+    const bars = measures.map((measure, index) => {
+      const measureStart = cursorBeat;
+      let localCursor = 0;
+      let meterChanged = false;
+      const changes = [];
+      [...measure.children].forEach(child => {
+        if (child.localName === 'attributes') {
+          const nextDivisions = Number(directXmlText(child, 'divisions'));
+          if (Number.isFinite(nextDivisions) && nextDivisions > 0) divisions = nextDivisions;
+          const time = directXmlChild(child, 'time');
+          const beats = Number(directXmlText(time, 'beats'));
+          const beatUnit = Number(directXmlText(time, 'beat-type'));
+          if (Number.isFinite(beats) && beats > 0 && Number.isFinite(beatUnit) && beatUnit > 0) {
+            meter = { beats, beatUnit };
+            meterChanged = true;
+          }
+          const keyElement = directXmlChild(child, 'key');
+          if (!key) key = musicXmlKeyFromFifths(directXmlText(keyElement, 'fifths'));
+          return;
+        }
+        if (child.localName === 'direction' && !bpm) {
+          const tempo = Number(child.querySelector('per-minute')?.textContent);
+          if (Number.isFinite(tempo) && tempo >= 30) bpm = tempo;
+          return;
+        }
+        if (child.localName === 'harmony') {
+          const raw = musicXmlHarmonySymbol(child);
+          if (!raw || !Theory.parseChordSymbol(raw)) return;
+          const offset = Number(directXmlText(child, 'offset'));
+          const position = Math.max(0, localCursor + (Number.isFinite(offset) ? offset : 0));
+          changes.push({ raw, startBeat: measureStart + position / divisions });
+          return;
+        }
+        const duration = Number(directXmlText(child, 'duration'));
+        if (!Number.isFinite(duration)) return;
+        if (child.localName === 'backup') localCursor = Math.max(0, localCursor - duration);
+        else if (child.localName === 'forward') localCursor += duration;
+        else if (child.localName === 'note' && !directXmlChild(child, 'chord')) localCursor += duration;
+      });
+      const measureBeats = meter.beats * 4 / meter.beatUnit;
+      const measureEnd = measureStart + measureBeats;
+      const chords = changes.map((change, chordIndex) => ({
+        raw: change.raw,
+        chordIndex,
+        startBeat: Math.min(measureEnd - .001, change.startBeat),
+        endBeat: chordIndex + 1 < changes.length
+          ? Math.min(measureEnd, changes[chordIndex + 1].startBeat)
+          : measureEnd
+      }));
+      // A few transcriptions have a fully sustained measure. Re-articulate
+      // the last named harmony for audible backing while keeping the source
+      // timing intact.
+      if (!chords.length && previousChord) chords.push({
+        raw: previousChord,
+        chordIndex: 0,
+        startBeat: measureStart,
+        endBeat: measureEnd,
+        inherited: true
+      });
+      if (chords.length) previousChord = chords[chords.length - 1].raw;
+      cursorBeat = measureEnd;
+      return {
+        index,
+        chords,
+        overflowChords: [],
+        section: String.fromCharCode(65 + Math.floor(index / 8) % 26),
+        sectionMarker: index % 8 === 0 ? String.fromCharCode(65 + Math.floor(index / 8) % 26) : null,
+        timeSignature: meter,
+        timeSignatureChange: meterChanged ? meter : null,
+        annotations: [],
+        comments: [],
+        repeatStart: false,
+        repeatEnd: false,
+        noChord: false,
+        pause: false,
+        startBeat: measureStart,
+        endBeat: measureEnd
+      };
+    });
+    if (!bars.some(bar => bar.chords.length)) throw new Error('The Parker source chart has no readable chord symbols.');
+    return {
+      ...song,
+      bars,
+      playbackOrder: bars.map((_, index) => index),
+      key: song.key || key,
+      bpm: song.bpm || bpm,
+      parkerXmlTiming: true
+    };
+  }
+
+  async function hydrateParkerSong(song) {
+    if (!song?.parkerXmlUrl || Array.isArray(song.bars) && song.bars.length) return song;
+    const xml = await fetchFirst([song.parkerXmlUrl], 'text');
+    return parseParkerMusicXmlSong(xml, song);
+  }
+
+  function applyLoadedSong(song, { transport = false } = {}) {
     const bars = normalizeBars(song);
     if (!bars.length) return false;
-    stopChartPlayback({ render: false });
+    if (transport) {
+      clearTransportTimers();
+      [...voices.keys()].filter(id => String(id).startsWith('chart-')).forEach(id => stopVoice(id, true));
+    } else {
+      stopChartPlayback({ render: false });
+    }
     invalidateDerivedHarmony();
     state.song = song;
-    state.irealChart = createChartData('ireal', bars, song.playbackOrder, { sourceKey: song.key, tempoBpm: song.bpm });
+    state.irealChart = createChartData('ireal', bars, song.playbackOrder, {
+      sourceKey: song.key,
+      tempoBpm: song.bpm,
+      explicitTiming: Boolean(song.parkerXmlTiming)
+    });
     if (!state.irealChart.events.length) return false;
     clearMidiSource();
     state.preferSoloChorus = ['solos', 'parker'].includes(state.songAvailabilityFilter);
@@ -3008,6 +3211,27 @@
     if ((state.showMelody || state.preferSoloChorus) && state.midiEntry) void requestMidiSource({ showAfterLoad: true });
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: song.title, composer: song.composer, key: song.key })); } catch (_) {}
     return true;
+  }
+
+  async function loadSong(song, options = {}) {
+    const request = ++songLoadSequence;
+    try {
+      if (song?.parkerXmlUrl && (!Array.isArray(song.bars) || !song.bars.length)) {
+        elements.libraryStatus.textContent = `Loading ${song.title}'s Parker chord chart…`;
+        const hydrated = await hydrateParkerSong(song);
+        if (request !== songLoadSequence) return false;
+        Object.assign(song, hydrated);
+      }
+      if (request !== songLoadSequence
+        || options.transportSession != null && !transportSessionActive(options.transportSession)) return false;
+      return applyLoadedSong(song, options);
+    } catch (error) {
+      if (request === songLoadSequence) {
+        console.error(error);
+        elements.libraryStatus.textContent = `Could not load ${song?.title || 'this Parker'} chord chart.`;
+      }
+      return false;
+    }
   }
 
   function favoriteKeyForSong(song) {
@@ -3367,7 +3591,12 @@
       elements.libraryStatus.textContent = 'Reading chart forms and chord symbols…';
       await new Promise(resolve => requestAnimationFrame(resolve));
       const parsed = IReal.parsePlaylist(text);
-      state.songs = Array.isArray(parsed) ? parsed : parsed?.songs || [];
+      const catalogSongs = Array.isArray(parsed) ? parsed : parsed?.songs || [];
+      const supplementalParkerSongs = typeof SoloCatalog?.parkerSupplementalSongs === 'function'
+        ? SoloCatalog.parkerSupplementalSongs()
+        : [];
+      const knownTitles = new Set(catalogSongs.map(song => safeText(song?.title).toLocaleLowerCase()));
+      state.songs = [...catalogSongs, ...supplementalParkerSongs.filter(song => !knownTitles.has(safeText(song?.title).toLocaleLowerCase()))];
       if (!state.songs.length) throw new Error('No readable standards were found in the catalog.');
       state.songs.sort((a, b) => safeText(a.title).localeCompare(safeText(b.title), undefined, { sensitivity: 'base' }));
       elements.randomSong.disabled = false;
@@ -3681,6 +3910,66 @@
     else syncTransportControls();
   }
 
+  function transportSessionActive(session) {
+    return state.transport.playing && state.transport.session === session;
+  }
+
+  function firstTimelineIndex() {
+    return state.timeline.findIndex(entry => entry.type === 'chord' || entry.type === 'pickup');
+  }
+
+  function restartChartFromBeginning(session) {
+    if (!transportSessionActive(session)) return;
+    const startIndex = firstTimelineIndex();
+    if (startIndex < 0) {
+      stopChartPlayback();
+      return;
+    }
+    state.activeIndex = 0;
+    state.activeAlternateCellId = null;
+    state.activeAlternateIndex = -1;
+    resetMelodySelection();
+    renderStudy({ keepVisible: false });
+    playTimelineEntry(startIndex, session, 60 / currentTempo());
+  }
+
+  function randomAutoplaySong() {
+    const eligible = randomSelectionSongs();
+    if (!eligible.length) return null;
+    const alternatives = eligible.filter(song => song !== state.song);
+    const pool = alternatives.length ? alternatives : eligible;
+    return pool[Math.floor(Math.random() * pool.length)] || null;
+  }
+
+  async function continueWithRandomChart(session) {
+    if (!transportSessionActive(session)) return;
+    const nextSong = randomAutoplaySong();
+    if (!nextSong) {
+      restartChartFromBeginning(session);
+      return;
+    }
+    const loaded = await loadSong(nextSong, { transport: true, transportSession: session });
+    if (!loaded || !transportSessionActive(session)) return;
+    const startIndex = firstTimelineIndex();
+    if (startIndex < 0) {
+      restartChartFromBeginning(session);
+      return;
+    }
+    state.activeIndex = 0;
+    resetMelodySelection();
+    renderStudy({ keepVisible: false });
+    playTimelineEntry(startIndex, session, 60 / currentTempo());
+  }
+
+  function continueAfterChart(session) {
+    if (!transportSessionActive(session)) return;
+    if (state.transport.autoAdvanceRandom) {
+      void continueWithRandomChart(session);
+      return;
+    }
+    restartChartFromBeginning(session);
+  }
+
   function scheduleTransport(callback, milliseconds, session) {
     const timerId = window.setTimeout(() => {
       state.transport.timerIds.delete(timerId);
@@ -3750,7 +4039,7 @@
     }
     const next = state.timeline[timelineIndex + 1];
     if (!next) {
-      scheduleTransport(() => stopChartPlayback(), Math.max(.06, entry.durationBeats * secondsPerBeat) * 1000, session);
+      scheduleTransport(() => continueAfterChart(session), Math.max(.06, entry.durationBeats * secondsPerBeat) * 1000, session);
       return;
     }
     const delayBeats = Math.max(.01, next.startBeat - entry.startBeat);
@@ -3914,6 +4203,12 @@
     try { localStorage.setItem(FRETBOARD_TONE_STORAGE_KEY, state.fretboardToneMode); } catch (_) {}
     renderStudy({ keepVisible: false });
   });
+  elements.fretboardSoloOctave?.addEventListener('click', () => {
+    if (!soloStudyActive() || state.instrumentView !== 'fretboard') return;
+    state.fretboardSoloOctaveDown = !state.fretboardSoloOctaveDown;
+    try { localStorage.setItem(FRETBOARD_SOLO_OCTAVE_STORAGE_KEY, state.fretboardSoloOctaveDown ? 'down' : 'written'); } catch (_) {}
+    renderStudy({ keepVisible: false });
+  });
   elements.instrumentView?.addEventListener('change', () => {
     state.instrumentView = elements.instrumentView.value === 'fretboard' ? 'fretboard' : 'piano';
     try { localStorage.setItem(INSTRUMENT_VIEW_STORAGE_KEY, state.instrumentView); } catch (_) {}
@@ -3948,6 +4243,11 @@
       setMelodyVisibility(true);
       renderStudy({ keepVisible: false });
     }
+  });
+  elements.autoAdvanceRandom?.addEventListener('change', () => {
+    state.transport.autoAdvanceRandom = Boolean(elements.autoAdvanceRandom.checked);
+    try { localStorage.setItem(AUTO_ADVANCE_RANDOM_STORAGE_KEY, state.transport.autoAdvanceRandom ? 'on' : 'off'); } catch (_) {}
+    syncTransportControls();
   });
   elements.retryLoad.addEventListener('click', loadCatalog);
 
@@ -4033,10 +4333,10 @@
   elements.studyCard.addEventListener('pointercancel', () => { swipe = null; });
 
   document.addEventListener('keydown', event => {
-    if (event.target.closest('input, a, select, textarea, [contenteditable]')) return;
+    if (event.target.closest('button, input, a, select, textarea, [contenteditable]')) return;
     if (event.key === 'ArrowLeft') { event.preventDefault(); navigateChord(-1); }
     if (event.key === 'ArrowRight') { event.preventDefault(); navigateChord(1); }
-    if (event.key === ' ') { event.preventDefault(); playCurrentVoicing(); }
+    if (event.key === ' ' || event.code === 'Space') { event.preventDefault(); startChartPlayback(); }
   });
   // `touch-action: manipulation` handles current mobile browsers without
   // disabling pinch or scroll.  This small fallback also prevents a stray
@@ -4057,9 +4357,11 @@
   } catch (_) {}
   try { state.keyboardToneMode = validToneMode(localStorage.getItem(KEYBOARD_TONE_STORAGE_KEY)); } catch (_) {}
   try { state.fretboardToneMode = validToneMode(localStorage.getItem(FRETBOARD_TONE_STORAGE_KEY)); } catch (_) {}
+  try { state.fretboardSoloOctaveDown = localStorage.getItem(FRETBOARD_SOLO_OCTAVE_STORAGE_KEY) === 'down'; } catch (_) {}
   try { state.pianoVoicingStyle = validPianoVoicingStyle(localStorage.getItem(PIANO_VOICING_STORAGE_KEY)); } catch (_) {}
   try { state.guitarVoicingStyle = validGuitarVoicingStyle(localStorage.getItem(GUITAR_VOICING_STORAGE_KEY)); } catch (_) {}
   try { state.showMelody = localStorage.getItem(MELODY_VISIBILITY_STORAGE_KEY) === 'on'; } catch (_) {}
+  try { state.transport.autoAdvanceRandom = localStorage.getItem(AUTO_ADVANCE_RANDOM_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.reharmLevel = Reharm?.normalizeLevel?.(localStorage.getItem(REHARM_LEVEL_STORAGE_KEY)) ?? 0; } catch (_) {}
   try {
     const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
