@@ -7,6 +7,7 @@
   const SoloCatalog = window.KeyerJazzSoloCatalog;
   const AzMidiCatalog = window.KeyerAzMidiCatalog;
   const Reharm = window.KeyerStandardsReharm;
+  const Parkerize = window.KeyerParkerize;
   const CATALOG_URLS = [
     'https://raw.githubusercontent.com/santismo/fakebot/main/real%20playlist.txt',
     'https://cdn.jsdelivr.net/gh/santismo/fakebot@main/real%20playlist.txt'
@@ -34,6 +35,9 @@
   const GUITAR_VOICING_STORAGE_KEY = 'keyer-jazz-guitar-voicing-style';
   const MELODY_VISIBILITY_STORAGE_KEY = 'keyer-jazz-show-melody';
   const AUTO_ADVANCE_RANDOM_STORAGE_KEY = 'keyer-jazz-auto-advance-random';
+  const PARKERIZE_HARMONY_STORAGE_KEY = 'keyer-jazz-parkerize-harmony';
+  const PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY = 'keyer-jazz-parkerize-chart-complexity';
+  const PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY = 'keyer-jazz-parkerize-solo-complexity';
   const REHARM_LEVEL_STORAGE_KEY = 'keyer-jazz-reharm-level';
   const FAVORITES_STORAGE_KEY = 'keyer-jazz-standard-favorites';
   const DESKTOP_KEYBOARD_RANGE_STORAGE_KEY = 'keyer-jazz-desktop-keyboard-range';
@@ -77,11 +81,22 @@
     major: ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'],
     minor: ['Aeolian', 'Locrian', 'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian']
   };
+  const PARKERIZE_COMPLEXITY_LABELS = ['','Spacious', 'Swinging', 'Bebop', 'Intricate', 'Bird fire'];
 
   const elements = {
     search: document.querySelector('#songSearch'),
     searchResults: document.querySelector('#searchResults'),
     songAvailabilityFilter: document.querySelector('#songAvailabilityFilter'),
+    parkerizePanel: document.querySelector('#parkerizePanel'),
+    parkerizeStatus: document.querySelector('#parkerizeStatus'),
+    parkerizeHarmonyMode: document.querySelector('#parkerizeHarmonyMode'),
+    parkerizeChartComplexity: document.querySelector('#parkerizeChartComplexity'),
+    parkerizeChartComplexityValue: document.querySelector('#parkerizeChartComplexityValue'),
+    parkerizeSoloComplexity: document.querySelector('#parkerizeSoloComplexity'),
+    parkerizeSoloComplexityValue: document.querySelector('#parkerizeSoloComplexityValue'),
+    generateParkerize: document.querySelector('#generateParkerize'),
+    regenerateParkerizeSolo: document.querySelector('#regenerateParkerizeSolo'),
+    exportParkerizeMidi: document.querySelector('#exportParkerizeMidi'),
     randomSong: document.querySelector('#randomSong'),
     favoriteSong: document.querySelector('#favoriteSong'),
     libraryStatus: document.querySelector('#libraryStatus'),
@@ -115,6 +130,7 @@
     tempoValue: document.querySelector('#tempoValue'),
     playMelody: document.querySelector('#playMelody'),
     autoAdvanceRandom: document.querySelector('#autoAdvanceRandom'),
+    autoAdvanceRandomLabel: document.querySelector('#autoAdvanceRandomLabel'),
     piano: document.querySelector('#piano'),
     melodyPiano: document.querySelector('#melodyPiano'),
     keyboardStack: document.querySelector('#keyboardStack'),
@@ -153,6 +169,16 @@
     searchPickerPrimed: false,
     songAvailabilityFilter: 'all',
     favoriteSongKeys: new Set(),
+    parkerize: {
+      active: false,
+      harmonyMode: 'standard',
+      chartComplexity: 3,
+      soloComplexity: 3,
+      seedCounter: 0,
+      corpus: null,
+      baseSong: null,
+      lastTake: null
+    },
     voicing: [],
     displayVoicing: [],
     fretboardVoicing: [],
@@ -224,6 +250,132 @@
   let swipe = null;
   let songLoadSequence = 0;
   const safeText = value => String(value == null ? '' : value).trim();
+
+  function parkerizeActive() {
+    return Boolean(state.parkerize.active && state.songAvailabilityFilter === 'parkerize');
+  }
+
+  function parkerizeComplexityLabel(value) {
+    const level = Parkerize?.clampLevel?.(value) || Math.max(1, Math.min(5, Number(value) || 3));
+    return `${level} · ${PARKERIZE_COMPLEXITY_LABELS[level]}`;
+  }
+
+  function nextParkerizeSeed(kind) {
+    state.parkerize.seedCounter += 1;
+    return `${kind}:${Date.now()}:${state.parkerize.seedCounter}:${state.song?.title || 'chart'}`;
+  }
+
+  function syncParkerizePanel() {
+    const active = parkerizeActive();
+    if (elements.parkerizePanel) elements.parkerizePanel.hidden = !active;
+    if (elements.parkerizeHarmonyMode) elements.parkerizeHarmonyMode.value = state.parkerize.harmonyMode;
+    if (elements.parkerizeChartComplexity) {
+      elements.parkerizeChartComplexity.value = String(state.parkerize.chartComplexity);
+      elements.parkerizeChartComplexity.disabled = state.parkerize.harmonyMode !== 'generated';
+    }
+    if (elements.parkerizeSoloComplexity) elements.parkerizeSoloComplexity.value = String(state.parkerize.soloComplexity);
+    if (elements.parkerizeChartComplexityValue) elements.parkerizeChartComplexityValue.textContent = parkerizeComplexityLabel(state.parkerize.chartComplexity);
+    if (elements.parkerizeSoloComplexityValue) elements.parkerizeSoloComplexityValue.textContent = parkerizeComplexityLabel(state.parkerize.soloComplexity);
+    if (elements.generateParkerize) elements.generateParkerize.textContent = state.parkerize.harmonyMode === 'generated' ? 'New chart + solo' : 'Generate solo';
+    if (elements.regenerateParkerizeSolo) elements.regenerateParkerizeSolo.hidden = state.parkerize.harmonyMode !== 'generated';
+    if (elements.exportParkerizeMidi) elements.exportParkerizeMidi.disabled = !state.parkerize.lastTake || state.midiEntry?.type !== 'parkerize';
+    if (elements.search) elements.search.placeholder = active && state.parkerize.harmonyMode === 'standard'
+      ? 'Choose a standard to Parkerize…'
+      : 'Find a standard or composer…';
+    if (elements.randomSong) {
+      const generated = active && state.parkerize.harmonyMode === 'generated';
+      elements.randomSong.textContent = generated ? 'New tune' : active ? 'Random tune' : 'Random';
+      elements.randomSong.setAttribute('aria-label', generated ? 'Generate a new original bebop chart and solo' : active ? 'Parkerize a random standard' : 'Choose a random standard');
+      elements.randomSong.title = elements.randomSong.getAttribute('aria-label');
+    }
+  }
+
+  function parkerizeChartEvents() {
+    return (state.irealChart?.events || []).filter(event => event?.kind === 'chord' && event.chord);
+  }
+
+  function installParkerizedSolo({ transport = false } = {}) {
+    if (!Parkerize || !state.song || !state.irealChart?.events?.length) return false;
+    if (state.transport.playing && !transport) stopChartPlayback({ render: false });
+    if (!state.song.parkerizeGenerated) state.parkerize.baseSong = state.song;
+    const events = parkerizeChartEvents();
+    if (!events.length) return false;
+    try {
+      const result = Parkerize.generateSolo({
+        events,
+        complexity: state.parkerize.soloComplexity,
+        seed: nextParkerizeSeed('solo'),
+        title: `${state.song.title || 'Standard'} · Parkerize`,
+        bpm: Number(state.song.bpm) || DEFAULT_TEMPO
+      });
+      const entry = {
+        type: 'parkerize',
+        name: `${state.song.title || 'Standard'}-parkerize.mid`,
+        title: result.title,
+        sourceLabel: 'Parkerize · aggregate Parker model',
+        soloTitle: result.title
+      };
+      state.midiEntries = [];
+      state.midiEntry = entry;
+      state.preferSoloChorus = true;
+      state.parkerize.lastTake = { ...result, events: events.slice(), song: state.song };
+      installMidiSource(result.midi, entry);
+      if (elements.parkerizeStatus) {
+        const harmony = state.song.parkerizeGenerated
+          ? `original chart ${state.parkerize.chartComplexity}`
+          : state.song.title;
+        elements.parkerizeStatus.textContent = `${result.notes.length} solo notes · ${harmony} · solo ${state.parkerize.soloComplexity}`;
+      }
+      syncParkerizePanel();
+      return true;
+    } catch (error) {
+      console.error(error);
+      if (elements.parkerizeStatus) elements.parkerizeStatus.textContent = error?.message || 'Could not generate this solo';
+      return false;
+    }
+  }
+
+  function generateParkerizedChart({ transport = false } = {}) {
+    if (!Parkerize) return false;
+    if (state.transport.playing && !transport) stopChartPlayback({ render: false });
+    if (state.song && !state.song.parkerizeGenerated) state.parkerize.baseSong = state.song;
+    const song = Parkerize.generateChart({
+      complexity: state.parkerize.chartComplexity,
+      corpus: state.parkerize.corpus,
+      seed: nextParkerizeSeed('chart')
+    });
+    return applyLoadedSong(song, { transport });
+  }
+
+  function exportParkerizedMidi() {
+    const take = state.parkerize.lastTake;
+    if (!Parkerize || !take || state.midiEntry?.type !== 'parkerize') return false;
+    try {
+      const bytes = Parkerize.exportMidi({
+        title: `${state.song?.title || 'Parkerize'} · solo ${state.parkerize.soloComplexity}`,
+        key: state.song?.key,
+        bpm: currentTempo(),
+        events: take.events,
+        notes: state.melodyNotes
+      });
+      const blob = new Blob([bytes], { type: 'audio/midi' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = Parkerize.fileNameForTitle(`${state.song?.title || 'parkerize'}-solo-${state.parkerize.soloComplexity}`);
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (elements.parkerizeStatus) elements.parkerizeStatus.textContent = `Exported ${link.download || 'Parkerize MIDI'} with chord markers`;
+      return true;
+    } catch (error) {
+      console.error(error);
+      if (elements.parkerizeStatus) elements.parkerizeStatus.textContent = error?.message || 'Could not export this MIDI';
+      return false;
+    }
+  }
 
   function validFretboardPositionAnchor(value) {
     if (value == null || value === '') return null;
@@ -865,6 +1017,7 @@
   }
 
   function soloStudyLabel(entry) {
+    if (entry?.type === 'parkerize') return `Parkerize · ${entry.soloTitle || entry.title}`;
     if (entry?.type === 'parker-solo') return `Charlie Parker · ${entry.soloTitle || entry.title}`;
     return entry?.sourceLabel || entry?.title || 'MIDI study';
   }
@@ -2754,13 +2907,24 @@
     elements.playChart.setAttribute('aria-pressed', String(state.transport.playing));
     elements.playChart.disabled = !state.transport.playing && !state.timeline.length;
     if (elements.autoAdvanceRandom) {
+      const generatedParkerize = parkerizeActive() && state.parkerize.harmonyMode === 'generated';
+      const standardParkerize = parkerizeActive() && state.parkerize.harmonyMode === 'standard';
       elements.autoAdvanceRandom.checked = state.transport.autoAdvanceRandom;
       elements.autoAdvanceRandom.setAttribute('aria-label', state.transport.autoAdvanceRandom
-        ? 'At the end of the chart, choose a random chart from the selected bank and keep playing'
+        ? generatedParkerize
+          ? 'At the end of the chart, generate a new original bebop chart and solo and keep playing'
+          : standardParkerize
+            ? 'At the end of the chart, Parkerize a random standard and keep playing'
+            : 'At the end of the chart, choose a random chart from the selected bank and keep playing'
         : 'At the end of the chart, loop this chart from the beginning');
       elements.autoAdvanceRandom.parentElement.title = state.transport.autoAdvanceRandom
-        ? 'Random next chart is on: the selected bank supplies the next chart.'
+        ? generatedParkerize
+          ? 'New generated chart is on: Parkerize creates another composition with the saved complexity settings.'
+          : standardParkerize
+            ? 'Random next chart is on: Parkerize creates a new solo over another standard.'
+            : 'Random next chart is on: the selected bank supplies the next chart.'
         : 'Random next chart is off: this chart loops from the beginning.';
+      if (elements.autoAdvanceRandomLabel) elements.autoAdvanceRandomLabel.textContent = generatedParkerize ? 'Generate next tune' : standardParkerize ? 'Parkerize next chart' : 'Random next chart';
     }
     syncTempoControls();
   }
@@ -2943,11 +3107,13 @@
         ? `${chordEventCount} chord markers${pickupSuffix}`
         : 'melody over iReal timing';
       const tempo = Number(state.midi.tempos?.[0]?.bpm);
-      const caution = !state.midiChart ? ' · check the form matches' : '';
+      const caution = !state.midiChart && state.midiEntry?.type !== 'parkerize' ? ' · check the form matches' : '';
       const chorusText = state.midiChoruses.length > 1
         ? ` · chorus ${state.midiChorusIndex + 1} of ${state.midiChoruses.length}`
         : '';
-      const studyText = soloStudyActive() ? 'solo study' : state.midiEntry?.type === 'parker-solo' ? 'Parker transcription' : 'MIDI';
+      const studyText = state.midiEntry?.type === 'parkerize'
+        ? `Parkerize solo ${state.parkerize.soloComplexity}`
+        : soloStudyActive() ? 'solo study' : state.midiEntry?.type === 'parker-solo' ? 'Parker transcription' : 'MIDI';
       elements.midiStatus.textContent = `${studyText} · ${markerText}${chorusText}${Number.isFinite(tempo) ? ` · ${Math.round(tempo)} BPM` : ''}${caution}`;
       return;
     }
@@ -3188,14 +3354,17 @@
     });
     if (!state.irealChart.events.length) return false;
     clearMidiSource();
-    state.preferSoloChorus = ['solos', 'parker'].includes(state.songAvailabilityFilter);
-    state.midiEntries = midiEntriesForSong(song);
+    const generatedPractice = parkerizeActive();
+    state.preferSoloChorus = generatedPractice || ['solos', 'parker'].includes(state.songAvailabilityFilter);
+    state.midiEntries = generatedPractice ? [] : midiEntriesForSong(song);
     state.midiEntry = state.midiEntries[0] || null;
 
     if (state.preferSoloChorus && state.midiEntry) setMelodyVisibility(true, { persist: false });
 
     elements.songTitle.textContent = song.title || 'Untitled standard';
-    elements.songComposer.textContent = state.midiEntry?.type === 'parker-solo'
+    elements.songComposer.textContent = song.parkerizeGenerated
+      ? 'Parkerize · original generated composition'
+      : state.midiEntry?.type === 'parker-solo'
       ? `${song.composer || 'Charlie Parker'} · Parker solo study`
       : song.composer || 'Unknown composer';
     elements.songMeta.textContent = [song.style, song.key ? `Key ${song.key}` : '', `${bars.length} bars`].filter(Boolean).join(' · ');
@@ -3210,15 +3379,19 @@
     // "Show melody" is a learner preference, not a property of one chart.
     // Keep it on through Random/song selection and quietly load the next
     // compatible melody when the catalog has a match.
-    if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi) void requestMidiSource({ showAfterLoad: true });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        title: song.title,
-        composer: song.composer,
-        key: song.key,
-        azMidiFile: song.azMidiEntry?.file || ''
-      }));
-    } catch (_) {}
+    if (generatedPractice) installParkerizedSolo({ transport });
+    else if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi) void requestMidiSource({ showAfterLoad: true });
+    if (!song.parkerizeGenerated) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          title: song.title,
+          composer: song.composer,
+          key: song.key,
+          azMidiFile: song.azMidiEntry?.file || ''
+        }));
+      } catch (_) {}
+    }
+    syncParkerizePanel();
     return true;
   }
 
@@ -3324,6 +3497,7 @@
     if (state.songAvailabilityFilter === 'solos') return source.filter(isJazzSoloSong);
     if (state.songAvailabilityFilter === 'parker') return source.filter(isParkerSoloSong);
     if (state.songAvailabilityFilter === 'az-midi') return source;
+    if (state.songAvailabilityFilter === 'parkerize') return source;
     if (state.songAvailabilityFilter === 'favorites') return source.filter(isFavoriteSong);
     if (!state.midiCatalogReady) return [];
     return source.filter(song => {
@@ -3362,6 +3536,8 @@
         ? 'Parker solo'
         : state.songAvailabilityFilter === 'solos'
           ? isParkerSoloSong(song) ? 'Parker solo' : 'Multi-chorus study'
+          : state.songAvailabilityFilter === 'parkerize'
+            ? 'Generate a new solo'
           : '';
       sub.textContent = [sourceLabel, song.composer, song.style].filter(Boolean).join(' · ');
       meta.append(title, sub);
@@ -3385,6 +3561,7 @@
         : state.songAvailabilityFilter === 'solos' ? 'jazz solo studies'
         : state.songAvailabilityFilter === 'parker' ? 'Charlie Parker solo studies'
         : state.songAvailabilityFilter === 'az-midi' ? 'in the A–Z MIDI bank'
+        : state.songAvailabilityFilter === 'parkerize' ? 'available to Parkerize'
         : '';
       const available = state.songAvailabilityFilter === 'az-midi' ? state.azMidiSongs.length : state.songs.length;
       elements.libraryStatus.textContent = `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'}${label ? ` ${label}` : ''} · ${available.toLocaleString()} charts available`;
@@ -3483,12 +3660,14 @@
 
   function isSoloStudyEntry(entry = state.midiEntry) {
     return entry?.type === 'parker-solo'
+      || entry?.type === 'parkerize'
       || Boolean(state.preferSoloChorus && SoloCatalog?.isMiditarMultiChorus?.(state.song?.title));
   }
 
   function soloStudyActive() {
     return Boolean(state.midi && state.showMelody && (
       state.midiEntry?.type === 'parker-solo'
+      || state.midiEntry?.type === 'parkerize'
       || (state.midiChoruses.length > 1 && state.midiChorusIndex > 0)
     ));
   }
@@ -3547,7 +3726,9 @@
     const key = state.chartSource === 'midi'
       ? chart?.sourceKey ? `Key ${chart.sourceKey}` : 'MIDI form'
       : chart?.sourceKey ? `Key ${chart.sourceKey}` : state.song.key ? `Key ${state.song.key}` : '';
-    const solo = state.midiEntry?.type === 'parker-solo'
+    const solo = state.midiEntry?.type === 'parkerize'
+      ? 'Parkerize solo'
+      : state.midiEntry?.type === 'parker-solo'
       ? 'Parker solo'
       : soloStudyActive() ? 'Solo study' : '';
     return [state.song.style, key, `${chart?.bars?.length || 0} bars`, solo, source].filter(Boolean).join(' · ');
@@ -3649,7 +3830,7 @@
     elements.libraryStatus.textContent = 'Loading jazz standards…';
     elements.randomSong.disabled = true;
     try {
-      if (!Theory || !IReal || typeof IReal.parsePlaylist !== 'function') throw new Error('The standards parser did not load.');
+      if (!Theory || !IReal || typeof IReal.parsePlaylist !== 'function' || !Parkerize) throw new Error('The standards parser did not load.');
       const text = await fetchCatalog();
       elements.libraryStatus.textContent = 'Reading chart forms and chord symbols…';
       await new Promise(resolve => requestAnimationFrame(resolve));
@@ -3682,6 +3863,7 @@
       });
       if (!state.songs.length) throw new Error('No readable standards were found in the catalog.');
       state.songs.sort((a, b) => safeText(a.title).localeCompare(safeText(b.title), undefined, { sensitivity: 'base' }));
+      state.parkerize.corpus = Parkerize.learnHarmonyCorpus(state.songs);
       elements.randomSong.disabled = false;
       const first = restoredSong()
         || state.songs.find(song => safeText(song.title).toLowerCase() === 'autumn leaves')
@@ -4026,12 +4208,17 @@
 
   async function continueWithRandomChart(session) {
     if (!transportSessionActive(session)) return;
-    const nextSong = randomAutoplaySong();
-    if (!nextSong) {
-      restartChartFromBeginning(session);
-      return;
+    let loaded = false;
+    if (parkerizeActive() && state.parkerize.harmonyMode === 'generated') {
+      loaded = generateParkerizedChart({ transport: true });
+    } else {
+      const nextSong = randomAutoplaySong();
+      if (!nextSong) {
+        restartChartFromBeginning(session);
+        return;
+      }
+      loaded = await loadSong(nextSong, { transport: true, transportSession: session });
     }
-    const loaded = await loadSong(nextSong, { transport: true, transportSession: session });
     if (!loaded || !transportSessionActive(session)) return;
     const startIndex = firstTimelineIndex();
     if (startIndex < 0) {
@@ -4211,10 +4398,18 @@
   });
   elements.search.addEventListener('input', () => { state.searchIndex = -1; renderSearchResults(); });
   elements.songAvailabilityFilter?.addEventListener('change', () => {
-    state.songAvailabilityFilter = ['favorites', 'melody', 'chords', 'solos', 'parker', 'az-midi'].includes(elements.songAvailabilityFilter.value)
+    state.songAvailabilityFilter = ['favorites', 'melody', 'chords', 'solos', 'parker', 'az-midi', 'parkerize'].includes(elements.songAvailabilityFilter.value)
       ? elements.songAvailabilityFilter.value
       : 'all';
+    state.parkerize.active = state.songAvailabilityFilter === 'parkerize';
     state.searchIndex = -1;
+    syncParkerizePanel();
+    if (parkerizeActive()) {
+      setMelodyVisibility(true, { persist: false });
+      if (state.parkerize.harmonyMode === 'generated') generateParkerizedChart();
+      else if (state.song?.parkerizeGenerated && state.parkerize.baseSong) void loadSong(state.parkerize.baseSong);
+      else installParkerizedSolo();
+    }
     renderSearchResults();
   });
   elements.search.addEventListener('keydown', event => {
@@ -4238,10 +4433,40 @@
     }
   });
   elements.randomSong.addEventListener('click', () => {
+    if (parkerizeActive() && state.parkerize.harmonyMode === 'generated') {
+      generateParkerizedChart();
+      return;
+    }
     const songs = randomSelectionSongs();
     if (!songs.length) return;
     loadSong(songs[Math.floor(Math.random() * songs.length)]);
   });
+  elements.parkerizeHarmonyMode?.addEventListener('change', () => {
+    state.parkerize.harmonyMode = elements.parkerizeHarmonyMode.value === 'generated' ? 'generated' : 'standard';
+    try { localStorage.setItem(PARKERIZE_HARMONY_STORAGE_KEY, state.parkerize.harmonyMode); } catch (_) {}
+    syncParkerizePanel();
+    syncTransportControls();
+    if (!parkerizeActive()) return;
+    if (state.parkerize.harmonyMode === 'generated') generateParkerizedChart();
+    else if (state.song?.parkerizeGenerated && state.parkerize.baseSong) void loadSong(state.parkerize.baseSong);
+    else installParkerizedSolo();
+  });
+  elements.parkerizeChartComplexity?.addEventListener('input', () => {
+    state.parkerize.chartComplexity = Parkerize?.clampLevel?.(elements.parkerizeChartComplexity.value) || 3;
+    try { localStorage.setItem(PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY, String(state.parkerize.chartComplexity)); } catch (_) {}
+    syncParkerizePanel();
+  });
+  elements.parkerizeSoloComplexity?.addEventListener('input', () => {
+    state.parkerize.soloComplexity = Parkerize?.clampLevel?.(elements.parkerizeSoloComplexity.value) || 3;
+    try { localStorage.setItem(PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY, String(state.parkerize.soloComplexity)); } catch (_) {}
+    syncParkerizePanel();
+  });
+  elements.generateParkerize?.addEventListener('click', () => {
+    if (state.parkerize.harmonyMode === 'generated') generateParkerizedChart();
+    else installParkerizedSolo();
+  });
+  elements.regenerateParkerizeSolo?.addEventListener('click', () => { installParkerizedSolo(); });
+  elements.exportParkerizeMidi?.addEventListener('click', exportParkerizedMidi);
   elements.favoriteSong?.addEventListener('click', toggleFavoriteSong);
   elements.previousChord.addEventListener('click', () => navigateChord(-1));
   elements.nextChord.addEventListener('click', () => navigateChord(1));
@@ -4416,10 +4641,17 @@
   elements.studyCard.addEventListener('pointercancel', () => { swipe = null; });
 
   document.addEventListener('keydown', event => {
+    if (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.code === 'Space' || event.keyCode === 32) {
+      // Space is the global chart transport even after a button or link was
+      // used. Preserve native editing/select behavior for form fields.
+      if (event.target.closest('input, select, textarea, [contenteditable]')) return;
+      event.preventDefault();
+      startChartPlayback();
+      return;
+    }
     if (event.target.closest('button, input, a, select, textarea, [contenteditable]')) return;
     if (event.key === 'ArrowLeft') { event.preventDefault(); navigateChord(-1); }
     if (event.key === 'ArrowRight') { event.preventDefault(); navigateChord(1); }
-    if (event.key === ' ' || event.code === 'Space') { event.preventDefault(); startChartPlayback(); }
   });
   // `touch-action: manipulation` handles current mobile browsers without
   // disabling pinch or scroll.  This small fallback also prevents a stray
@@ -4445,6 +4677,9 @@
   try { state.guitarVoicingStyle = validGuitarVoicingStyle(localStorage.getItem(GUITAR_VOICING_STORAGE_KEY)); } catch (_) {}
   try { state.showMelody = localStorage.getItem(MELODY_VISIBILITY_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.transport.autoAdvanceRandom = localStorage.getItem(AUTO_ADVANCE_RANDOM_STORAGE_KEY) === 'on'; } catch (_) {}
+  try { state.parkerize.harmonyMode = localStorage.getItem(PARKERIZE_HARMONY_STORAGE_KEY) === 'generated' ? 'generated' : 'standard'; } catch (_) {}
+  try { state.parkerize.chartComplexity = Parkerize?.clampLevel?.(localStorage.getItem(PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY)) || 3; } catch (_) {}
+  try { state.parkerize.soloComplexity = Parkerize?.clampLevel?.(localStorage.getItem(PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY)) || 3; } catch (_) {}
   try { state.reharmLevel = Reharm?.normalizeLevel?.(localStorage.getItem(REHARM_LEVEL_STORAGE_KEY)) ?? 0; } catch (_) {}
   try {
     const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
@@ -4462,6 +4697,7 @@
   syncNoteNameToggle();
   syncInstrumentControls();
   syncTransportControls();
+  syncParkerizePanel();
   window.KeyerStandardsDebug = {
     state,
     loadSong,
@@ -4473,6 +4709,10 @@
     selectMidiStudy,
     selectMidiChorus,
     soloStudyActive,
+    parkerizeActive,
+    installParkerizedSolo,
+    generateParkerizedChart,
+    exportParkerizedMidi,
     installMidiSource,
     startChartPlayback,
     stopChartPlayback,
