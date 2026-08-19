@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const Parkerize = require('../parkerize.js');
+const ParkerCorpus = require('../parkerize-corpus.js');
 const Theory = require('../jazz-theory.js');
 const MiditarMidi = require('../miditar-midi.js');
 
@@ -55,6 +56,19 @@ test('learns a compact harmonic profile from jazz charts', () => {
   assert.ok(corpus.chordCount >= 15);
   assert.ok(corpus.transitions['0:maj']['9:dom'] > 0);
   assert.ok(corpus.transitions['2:min']['7:dom'] > 0);
+  assert.ok(Object.keys(corpus.trigrams).length > 0);
+  assert.ok(Object.keys(corpus.barCells).length > 0);
+  assert.ok(corpus.chordCounts[2] > 0);
+});
+
+test('ships an aggregate performance model built from every Parker transcription', () => {
+  assert.equal(ParkerCorpus.soloCount, 50);
+  assert.ok(ParkerCorpus.noteCount > 20000);
+  assert.ok(ParkerCorpus.phraseCount > 1500);
+  assert.ok(Object.keys(ParkerCorpus.stepTransitions).length >= 6);
+  assert.ok(Object.keys(ParkerCorpus.intervalTransitions).length >= 20);
+  assert.equal(Parkerize.corpusModel.parkerSoloCount, 50);
+  assert.equal(Parkerize.corpusModel.parkerNoteCount, ParkerCorpus.noteCount);
 });
 
 test('creates deterministic original forms with independent chart complexity', () => {
@@ -67,12 +81,16 @@ test('creates deterministic original forms with independent chart complexity', (
   assert.equal(simple.parkerizeGenerated, true);
   assert.equal(advanced.parkerizeChartComplexity, 5);
   assert.equal(advanced.parkerizeCorpusSongs, 2);
+  assert.match(advanced.parkerizeForm, /^[A-F]+ · (?:\d+-?)+$/);
   assert.notDeepEqual(advanced.bars.map(bar => bar.chords.map(chord => chord.raw)), simple.bars.map(bar => bar.chords.map(chord => chord.raw)));
   assert.ok(advanced.bars.length >= 25 && advanced.bars.length <= 50);
   assert.ok(advanced.bars.reduce((sum, bar) => sum + bar.chords.length, 0) / advanced.bars.length
     > simple.bars.reduce((sum, bar) => sum + bar.chords.length, 0) / simple.bars.length);
   eventsForSong(simple);
   eventsForSong(advanced);
+  const finalChord = Theory.parseChordSymbol(advanced.bars.at(-1).chords.at(-1).raw);
+  const tonic = Theory.parseChordSymbol(`${advanced.key}maj7`);
+  assert.equal(finalChord.root, tonic.root);
 });
 
 test('solo complexity increases density without changing the chart', () => {
@@ -88,6 +106,28 @@ test('solo complexity increases density without changing the chart', () => {
     assert.ok(note.midi >= 55 && note.midi <= 91);
     assert.ok(note.startBeat >= 0 && note.endBeat > note.startBeat);
     assert.ok(note.endBeat <= advanced.durationBeats + 0.001);
+  });
+});
+
+test('uses Parker-derived phrasing, swing placement, contour, and human articulation', () => {
+  const chart = Parkerize.generateChart({ complexity: 4, seed: 'human-chart' });
+  const events = eventsForSong(chart);
+  const solo = Parkerize.generateSolo({ events, complexity: 4, seed: 'human-take', bpm: chart.bpm, title: chart.title });
+  const rests = solo.notes.slice(1).map((note, index) => note.startBeat - solo.notes[index].endBeat).filter(gap => gap > 0.2);
+  const swung = solo.notes.filter(note => {
+    const phase = ((note.startBeat % 1) + 1) % 1;
+    return phase > 0.59 && phase < 0.72;
+  });
+  const offQuarterGrid = solo.notes.filter(note => Math.abs(note.startBeat * 4 - Math.round(note.startBeat * 4)) > 0.025);
+  const velocities = new Set(solo.notes.map(note => note.velocity));
+
+  assert.equal(solo.corpusSoloCount, 50);
+  assert.ok(rests.length >= 5, 'phrases should breathe instead of filling every subdivision');
+  assert.ok(swung.length >= 10, 'straight eighths should receive Parker-style swing placement');
+  assert.ok(offQuarterGrid.length > solo.notes.length * 0.2, 'timing should not remain locked to a robotic sixteenth grid');
+  assert.ok(velocities.size > solo.notes.length * 0.5, 'phrase dynamics and accents should vary');
+  solo.notes.slice(1).forEach((note, index) => {
+    assert.ok(solo.notes[index].endBeat <= note.startBeat + 0.000001, 'the generated sax line should stay monophonic');
   });
 });
 

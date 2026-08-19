@@ -8,11 +8,13 @@
  */
 (function attachKeyerParkerize(root, factory) {
   var theory = root && root.KeyerJazzTheory;
+  var soloCorpus = root && root.KeyerParkerizeCorpus;
   if (!theory && typeof module === 'object' && module.exports) theory = require('./jazz-theory.js');
-  var api = factory(theory);
+  if (!soloCorpus && typeof module === 'object' && module.exports) soloCorpus = require('./parkerize-corpus.js');
+  var api = factory(theory, soloCorpus);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.KeyerParkerize = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function buildKeyerParkerize(Theory) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function buildKeyerParkerize(Theory, SoloCorpus) {
   'use strict';
 
   var PPQ = 480;
@@ -132,6 +134,29 @@
     return entries[entries.length - 1];
   }
 
+  function compactCounts(counts, limit) {
+    var ranked = Object.keys(counts || {}).sort(function byFrequency(left, right) {
+      return counts[right] - counts[left] || left.localeCompare(right);
+    }).slice(0, limit || 120);
+    var compact = Object.create(null);
+    ranked.forEach(function retain(key) { compact[key] = counts[key]; });
+    return compact;
+  }
+
+  function histogramEntries(histogram) {
+    return Object.keys(histogram || {}).map(function entry(key) {
+      return { value: Number(key), key: key, weight: Number(histogram[key]) || 0 };
+    }).filter(function valid(entry) { return Number.isFinite(entry.value) && entry.weight > 0; });
+  }
+
+  function corpusNumber(histogram, random, fallback, filter) {
+    var entries = histogramEntries(histogram).filter(function allowed(entry) {
+      return typeof filter !== 'function' || filter(entry.value);
+    });
+    var chosen = weightedPick(entries, random, function weight(entry) { return entry.weight; });
+    return chosen ? chosen.value : fallback;
+  }
+
   function pitchClass(value) {
     var match = String(value || '').replace(/♭/g, 'b').replace(/♯/g, '#').match(/^([A-Ga-g])([#b]?)/);
     if (!match) return null;
@@ -168,19 +193,45 @@
 
   function learnHarmonyCorpus(songs) {
     var transitions = Object.create(null);
+    var trigrams = Object.create(null);
+    var barCells = Object.create(null);
+    var chordCounts = Object.create(null);
+    var cadenceCells = Object.create(null);
+    var formProfiles = Object.create(null);
     var songCount = 0;
     var chordCount = 0;
     (Array.isArray(songs) ? songs : []).forEach(function inspectSong(song) {
       var tonic = pitchClass(song && song.key);
       if (tonic == null || !Array.isArray(song.bars)) return;
       var tokens = [];
-      song.bars.forEach(function inspectBar(bar) {
+      var tokenBars = [];
+      var sections = [];
+      var activeSection = null;
+      song.bars.forEach(function inspectBar(bar, barIndex) {
         var chords = [].concat(Array.isArray(bar && bar.chords) ? bar.chords : [], Array.isArray(bar && bar.overflowChords) ? bar.overflowChords : []);
+        var barTokens = [];
         chords.forEach(function inspectChord(chord) {
           if (chord && (chord.isAlternateOnly || chord.isNoChord || chord.isPause)) return;
           var token = chordToken(chord, tonic);
-          if (token) tokens.push(token);
+          if (token) {
+            tokens.push(token);
+            barTokens.push(token);
+          }
         });
+        if (barTokens.length) {
+          tokenBars.push(barTokens);
+          chordCounts[barTokens.length] = (chordCounts[barTokens.length] || 0) + 1;
+          var cellKey = barTokens.map(tokenKey).join('>');
+          barCells[cellKey] = (barCells[cellKey] || 0) + 1;
+        }
+        var sectionLabel = String(bar && (bar.sectionMarker || bar.section) || '').trim();
+        if (!sectionLabel) sectionLabel = activeSection ? activeSection.label : String.fromCharCode(65 + Math.floor(barIndex / 8));
+        if (!activeSection || activeSection.label !== sectionLabel) {
+          activeSection = { label: sectionLabel, length: 0, tokens: [] };
+          sections.push(activeSection);
+        }
+        activeSection.length += 1;
+        activeSection.tokens.push.apply(activeSection.tokens, barTokens);
       });
       if (tokens.length < 4) return;
       songCount += 1;
@@ -190,17 +241,45 @@
         var to = tokenKey(tokens[index + 1]);
         if (!transitions[from]) transitions[from] = Object.create(null);
         transitions[from][to] = (transitions[from][to] || 0) + 1;
+        if (index > 0) {
+          var context = tokenKey(tokens[index - 1]) + '>' + from;
+          if (!trigrams[context]) trigrams[context] = Object.create(null);
+          trigrams[context][to] = (trigrams[context][to] || 0) + 1;
+        }
+      }
+      sections.forEach(function rememberCadence(section) {
+        if (section.tokens.length < 2) return;
+        var cadence = section.tokens.slice(-3).map(tokenKey).join('>');
+        cadenceCells[cadence] = (cadenceCells[cadence] || 0) + 1;
+      });
+      if (sections.length > 1 && sections.length <= 6) {
+        var labelMap = Object.create(null);
+        var nextLabel = 0;
+        var labels = sections.map(function normalizedLabel(section) {
+          if (labelMap[section.label] == null) labelMap[section.label] = String.fromCharCode(65 + nextLabel++);
+          return labelMap[section.label];
+        }).join('');
+        var lengths = sections.map(function sectionLength(section) { return section.length; });
+        if (lengths.every(function practical(length) { return length >= 4 && length <= 16; })) {
+          var profile = labels + ':' + lengths.join(',');
+          formProfiles[profile] = (formProfiles[profile] || 0) + 1;
+        }
       }
     });
     Object.keys(transitions).forEach(function compact(from) {
-      var ranked = Object.keys(transitions[from]).sort(function byFrequency(left, right) {
-        return transitions[from][right] - transitions[from][left];
-      }).slice(0, 10);
-      var next = Object.create(null);
-      ranked.forEach(function retain(key) { next[key] = transitions[from][key]; });
-      transitions[from] = next;
+      transitions[from] = compactCounts(transitions[from], 14);
     });
-    return { songCount: songCount, chordCount: chordCount, transitions: transitions };
+    Object.keys(trigrams).forEach(function compact(context) { trigrams[context] = compactCounts(trigrams[context], 10); });
+    return {
+      songCount: songCount,
+      chordCount: chordCount,
+      transitions: transitions,
+      trigrams: trigrams,
+      barCells: compactCounts(barCells, 180),
+      chordCounts: chordCounts,
+      cadenceCells: compactCounts(cadenceCells, 80),
+      formProfiles: compactCounts(formProfiles, 50)
+    };
   }
 
   function transitionOptions(token, corpus) {
@@ -215,8 +294,18 @@
     });
   }
 
-  function corpusNext(token, corpus, random) {
+  function corpusNext(token, corpus, random, previousToken) {
     var options = transitionOptions(token, corpus);
+    var context = previousToken && tokenKey(previousToken) + '>' + tokenKey(token);
+    var trigram = context && corpus && corpus.trigrams && corpus.trigrams[context];
+    if (trigram) {
+      options.forEach(function boost(entry) { entry.weight += Math.min(45, Number(trigram[tokenKey(entry.token)]) || 0) * 3; });
+      Object.keys(trigram).forEach(function addMissing(next) {
+        if (options.some(function same(entry) { return tokenKey(entry.token) === next; })) return;
+        var parts = next.split(':');
+        options.push({ token: { degree: Number(parts[0]), family: parts[1] }, weight: Math.min(45, trigram[next] * 3) });
+      });
+    }
     var selected = weightedPick(options, random, function weight(entry) { return entry.weight; });
     return selected && selected.token;
   }
@@ -235,13 +324,54 @@
     return name + suffix;
   }
 
-  function formShape(complexity, random) {
-    if (complexity === 1) return [8, 8, 8, 8];
-    var sectionCount = complexity === 2 ? 4 : complexity === 3 ? 4 + (random() < 0.3 ? 1 : 0) : complexity === 4 ? 4 + (random() < 0.55 ? 1 : 0) : 5;
-    var lengths = [];
-    var pools = complexity === 2 ? [6, 8] : complexity === 3 ? [6, 7, 8, 9] : complexity === 4 ? [5, 6, 7, 8, 9] : [5, 6, 7, 8, 9, 10];
-    for (var index = 0; index < sectionCount; index += 1) lengths.push(pick(pools, random));
-    return lengths;
+  function parseFormProfile(value) {
+    var parts = String(value || '').split(':');
+    var labels = parts[0];
+    var lengths = String(parts[1] || '').split(',').map(Number);
+    if (!/^[A-F]+$/.test(labels) || labels.length !== lengths.length || !lengths.every(Number.isFinite)) return null;
+    return { labels: labels.split(''), lengths: lengths };
+  }
+
+  function formShape(complexity, random, corpus) {
+    var learned = Object.keys(corpus && corpus.formProfiles || {}).map(function profile(key) {
+      var parsed = parseFormProfile(key);
+      if (!parsed) return null;
+      var total = parsed.lengths.reduce(function sum(value, length) { return value + length; }, 0);
+      var repeated = new Set(parsed.labels).size < parsed.labels.length;
+      var allowed = total >= (complexity <= 2 ? 24 : 16) && total <= (complexity >= 4 ? 48 : 40)
+        && parsed.lengths.every(function practical(length) { return length >= 4 && length <= 12; });
+      return allowed ? { form: parsed, weight: corpus.formProfiles[key] * (repeated ? 1.5 : 1) } : null;
+    }).filter(Boolean);
+    if (learned.length && complexity >= 2 && random() < 0.62) {
+      var learnedForm = weightedPick(learned, random, function weight(entry) { return entry.weight; });
+      if (learnedForm) return learnedForm.form;
+    }
+    var forms = complexity === 1
+      ? [{ labels: 'AABA'.split(''), lengths: [8, 8, 8, 8], weight: 6 }]
+      : complexity === 2
+        ? [
+          { labels: 'AABA'.split(''), lengths: [8, 8, 8, 8], weight: 7 },
+          { labels: 'ABAC'.split(''), lengths: [8, 8, 8, 8], weight: 4 }
+        ]
+        : complexity === 3
+          ? [
+            { labels: 'AABA'.split(''), lengths: [8, 8, 8, 8], weight: 6 },
+            { labels: 'ABAC'.split(''), lengths: [8, 8, 8, 8], weight: 6 },
+            { labels: 'AABC'.split(''), lengths: [8, 8, 8, 8], weight: 3 }
+          ]
+          : complexity === 4
+            ? [
+              { labels: 'ABAC'.split(''), lengths: [8, 8, 8, 8], weight: 6 },
+              { labels: 'AABA'.split(''), lengths: [8, 8, 8, 8], weight: 4 },
+              { labels: 'AABAC'.split(''), lengths: [8, 8, 8, 8, 8], weight: 3 }
+            ]
+            : [
+              { labels: 'AABAC'.split(''), lengths: [8, 8, 8, 8, 8], weight: 6 },
+              { labels: 'ABAC'.split(''), lengths: [8, 8, 8, 8], weight: 5 },
+              { labels: 'AABC'.split(''), lengths: [8, 8, 8, 8], weight: 4 }
+            ];
+    var selected = weightedPick(forms, random, function weight(entry) { return entry.weight; }) || forms[0];
+    return { labels: selected.labels, lengths: selected.lengths };
   }
 
   function sectionKeyOffsets(complexity, count, random) {
@@ -256,6 +386,77 @@
       else offsets.push(pick(choices, random));
     }
     return offsets;
+  }
+
+  function tokenFromKey(value) {
+    var parts = String(value || '').split(':');
+    return { degree: mod(Number(parts[0]) || 0), family: canonicalFamily(parts[1]) };
+  }
+
+  function learnedBarCell(corpus, previousToken, complexity, random) {
+    var maximumChords = complexity <= 1 ? 1 : complexity <= 3 ? 2 : 3;
+    var candidates = Object.keys(corpus && corpus.barCells || {}).map(function candidate(key) {
+      var tokens = key.split('>').map(tokenFromKey).slice(0, maximumChords);
+      if (!tokens.length || tokens.length > maximumChords) return null;
+      var transition = corpus.transitions && corpus.transitions[tokenKey(previousToken)];
+      var connection = transition && transition[tokenKey(tokens[0])] || 0;
+      return { tokens: tokens, weight: Math.max(1, corpus.barCells[key]) * (1 + Math.min(10, connection) * 0.28) };
+    }).filter(Boolean);
+    var chosen = weightedPick(candidates, random, function weight(entry) { return entry.weight; });
+    return chosen && chosen.tokens.map(function clone(token) { return { degree: token.degree, family: token.family }; });
+  }
+
+  function fallbackBarCell(complexity, random) {
+    var candidates = BAR_CELLS.filter(function available(cell) { return cell.min <= complexity; });
+    var cell = weightedPick(candidates, random, function weight(entry) { return entry.weight; });
+    return cell.chords.map(function clone(parts) { return { degree: parts[0], family: parts[1] }; });
+  }
+
+  function buildSectionTemplate(length, complexity, corpus, random) {
+    var section = [];
+    var previous = null;
+    var current = { degree: 0, family: 'maj' };
+    for (var barIndex = 0; barIndex < length; barIndex += 1) {
+      var remaining = length - barIndex;
+      var tokens;
+      if (barIndex === 0) tokens = [{ degree: 0, family: 'maj' }];
+      else if (remaining <= 2) tokens = [{ degree: 2, family: 'min' }, { degree: 7, family: complexity >= 4 ? 'alt' : 'dom' }];
+      else if (barIndex % 4 === 3 && random() < 0.58) {
+        tokens = complexity >= 4 && random() < 0.42
+          ? [{ degree: 6, family: 'hdim' }, { degree: 11, family: 'alt' }]
+          : [{ degree: 2, family: 'min' }, { degree: 7, family: 'dom' }];
+      } else {
+        tokens = random() < 0.78 ? learnedBarCell(corpus, current, complexity, random) : null;
+        if (!tokens) tokens = fallbackBarCell(complexity, random);
+        if (tokens.length && tokenKey(tokens[0]) === tokenKey(current) && random() < 0.72) {
+          var next = corpusNext(current, corpus, random, previous);
+          if (next) tokens[0] = next;
+        }
+      }
+      previous = current;
+      current = tokens[tokens.length - 1];
+      section.push(tokens);
+    }
+    return section;
+  }
+
+  function varyRepeatedSection(template, complexity, corpus, random) {
+    var variation = template.map(function cloneBar(tokens) {
+      return tokens.map(function cloneToken(token) { return { degree: token.degree, family: token.family }; });
+    });
+    var changes = complexity <= 2 ? 1 : complexity <= 4 ? 2 : 3;
+    for (var index = 0; index < changes; index += 1) {
+      var barIndex = 1 + Math.floor(random() * Math.max(1, variation.length - 3));
+      var tokens = variation[barIndex];
+      var previous = variation[barIndex - 1][variation[barIndex - 1].length - 1];
+      if (complexity >= 4 && tokens.length === 1 && random() < 0.45) {
+        variation[barIndex] = [{ degree: mod(tokens[0].degree + 6), family: 'dom' }, tokens[0]];
+      } else {
+        var next = corpusNext(previous, corpus, random);
+        if (next) tokens[tokens.length - 1] = next;
+      }
+    }
+    return variation;
   }
 
   function generatedTitle(seedHash) {
@@ -273,42 +474,36 @@
     if (keyPc == null) keyPc = 0;
     var preferFlats = settings.preferFlats == null ? FLAT_KEYS.has(keyPc) : Boolean(settings.preferFlats);
     var key = (preferFlats ? FLAT_NAMES : SHARP_NAMES)[keyPc];
-    var lengths = formShape(complexity, random);
-    var offsets = sectionKeyOffsets(complexity, lengths.length, random);
+    var form = formShape(complexity, random, settings.corpus);
+    var lengths = form.lengths;
+    var labels = form.labels;
+    var uniqueLabels = [];
+    labels.forEach(function unique(label) { if (uniqueLabels.indexOf(label) < 0) uniqueLabels.push(label); });
+    var uniqueOffsets = sectionKeyOffsets(complexity, uniqueLabels.length, random);
+    var offsetsByLabel = Object.create(null);
+    uniqueLabels.forEach(function assign(label, index) { offsetsByLabel[label] = uniqueOffsets[index]; });
+    var templates = Object.create(null);
     var bars = [];
-    var lastLocalToken = { degree: 0, family: 'maj' };
 
     lengths.forEach(function buildSection(length, sectionIndex) {
-      var localOffset = offsets[sectionIndex];
-      var nextOffset = offsets[sectionIndex + 1] == null ? 0 : offsets[sectionIndex + 1];
-      var label = String.fromCharCode(65 + sectionIndex);
+      var label = labels[sectionIndex] || String.fromCharCode(65 + sectionIndex);
+      var localOffset = offsetsByLabel[label] || 0;
+      var nextLabel = labels[sectionIndex + 1];
+      var nextOffset = nextLabel == null ? 0 : offsetsByLabel[nextLabel] || 0;
+      var template = templates[label];
+      var localBars;
+      if (!template || template.length !== length) {
+        template = buildSectionTemplate(length, complexity, settings.corpus, random);
+        templates[label] = template;
+        localBars = template.map(function cloneBar(tokens) { return tokens.map(function cloneToken(token) { return { degree: token.degree, family: token.family }; }); });
+      } else {
+        localBars = varyRepeatedSection(template, complexity, settings.corpus, random);
+      }
       for (var barIndex = 0; barIndex < length; barIndex += 1) {
         var remaining = length - barIndex;
-        var localTokens;
-        if (remaining === 2) {
-          localTokens = [{ degree: mod(nextOffset - localOffset + 2), family: 'min' }, { degree: mod(nextOffset - localOffset + 7), family: complexity >= 4 ? 'alt' : 'dom' }];
-        } else if (remaining === 1) {
-          localTokens = sectionIndex === lengths.length - 1
-            ? [{ degree: mod(-localOffset), family: 'maj' }]
-            : [{ degree: mod(nextOffset - localOffset), family: 'maj' }, { degree: mod(nextOffset - localOffset + 9), family: 'dom' }];
-        } else if (barIndex === 0) {
-          localTokens = [{ degree: 0, family: 'maj' }];
-        } else {
-          var candidates = BAR_CELLS.filter(function available(cell) { return cell.min <= complexity; });
-          var cell = weightedPick(candidates, random, function weight(entry) { return entry.weight; });
-          localTokens = cell.chords.map(function clone(parts) { return { degree: parts[0], family: parts[1] }; });
-          if (complexity >= 2 && random() < 0.32) {
-            var learned = corpusNext(lastLocalToken, settings.corpus, random);
-            if (learned) localTokens[localTokens.length - 1] = learned;
-          }
-        }
-        // Higher chart complexity means denser harmonic rhythm as well as
-        // farther key centers; it never means an arbitrary pile of chords.
-        if (complexity >= 4 && localTokens.length === 1 && remaining > 2 && random() < 0.34) {
-          var continuation = corpusNext(localTokens[0], settings.corpus, random);
-          if (continuation) localTokens.push(continuation);
-        }
-        lastLocalToken = localTokens[localTokens.length - 1];
+        var localTokens = localBars[barIndex];
+        if (remaining === 2) localTokens = [{ degree: mod(nextOffset - localOffset + 2), family: 'min' }, { degree: mod(nextOffset - localOffset + 7), family: complexity >= 4 ? 'alt' : 'dom' }];
+        if (remaining === 1) localTokens = [{ degree: mod(nextOffset - localOffset), family: 'maj' }];
         var chords = localTokens.slice(0, 3).map(function renderToken(token) {
           return { raw: chordName(keyPc + localOffset + token.degree, token.family, complexity, random, preferFlats) };
         });
@@ -342,7 +537,8 @@
       parkerizeGenerated: true,
       parkerizeSeed: String(seed),
       parkerizeChartComplexity: complexity,
-      parkerizeCorpusSongs: Number(settings.corpus && settings.corpus.songCount) || 0
+      parkerizeCorpusSongs: Number(settings.corpus && settings.corpus.songCount) || 0,
+      parkerizeForm: labels.join('') + ' · ' + lengths.join('-')
     };
   }
 
@@ -386,6 +582,109 @@
   function weightedNumber(entries, random) {
     var selected = weightedPick(entries, random, function weight(entry) { return entry[1]; });
     return selected ? selected[0] : 1;
+  }
+
+  function corpusKey(histogram, random, fallback) {
+    var entries = Object.keys(histogram || {}).map(function entry(key) {
+      return { key: key, weight: Number(histogram[key]) || 0 };
+    }).filter(function valid(entry) { return entry.weight > 0; });
+    var selected = weightedPick(entries, random, function weight(entry) { return entry.weight; });
+    return selected ? selected.key : fallback;
+  }
+
+  function soloRhythmStep(previousStep, complexity, random) {
+    var transition = previousStep != null && SoloCorpus && SoloCorpus.stepTransitions && SoloCorpus.stepTransitions[String(previousStep)];
+    var histogram = transition || SoloCorpus && SoloCorpus.steps;
+    var entries = histogramEntries(histogram).filter(function useful(entry) {
+      if (entry.value > 1.5) return false;
+      if (complexity === 1) return entry.value >= 0.5;
+      if (complexity === 2) return entry.value >= 1 / 3;
+      if (complexity === 3) return entry.value >= 0.25;
+      return entry.value >= 1 / 6;
+    });
+    entries.forEach(function complexityWeight(entry) {
+      if (complexity === 1) entry.weight *= entry.value >= 1 ? 2.4 : 0.7;
+      else if (complexity === 2) entry.weight *= entry.value >= 0.5 ? 1.5 : 0.35;
+      else if (complexity === 3) entry.weight *= entry.value <= 0.5 ? 1.25 : 0.75;
+      else if (complexity === 4) entry.weight *= entry.value <= 1 / 3 ? 1.7 : entry.value <= 0.5 ? 1.1 : 0.35;
+      else entry.weight *= entry.value <= 0.25 ? 2.8 : entry.value <= 1 / 3 ? 2 : entry.value <= 0.5 ? 0.85 : 0.15;
+    });
+    var selected = weightedPick(entries, random, function weight(entry) { return entry.weight; });
+    if (selected) return selected.value;
+    return weightedNumber(RHYTHM_STEPS[complexity], random);
+  }
+
+  function soloInterval(previousInterval, phase, complexity, random) {
+    var transition = previousInterval != null && SoloCorpus && SoloCorpus.intervalTransitions && SoloCorpus.intervalTransitions[String(previousInterval)];
+    var phaseHistogram = SoloCorpus && SoloCorpus.intervalsByPhase && SoloCorpus.intervalsByPhase[phase];
+    var histogram = transition || phaseHistogram || SoloCorpus && SoloCorpus.intervals;
+    var maximum = [0, 5, 7, 9, 11, 12][complexity];
+    var entries = histogramEntries(histogram).filter(function practical(entry) { return Math.abs(entry.value) <= maximum; });
+    entries.forEach(function melodicWeight(entry) {
+      var size = Math.abs(entry.value);
+      if (size <= 3) entry.weight *= 1.4;
+      if (previousInterval != null && Math.abs(previousInterval) >= 5 && Math.sign(entry.value) !== Math.sign(previousInterval)) entry.weight *= 2.2;
+      if (previousInterval != null && Math.abs(previousInterval) >= 7 && Math.sign(entry.value) === Math.sign(previousInterval)) entry.weight *= 0.2;
+      if (entry.value === 0) entry.weight *= 0.35;
+    });
+    var selected = weightedPick(entries, random, function weight(entry) { return entry.weight; });
+    return selected ? selected.value : weightedNumber(INTERVAL_PRIORS[complexity], random);
+  }
+
+  function phraseLengthForComplexity(complexity, random) {
+    var maximum = [0, 4, 6, 8, 12, 16][complexity];
+    var minimum = complexity >= 4 ? 4 : complexity === 3 ? 3 : 1.5;
+    return corpusNumber(SoloCorpus && SoloCorpus.phraseLengths, random, complexity >= 4 ? 8 : 4, function within(value) {
+      return value >= minimum && value <= maximum;
+    });
+  }
+
+  function restLengthForComplexity(complexity, random) {
+    var sampled = corpusNumber(SoloCorpus && SoloCorpus.rests, random, 1, function useful(value) { return value <= 4; });
+    var scale = [0, 0.9, 0.7, 0.48, 0.3, 0.2][complexity];
+    return Math.max(complexity >= 4 ? 0.25 : 0.5, Math.round(sampled * scale * 4) / 4);
+  }
+
+  function performedOnset(nominal, random) {
+    var whole = Math.floor(nominal);
+    var phase = nominal - whole;
+    var jitter = (random() - 0.5) * 0.026;
+    if (Math.abs(phase - 0.5) < 0.035) return whole + 0.625 + random() * 0.045 + jitter;
+    if (Math.abs(phase) < 0.035) return nominal + jitter * 0.45;
+    return nominal + jitter;
+  }
+
+  function eventForBeat(events, beat, hint) {
+    var start = Math.max(0, Math.min(events.length - 1, Number(hint) || 0));
+    for (var index = start; index < events.length; index += 1) {
+      if (beat >= events[index].start - 0.001 && beat < events[index].end - 0.001) return { event: events[index], index: index };
+      if (events[index].start > beat) break;
+    }
+    for (var fallback = Math.min(start, events.length - 1); fallback >= 0; fallback -= 1) {
+      if (beat >= events[fallback].start - 0.001) return { event: events[fallback], index: fallback };
+    }
+    return { event: events[0], index: 0 };
+  }
+
+  function contourTarget(contourKey, progress, startMidi, random) {
+    var parts = String(contourKey || '0:7:2:1:2').split(':').map(Number);
+    var net = Number.isFinite(parts[0]) ? parts[0] : 0;
+    var range = Number.isFinite(parts[1]) ? Math.min(16, parts[1]) : 7;
+    var peakFirst = (parts[2] || 0) <= (parts[3] || 3);
+    var turns = Math.min(5, Number(parts[4]) || 1);
+    var arc = Math.sin(progress * Math.PI) * range * 0.46 * (peakFirst ? 1 : -1);
+    var motion = Math.sin(progress * Math.PI * Math.max(1, turns * 0.5)) * Math.min(2.2, turns * 0.35);
+    return startMidi + net * progress + arc + motion + (random() - 0.5) * 0.7;
+  }
+
+  function articulationForStep(step, phraseFinal, random) {
+    var key = String(Number(step.toFixed(6)));
+    var source = SoloCorpus && SoloCorpus.gatesByStep && SoloCorpus.gatesByStep[key];
+    var gate = corpusNumber(source, random, step <= 0.5 ? 0.97 : 0.9);
+    if (phraseFinal) gate *= 0.72 + random() * 0.12;
+    else if (random() < 0.09) gate *= 0.72 + random() * 0.12;
+    else gate *= 0.94 + random() * 0.06;
+    return Math.max(0.52, Math.min(0.995, gate));
   }
 
   function midiObject(title, notes, bpm, durationBeats, ppq) {
@@ -434,58 +733,130 @@
     if (!events.length) throw new Error('Parkerize needs a readable chord timeline.');
     var chartEnd = events.reduce(function latest(value, event) { return Math.max(value, event.end); }, 0);
     var notes = [];
-    var previousMidi = 70 + Math.floor(random() * 5);
+    var previousMidi = 66 + Math.floor(random() * 8);
+    var previousInterval = null;
     var pendingResolution = null;
-    var restChance = [0, 0.31, 0.23, 0.15, 0.09, 0.055][complexity];
-    var chromaticChance = [0, 0.025, 0.06, 0.12, 0.21, 0.29][complexity];
+    var motif = null;
+    var eventHint = 0;
+    var cursor = complexity <= 2 && random() < 0.65 ? 0.5 : 0;
+    var phraseIndex = 0;
 
-    events.forEach(function improvise(event, eventIndex) {
-      var pools = chordPitchPools(event.chord);
-      var cursor = event.start;
-      while (cursor < event.end - 0.08) {
-        var step = weightedNumber(RHYTHM_STEPS[complexity], random);
-        step = Math.max(0.125, Math.min(step, event.end - cursor));
-        var onBeat = Math.abs(cursor - Math.round(cursor)) < 0.055;
-        var phraseBreak = eventIndex > 0 && Math.abs(mod(cursor, 8)) < 0.04 && random() < 0.5;
-        if (phraseBreak || random() < restChance) {
-          cursor += step;
-          continue;
-        }
+    while (cursor < chartEnd - 0.25) {
+      var phraseLength = Math.min(phraseLengthForComplexity(complexity, random), chartEnd - cursor);
+      if (phraseLength < 0.45) break;
+      var phraseEnd = Math.min(chartEnd, cursor + phraseLength);
+      var contour = corpusKey(SoloCorpus && SoloCorpus.contours, random, '0:7:2:1:2');
+      var useMotif = motif && phraseIndex > 0 && random() < 0.34;
+      var motifInvert = useMotif && random() < 0.3;
+      var nominalOnsets = [];
+      var nominal = cursor;
+      var previousStep = null;
+      while (nominal < phraseEnd - 0.08 && nominalOnsets.length < 96) {
+        nominalOnsets.push(nominal);
+        var motifStep = useMotif && motif.steps[nominalOnsets.length - 1];
+        var step = motifStep || soloRhythmStep(previousStep, complexity, random);
+        step = Math.max(1 / 6, Math.min(1.5, step));
+        previousStep = Number(step.toFixed(6));
+        nominal += step;
+      }
+      if (!nominalOnsets.length) break;
+
+      var phraseNotes = [];
+      var phraseStartMidi = previousMidi;
+      nominalOnsets.forEach(function improvise(nominalOnset, noteIndex) {
+        var onset = Math.max(cursor, Math.min(phraseEnd - 0.04, performedOnset(nominalOnset, random)));
+        if (phraseNotes.length) onset = Math.max(phraseNotes[phraseNotes.length - 1].startBeat + 0.07, onset);
+        if (onset >= phraseEnd - 0.025) return;
+        var lookup = eventForBeat(events, onset, eventHint);
+        eventHint = lookup.index;
+        var pools = chordPitchPools(lookup.event.chord);
+        var phaseValue = ((nominalOnset % 1) + 1) % 1;
+        var strong = Math.abs(phaseValue) < 0.045;
+        var offbeat = Math.abs(phaseValue - 0.5) < 0.09;
+        var phase = strong ? 'strong' : offbeat ? 'offbeat' : 'triplet';
+        var motifInterval = useMotif && motif.intervals[noteIndex - 1];
+        var interval = motifInterval != null ? motifInterval * (motifInvert ? -1 : 1) : soloInterval(previousInterval, phase, complexity, random);
+        var progress = nominalOnsets.length <= 1 ? 1 : noteIndex / (nominalOnsets.length - 1);
+        var contourMidi = contourTarget(contour, progress, phraseStartMidi, random);
+        var desired = previousMidi * 0.48 + (previousMidi + interval) * 0.28 + contourMidi * 0.24;
+        var nextNominal = nominalOnsets[noteIndex + 1];
+        var nextStrong = nextNominal != null && Math.abs(nextNominal - Math.round(nextNominal)) < 0.045;
         var pc;
         if (pendingResolution != null) {
-          pc = pendingResolution;
+          pc = mod(pendingResolution);
+          desired = pendingResolution;
           pendingResolution = null;
-        } else if (!onBeat && random() < chromaticChance) {
-          var target = pick(random() < 0.7 ? pools.guides : pools.chord, random);
-          pc = mod(target + (random() < 0.5 ? -1 : 1));
-          pendingResolution = target;
+        } else if (!strong && nextStrong && complexity >= 2 && random() < [0, 0, 0.22, 0.38, 0.52, 0.62][complexity]) {
+          var nextLookup = eventForBeat(events, nextNominal, eventHint);
+          var nextPools = chordPitchPools(nextLookup.event.chord);
+          var targetPc = pick(random() < 0.76 ? nextPools.guides : nextPools.chord, random);
+          var targetMidi = nearestMidi(targetPc, desired, 55, 88);
+          var approachDirection = random() < 0.62 ? -1 : 1;
+          pc = mod(targetMidi + approachDirection);
+          pendingResolution = targetMidi;
         } else {
-          var pool = onBeat || random() < 0.48 ? pools.chord : pools.scale;
-          if (onBeat && random() < 0.55) pool = pools.guides;
+          var pool = strong ? (random() < 0.68 ? pools.guides : pools.chord)
+            : random() < 0.18 + complexity * 0.045 ? pools.chord : pools.scale;
           pc = pick(pool, random);
         }
-        var interval = weightedNumber(INTERVAL_PRIORS[complexity], random);
-        var contour = 71 + Math.sin((cursor / Math.max(8, chartEnd)) * Math.PI * (2 + complexity * 0.35)) * (3 + complexity * 0.7);
-        var desired = previousMidi + interval;
-        desired = desired * 0.68 + contour * 0.32;
-        var midi = nearestMidi(pc, desired, 55, 91);
-        if (midi == null) midi = 70;
-        if (midi === previousMidi && random() < 0.7) {
-          var alternate = nearestMidi(pc, desired + (random() < 0.5 ? -12 : 12), 55, 91);
-          if (alternate != null) midi = alternate;
+        var midi = nearestMidi(pc, desired, 55, 88);
+        if (midi == null) midi = previousMidi;
+        if (Math.abs(midi - previousMidi) > 12) {
+          var closer = nearestMidi(pc, previousMidi + Math.sign(midi - previousMidi) * 7, 55, 88);
+          if (closer != null) midi = closer;
         }
-        var duration = Math.max(0.08, Math.min(event.end - cursor, step * (complexity >= 4 ? 0.86 : 0.8)));
-        notes.push({
+        if (midi === previousMidi && random() < 0.72) {
+          var alternatePcs = pools.scale.concat(pools.chord).filter(function different(candidate, index, all) {
+            return mod(candidate) !== mod(previousMidi) && all.indexOf(candidate) === index;
+          });
+          var alternates = alternatePcs.map(function nearby(candidate) { return nearestMidi(candidate, desired, 55, 88); })
+            .filter(function practical(candidate) { return candidate != null && Math.abs(candidate - previousMidi) <= 9; })
+            .sort(function melodic(left, right) {
+              return Math.abs(left - desired) + Math.abs(left - previousMidi) * 0.3
+                - (Math.abs(right - desired) + Math.abs(right - previousMidi) * 0.3);
+            });
+          if (alternates.length) midi = alternates[Math.min(alternates.length - 1, Math.floor(random() * Math.min(3, alternates.length)))];
+        }
+        var dynamicArc = Math.sin(progress * Math.PI) * 0.09;
+        var velocity = (strong ? 0.78 : offbeat ? 0.64 : 0.69) + dynamicArc + (random() - 0.5) * 0.12;
+        if (pendingResolution != null) velocity -= 0.09;
+        phraseNotes.push({
           midi: midi,
-          startBeat: Number(cursor.toFixed(6)),
-          endBeat: Number((cursor + duration).toFixed(6)),
-          durationBeats: Number(duration.toFixed(6)),
-          velocity: Math.max(0.46, Math.min(0.96, (onBeat ? 0.75 : 0.64) + random() * 0.16))
+          startBeat: onset,
+          nominalBeat: nominalOnset,
+          velocity: Math.max(0.44, Math.min(0.96, velocity))
         });
+        previousInterval = midi - previousMidi;
         previousMidi = midi;
-        cursor += step;
+      });
+
+      phraseNotes.forEach(function articulate(note, noteIndex) {
+        var next = phraseNotes[noteIndex + 1];
+        var available = Math.max(0.08, (next ? next.startBeat : phraseEnd) - note.startBeat);
+        var nominalNext = nominalOnsets[Math.min(noteIndex + 1, nominalOnsets.length - 1)];
+        var nominalStep = noteIndex + 1 < nominalOnsets.length ? nominalNext - note.nominalBeat : available;
+        var gate = articulationForStep(Math.max(1 / 6, nominalStep), noteIndex === phraseNotes.length - 1, random);
+        var duration = Math.max(0.075, available * gate);
+        notes.push({
+          midi: note.midi,
+          startBeat: Number(note.startBeat.toFixed(6)),
+          endBeat: Number(Math.min(chartEnd - 0.01, note.startBeat + duration).toFixed(6)),
+          durationBeats: Number(duration.toFixed(6)),
+          velocity: Number(note.velocity.toFixed(4))
+        });
+      });
+
+      if (!motif && phraseNotes.length >= 4) {
+        motif = {
+          steps: phraseNotes.slice(1, 5).map(function motifStep(note, index) { return Number((note.nominalBeat - phraseNotes[index].nominalBeat).toFixed(6)); }),
+          intervals: phraseNotes.slice(1, 5).map(function motifInterval(note, index) { return note.midi - phraseNotes[index].midi; })
+        };
       }
-    });
+      phraseIndex += 1;
+      if (phraseEnd >= chartEnd - 0.25) break;
+      cursor = phraseEnd + restLengthForComplexity(complexity, random);
+      if (cursor < chartEnd) cursor = Math.round(cursor * 4) / 4;
+    }
 
     // Resolve near the end so the generated line always spans a complete
     // form and can be looped as one solo-study chorus by Standards.
@@ -496,9 +867,24 @@
     if (!last || last.endBeat < chartEnd - 0.12) {
       var finalPc = pick(finalPools.guides.length ? finalPools.guides : finalPools.chord, random);
       var finalMidi = nearestMidi(finalPc, previousMidi, 55, 91);
+      while (last && last.startBeat + 0.08 > finalStart) {
+        notes.pop();
+        last = notes[notes.length - 1];
+      }
+      if (last && last.endBeat > finalStart - 0.02) {
+        last.endBeat = Math.max(last.startBeat + 0.075, finalStart - 0.02);
+        last.durationBeats = Number((last.endBeat - last.startBeat).toFixed(6));
+      }
       notes.push({ midi: finalMidi, startBeat: finalStart, endBeat: Math.max(finalStart + 0.1, chartEnd - 0.02), durationBeats: Math.max(0.1, chartEnd - 0.02 - finalStart), velocity: 0.82 });
     }
     notes.sort(function chronological(left, right) { return left.startBeat - right.startBeat || left.midi - right.midi; });
+    notes.slice(0, -1).forEach(function keepMonophonic(note, index) {
+      var nextStart = notes[index + 1].startBeat;
+      if (note.endBeat > nextStart - 0.004) {
+        note.endBeat = Number(Math.max(note.startBeat + 0.04, nextStart - 0.004).toFixed(6));
+        note.durationBeats = Number((note.endBeat - note.startBeat).toFixed(6));
+      }
+    });
     var title = String(settings.title || 'Parkerize Take');
     return {
       title: title,
@@ -506,6 +892,7 @@
       seed: String(seed),
       notes: notes,
       durationBeats: chartEnd,
+      corpusSoloCount: Number(SoloCorpus && SoloCorpus.soloCount) || 0,
       midi: midiObject(title, notes, bpm, chartEnd, ppq)
     };
   }
@@ -599,7 +986,12 @@
 
   return Object.freeze({
     PPQ: PPQ,
-    corpusModel: Object.freeze({ parkerSoloCount: 50, approach: 'aggregate-transitions-and-rhythm-cells' }),
+    corpusModel: Object.freeze({
+      parkerSoloCount: Number(SoloCorpus && SoloCorpus.soloCount) || 0,
+      parkerNoteCount: Number(SoloCorpus && SoloCorpus.noteCount) || 0,
+      parkerPhraseCount: Number(SoloCorpus && SoloCorpus.phraseCount) || 0,
+      approach: 'aggregate-phrase-rhythm-contour-articulation-and-harmony-models'
+    }),
     learnHarmonyCorpus: learnHarmonyCorpus,
     generateChart: generateChart,
     generateSolo: generateSolo,

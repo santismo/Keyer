@@ -12,6 +12,7 @@ const desktopHtml = fs.readFileSync(path.join(root, 'standards-desktop.html'), '
 const desktopCss = fs.readFileSync(path.join(root, 'standards-desktop.css'), 'utf8');
 const soloCatalog = require(path.join(root, 'jazz-solo-catalog.js'));
 const azMidiCatalog = require(path.join(root, 'a-z-midi-catalog.js'));
+const parkerCorpus = require(path.join(root, 'parkerize-corpus.js'));
 
 assert.doesNotMatch(html, /id="(?:voicingNotes|scaleNotes|playVoicing)"/);
 assert.match(html, /id="toggleNoteNames"/);
@@ -30,6 +31,7 @@ assert.match(html, /id="parkerizeSoloComplexity"[^>]*type="range"[^>]*min="1"[^>
 assert.match(html, /id="generateParkerize"/);
 assert.match(html, /id="regenerateParkerizeSolo"/);
 assert.match(html, /id="exportParkerizeMidi"/);
+assert.match(html, /<script src="parkerize-corpus\.js"><\/script>\s*<script src="parkerize\.js"><\/script>/);
 assert.match(html, /option value="favorites">Favorites<\/option>/);
 assert.match(html, /id="favoriteSong"/);
 assert.doesNotMatch(html, /id="loadMidi"/);
@@ -228,6 +230,7 @@ assert.match(desktopHtml, /id="parkerizePanel"/);
 assert.match(desktopHtml, /id="parkerizeChartComplexity"/);
 assert.match(desktopHtml, /id="parkerizeSoloComplexity"/);
 assert.match(desktopHtml, /id="exportParkerizeMidi"/);
+assert.match(desktopHtml, /<script src="parkerize-corpus\.js"><\/script>\s*<script src="parkerize\.js"><\/script>/);
 assert.match(desktopHtml, /option value="favorites">Favorites<\/option>/);
 assert.match(desktopHtml, /id="favoriteSong"/);
 assert.doesNotMatch(desktopHtml, /id="loadMidi"/);
@@ -263,13 +266,17 @@ assert.equal(soloCatalog.parkerSupplementalSongs().length, 24);
 assert.equal(soloCatalog.isMiditarMultiChorus('Autumn Leaves'), true);
 assert.ok(soloCatalog.multiChorusCount >= 300);
 
-assert.equal(azMidiCatalog.fileCount, 1968);
-assert.equal(azMidiCatalog.playableCount, 1944);
-assert.equal(azMidiCatalog.entries.length, 1968);
+assert.equal(azMidiCatalog.fileCount, 2868);
+assert.equal(azMidiCatalog.playableCount, 2844);
+assert.equal(azMidiCatalog.entries.length, 2868);
 assert.equal(azMidiCatalog.playableEntries.every(entry => entry.playable && entry.chordMarkers > 0 && entry.melodyNotes > 0), true);
-assert.equal(new Set(azMidiCatalog.entries.map(entry => entry.file)).size, 1968);
+assert.equal(new Set(azMidiCatalog.entries.map(entry => entry.file)).size, 2868);
 azMidiCatalog.entries.forEach(entry => {
   assert.equal(fs.existsSync(path.join(root, 'a-z-midi', entry.file)), true, `Missing A–Z MIDI file: ${entry.file}`);
 });
+
+assert.equal(parkerCorpus.soloCount, 50);
+assert.ok(parkerCorpus.noteCount > 20000);
+assert.ok(parkerCorpus.phraseCount > 1500);
 
 console.log('Jazz standards UI contract tests passed.');
