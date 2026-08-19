@@ -43,11 +43,22 @@
           <option value="solos">Jazz solos</option>
           <option value="parker">Charlie Parker solos</option>
           <option value="az-midi">A–Z MIDI songs</option>
+          <option value="parkerize">Parkerize</option>
           <option value="favorites">Favorites</option>
           <option value="melody">With MIDI melody</option>
           <option value="chords">Chord charts only</option>
         </select>
       </label>
+      <section class="parkerize-panel" id="parkerizePanel" aria-labelledby="parkerizeTitle" hidden>
+        <div class="parkerize-heading"><strong id="parkerizeTitle">Parkerize</strong><span id="parkerizeStatus">Ready to generate a bebop solo</span></div>
+        <div class="parkerize-controls">
+          <label class="parkerize-mode-control" for="parkerizeHarmonyMode"><span>Harmony</span><select id="parkerizeHarmonyMode"><option value="standard" selected>Existing standard</option><option value="generated">Original bebop chart</option></select></label>
+          <label class="parkerize-slider" for="parkerizeChartComplexity"><span>Chart complexity <output id="parkerizeChartComplexityValue">3 · Bebop</output></span><input id="parkerizeChartComplexity" type="range" min="1" max="5" step="1" value="3" disabled></label>
+          <label class="parkerize-slider" for="parkerizeSoloComplexity"><span>Solo complexity <output id="parkerizeSoloComplexityValue">3 · Bebop</output></span><input id="parkerizeSoloComplexity" type="range" min="1" max="5" step="1" value="3"></label>
+          <div class="parkerize-actions"><button class="parkerize-generate" id="generateParkerize" type="button">Generate solo</button><button id="regenerateParkerizeSolo" type="button" hidden>New solo</button><button id="exportParkerizeMidi" type="button" disabled>Export MIDI</button></div>
+        </div>
+        <p>Original notes and changes from aggregate Parker-solo and jazz-chart patterns. Export includes chord markers.</p>
+      </section>
       <p class="library-status" id="libraryStatus" role="status">Loading jazz standards…</p>
     </section>
 
@@ -177,7 +188,7 @@
             <label class="tempo-mode"><input id="useChartTempo" type="checkbox" checked> Chart tempo</label>
             <label class="tempo-control" for="tempoRange"><span>Tempo <output id="tempoValue">120</output></span><input id="tempoRange" type="range" min="40" max="260" step="1" value="120" disabled></label>
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
-            <label class="auto-advance-toggle" title="Off: loop this chart from the beginning. On: pick and play a random chart from the selected bank after each ending."><input id="autoAdvanceRandom" type="checkbox"> Random next chart</label>
+            <label class="auto-advance-toggle" title="Off: loop this chart from the beginning. On: pick and play a random chart from the selected bank after each ending."><input id="autoAdvanceRandom" type="checkbox"> <span id="autoAdvanceRandomLabel">Random next chart</span></label>
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite">
             <span id="midiStatus">Looking for a matching MIDI…</span>
@@ -209,6 +220,7 @@
   <script src="jazz-solo-catalog.js"></script>
   <script src="a-z-midi-catalog.js"></script>
   <script src="standards-reharm.js"></script>
+  <script src="parkerize.js"></script>
   <script src="standards.js"></script>
 </body>
 </html>

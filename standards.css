@@ -60,6 +60,22 @@ input[type="search"]::placeholder { color: #7f8999; }
 .library-play-button { min-height: 44px; }
 .library-filter { display: inline-flex; align-items: center; gap: 7px; margin: 8px 3px 0; color: var(--muted); font-size: .62rem; font-weight: 750; }
 .library-filter select { min-height: 29px; padding: 0 24px 0 8px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; font: inherit; }
+.parkerize-panel { margin-top: 9px; overflow: hidden; color: var(--ink); background: linear-gradient(135deg, #24143b, #111b2b 68%, #13251f); border: 1px solid #6d4c96; border-radius: 11px; box-shadow: inset 0 1px #ffffff12; }
+.parkerize-heading { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 9px; border-bottom: 1px solid #6d4c965c; }
+.parkerize-heading strong { color: #e2caff; font: 900 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.parkerize-heading span { min-width: 0; overflow: hidden; color: var(--green); font: 750 .57rem ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.parkerize-controls { display: grid; grid-template-columns: minmax(140px, .85fr) repeat(2, minmax(150px, 1fr)) minmax(190px, auto); gap: 8px; align-items: end; padding: 8px 9px; }
+.parkerize-mode-control, .parkerize-slider { min-width: 0; display: grid; gap: 5px; color: #c9b6e2; font: 800 .56rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; }
+.parkerize-mode-control select { width: 100%; min-height: 32px; padding: 0 7px; color: var(--ink); background: #1c2635; border: 1px solid #70549a; border-radius: 7px; font: 800 .61rem ui-rounded, system-ui, sans-serif; text-transform: none; }
+.parkerize-slider > span { display: flex; justify-content: space-between; gap: 5px; }
+.parkerize-slider output { color: var(--gold); white-space: nowrap; }
+.parkerize-slider input { width: 100%; accent-color: #b780f2; }
+.parkerize-slider input:disabled { opacity: .35; }
+.parkerize-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.parkerize-actions button { min-height: 32px; padding: 0 7px; color: #e2caff; background: #251a35; border: 1px solid #70549a; border-radius: 7px; font-size: .58rem; font-weight: 850; white-space: nowrap; }
+.parkerize-actions .parkerize-generate { color: #171020; background: #d7bcff; border-color: #f2e9ff; }
+.parkerize-actions button:disabled { opacity: .48; cursor: default; }
+.parkerize-panel > p { margin: 0; padding: 0 9px 8px; color: #9aa8bc; font: 650 .54rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .library-status { min-height: 1em; margin: 7px 3px 0; color: var(--muted); font-size: .64rem; }
 .search-results { position: absolute; z-index: 20; top: calc(100% + 5px); left: 0; right: 0; max-height: min(56vh, 410px); overflow: auto; padding: 5px; border: 1px solid #465165; border-radius: 12px; background: #111722; box-shadow: 0 20px 44px #000b; overscroll-behavior: contain; }
 .result-button { width: 100%; min-height: 48px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 9px; color: var(--ink); text-align: left; background: transparent; border: 0; border-radius: 8px; }
@@ -269,6 +285,8 @@ input[type="search"]::placeholder { color: #7f8999; }
 [hidden] { display: none !important; }
 
 @media (max-width: 780px) {
+  .parkerize-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .parkerize-actions { grid-column: 1 / -1; }
   .workspace { grid-template-columns: 1fr; gap: 6px; }
   /* Keep the practice loop together: chart, two-octave keyboard, then step buttons. */
   .chart-scroll { height: clamp(180px, 29vh, 248px); height: clamp(180px, 29svh, 248px); min-height: 0; max-height: none; }
@@ -282,6 +300,9 @@ input[type="search"]::placeholder { color: #7f8999; }
   nav a { min-height: 31px; padding: 0 7px; justify-content: center; font-size: .61rem; }
   .song-heading { align-items: start; }
   .song-meta { max-width: 42%; font-size: .6rem; }
+  .parkerize-controls { grid-template-columns: minmax(0, 1fr); }
+  .parkerize-actions { grid-column: auto; }
+  .parkerize-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
   .chart-scroll { height: clamp(176px, 28vh, 230px); height: clamp(176px, 28svh, 230px); min-height: 0; padding: 3px; }
   .measure { min-height: 72px; padding: 18px 0 4px; }
   .chart-chord, .chart-hold, .chart-pickup { min-height: 44px; padding-inline: 1px; }
