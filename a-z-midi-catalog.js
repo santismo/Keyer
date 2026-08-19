@@ -7,6 +7,16 @@
   'use strict';
   var entries = [
   {
+    "file": "_deed I Do.MID",
+    "title": "'Deed I Do",
+    "bpm": 170,
+    "durationSeconds": 282,
+    "chordMarkers": 219,
+    "melodyNotes": 114,
+    "bytes": 39853,
+    "playable": true
+  },
+  {
     "file": "1 Fine Day.MID",
     "title": "One Fine Day - Lighthouse",
     "bpm": 131,
@@ -37,6 +47,16 @@
     "playable": true
   },
   {
+    "file": "2PRINCES.MID",
+    "title": "Two Princes       Spin Doctors",
+    "bpm": 110,
+    "durationSeconds": 284,
+    "chordMarkers": 158,
+    "melodyNotes": 852,
+    "bytes": 28840,
+    "playable": true
+  },
+  {
     "file": "3 Sea Captains.MID",
     "title": "Three Sea Captains",
     "bpm": 90,
@@ -54,6 +74,16 @@
     "chordMarkers": 139,
     "melodyNotes": 184,
     "bytes": 72733,
+    "playable": true
+  },
+  {
+    "file": "5 Foot 2.MID",
+    "title": "Five Foot Two",
+    "bpm": 210,
+    "durationSeconds": 368,
+    "chordMarkers": 86,
+    "melodyNotes": 286,
+    "bytes": 16492,
     "playable": true
   },
   {
@@ -77,6 +107,36 @@
     "playable": true
   },
   {
+    "file": "11 60.MID",
+    "title": "Eleven Sixty",
+    "bpm": 182,
+    "durationSeconds": 406,
+    "chordMarkers": 56,
+    "melodyNotes": 379,
+    "bytes": 14107,
+    "playable": true
+  },
+  {
+    "file": "12 Pins.MID",
+    "title": "Twelve Pins",
+    "bpm": 150,
+    "durationSeconds": 515,
+    "chordMarkers": 83,
+    "melodyNotes": 822,
+    "bytes": 18922,
+    "playable": true
+  },
+  {
+    "file": "18WHEELS.MID",
+    "title": "EIGHTEEN WHEELS AND A DOZEN ROSES",
+    "bpm": 120,
+    "durationSeconds": 218,
+    "chordMarkers": 103,
+    "melodyNotes": 370,
+    "bytes": 16248,
+    "playable": true
+  },
+  {
     "file": "81.MID",
     "title": "Eighty-One",
     "bpm": 125,
@@ -84,6 +144,16 @@
     "chordMarkers": 56,
     "melodyNotes": 87,
     "bytes": 24133,
+    "playable": true
+  },
+  {
+    "file": "500 Miles High.MID",
+    "title": "Five Hundred Miles High",
+    "bpm": 280,
+    "durationSeconds": 101,
+    "chordMarkers": 36,
+    "melodyNotes": 78,
+    "bytes": 68250,
     "playable": true
   },
   {
@@ -127,6 +197,36 @@
     "playable": true
   },
   {
+    "file": "A Final Drink (-pno).MID",
+    "title": "A Final Drink (-pno)",
+    "bpm": 66,
+    "durationSeconds": 153,
+    "chordMarkers": 78,
+    "melodyNotes": 46,
+    "bytes": 12417,
+    "playable": true
+  },
+  {
+    "file": "A Fine Romance - Jerome Kern.MID",
+    "title": "A Fine Romance - Jerome Kern",
+    "bpm": 135,
+    "durationSeconds": 299,
+    "chordMarkers": 214,
+    "melodyNotes": 157,
+    "bytes": 70036,
+    "playable": true
+  },
+  {
+    "file": "A Flower Is A Lovesome Thing - Billy Strayhorn.MID",
+    "title": "A Flower Is A Lovesome Thing - Billy Strayhorn",
+    "bpm": 90,
+    "durationSeconds": 685,
+    "chordMarkers": 59,
+    "melodyNotes": 134,
+    "bytes": 10267,
+    "playable": true
+  },
+  {
     "file": "A Fool Such As I.MID",
     "title": "A fool such as I",
     "bpm": 108,
@@ -134,6 +234,16 @@
     "chordMarkers": 149,
     "melodyNotes": 425,
     "bytes": 18179,
+    "playable": true
+  },
+  {
+    "file": "A Garden In The Rain.MID",
+    "title": "A Garden in the Rain",
+    "bpm": 120,
+    "durationSeconds": 557,
+    "chordMarkers": 96,
+    "melodyNotes": 150,
+    "bytes": 19100,
     "playable": true
   },
   {
@@ -237,6 +347,16 @@
     "playable": true
   },
   {
+    "file": "A Pretty Girl Is Like A Melody - Irving Berlin.MID",
+    "title": "A Pretty Girl Is Like A Melody - Irving Berlin",
+    "bpm": 134,
+    "durationSeconds": 514,
+    "chordMarkers": 141,
+    "melodyNotes": 168,
+    "bytes": 17068,
+    "playable": true
+  },
+  {
     "file": "A Short One_1.MID",
     "title": "A Short One",
     "bpm": 160,
@@ -247,6 +367,16 @@
     "playable": true
   },
   {
+    "file": "A Short One.MID",
+    "title": "A Short One",
+    "bpm": 160,
+    "durationSeconds": 147,
+    "chordMarkers": 109,
+    "melodyNotes": 260,
+    "bytes": 16628,
+    "playable": true
+  },
+  {
     "file": "A Sinner Kissed An Angel - Mack David & Ray Joseph.MID",
     "title": "A Sinner Kissed An Angel - Mack David & Ray Joseph",
     "bpm": 120,
@@ -254,6 +384,16 @@
     "chordMarkers": 57,
     "melodyNotes": 136,
     "bytes": 9385,
+    "playable": true
+  },
+  {
+    "file": "A Sleeping Bee - Arlen.MID",
+    "title": "A Sleeping Bee",
+    "bpm": 125,
+    "durationSeconds": 223,
+    "chordMarkers": 244,
+    "melodyNotes": 372,
+    "bytes": 23176,
     "playable": true
   },
   {
@@ -377,6 +517,16 @@
     "playable": true
   },
   {
+    "file": "Accustomed To Her Face.MID",
+    "title": "Accustomed To Her Face",
+    "bpm": 85,
+    "durationSeconds": 68,
+    "chordMarkers": 49,
+    "melodyNotes": 117,
+    "bytes": 5065,
+    "playable": true
+  },
+  {
     "file": "ACENTPOS.MID",
     "title": "ACCENTUATE THE POSITIVE",
     "bpm": 135,
@@ -387,6 +537,16 @@
     "playable": true
   },
   {
+    "file": "Achy Breaky Heart - Billy Ray Cyrus2.MID",
+    "title": "Achy Breaky Heart - Billy Ray Cyrus",
+    "bpm": 123,
+    "durationSeconds": 515,
+    "chordMarkers": 32,
+    "melodyNotes": 3746,
+    "bytes": 29348,
+    "playable": true
+  },
+  {
     "file": "Across The Alley- Eight Bar Intro.MID",
     "title": "Across The Alley- eight bar intro",
     "bpm": 140,
@@ -394,6 +554,16 @@
     "chordMarkers": 103,
     "melodyNotes": 616,
     "bytes": 19868,
+    "playable": true
+  },
+  {
+    "file": "Act Naturally2.MID",
+    "title": "Act Naturally",
+    "bpm": 115,
+    "durationSeconds": 586,
+    "chordMarkers": 54,
+    "melodyNotes": 228,
+    "bytes": 18268,
     "playable": true
   },
   {
@@ -437,6 +607,16 @@
     "playable": true
   },
   {
+    "file": "AFRAIDOF.MID",
+    "title": "AFRAID OF LOSING YOU AGAIN",
+    "bpm": 110,
+    "durationSeconds": 161,
+    "chordMarkers": 49,
+    "melodyNotes": 265,
+    "bytes": 10480,
+    "playable": true
+  },
+  {
     "file": "African Flower Arr.MID",
     "title": "African Flower arr",
     "bpm": 165,
@@ -444,6 +624,26 @@
     "chordMarkers": 65,
     "melodyNotes": 540,
     "bytes": 20324,
+    "playable": true
+  },
+  {
+    "file": "AFRICANF.MID",
+    "title": "AFRICAN FLOWER",
+    "bpm": 120,
+    "durationSeconds": 248,
+    "chordMarkers": 67,
+    "melodyNotes": 287,
+    "bytes": 40914,
+    "playable": true
+  },
+  {
+    "file": "AFROBLUE_1.MID",
+    "title": "AFRO BLUE",
+    "bpm": 200,
+    "durationSeconds": 134,
+    "chordMarkers": 146,
+    "melodyNotes": 303,
+    "bytes": 50175,
     "playable": true
   },
   {
@@ -464,6 +664,16 @@
     "chordMarkers": 105,
     "melodyNotes": 122,
     "bytes": 15194,
+    "playable": true
+  },
+  {
+    "file": "After The Rain Part Ii.MID",
+    "title": "After The Rain Part II",
+    "bpm": 95,
+    "durationSeconds": 778,
+    "chordMarkers": 113,
+    "melodyNotes": 14,
+    "bytes": 43322,
     "playable": true
   },
   {
@@ -497,6 +707,16 @@
     "playable": true
   },
   {
+    "file": "AFTERNOON IN PARIS.MID",
+    "title": "Afternoon In Paris",
+    "bpm": 156,
+    "durationSeconds": 495,
+    "chordMarkers": 122,
+    "melodyNotes": 363,
+    "bytes": 15171,
+    "playable": true
+  },
+  {
     "file": "AFTPARIS.MID",
     "title": "AFTERNOON IN PARIS",
     "bpm": 190,
@@ -514,6 +734,16 @@
     "chordMarkers": 195,
     "melodyNotes": 582,
     "bytes": 21147,
+    "playable": true
+  },
+  {
+    "file": "Again_2.MID",
+    "title": "Again",
+    "bpm": 90,
+    "durationSeconds": 857,
+    "chordMarkers": 176,
+    "melodyNotes": 211,
+    "bytes": 37614,
     "playable": true
   },
   {
@@ -564,6 +794,26 @@
     "chordMarkers": 66,
     "melodyNotes": 212,
     "bytes": 47497,
+    "playable": true
+  },
+  {
+    "file": "ain_t_misbehavin.MID",
+    "title": "Ain't Misbehavin', et al.",
+    "bpm": 96,
+    "durationSeconds": 85,
+    "chordMarkers": 58,
+    "melodyNotes": 119,
+    "bytes": 5525,
+    "playable": true
+  },
+  {
+    "file": "Air Mail Special_1.MID",
+    "title": "Air Mail Special",
+    "bpm": 150,
+    "durationSeconds": 539,
+    "chordMarkers": 20,
+    "melodyNotes": 414,
+    "bytes": 62179,
     "playable": true
   },
   {
@@ -647,6 +897,16 @@
     "playable": true
   },
   {
+    "file": "Alfie_1.MID",
+    "title": "Alfie",
+    "bpm": 72,
+    "durationSeconds": 6710299,
+    "chordMarkers": 124,
+    "melodyNotes": 295,
+    "bytes": 25747,
+    "playable": true
+  },
+  {
     "file": "Alfie.MID",
     "title": "Alfie",
     "bpm": 72,
@@ -717,6 +977,16 @@
     "playable": true
   },
   {
+    "file": "All God_s Chillun Got Rhythm_2.MID",
+    "title": "All God's Chillun Got Rhythm",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 160,
+    "melodyNotes": 56,
+    "bytes": 16217,
+    "playable": true
+  },
+  {
     "file": "All My Life.MID",
     "title": "All My Life",
     "bpm": 100,
@@ -754,6 +1024,46 @@
     "chordMarkers": 121,
     "melodyNotes": 67,
     "bytes": 25977,
+    "playable": true
+  },
+  {
+    "file": "All Of Me  With Verse.MID",
+    "title": "All Of Me  with verse",
+    "bpm": 140,
+    "durationSeconds": 702,
+    "chordMarkers": 191,
+    "melodyNotes": 183,
+    "bytes": 49893,
+    "playable": true
+  },
+  {
+    "file": "All Of Me_1.MID",
+    "title": "ALL OF ME",
+    "bpm": 140,
+    "durationSeconds": 171,
+    "chordMarkers": 118,
+    "melodyNotes": 241,
+    "bytes": 16961,
+    "playable": true
+  },
+  {
+    "file": "All Of Me.MID",
+    "title": "All Of Me",
+    "bpm": 160,
+    "durationSeconds": 623,
+    "chordMarkers": 142,
+    "melodyNotes": 146,
+    "bytes": 83064,
+    "playable": true
+  },
+  {
+    "file": "All Of Us [Mobley solo].MID",
+    "title": "All Of Us [Hank Mobley solo]",
+    "bpm": 100,
+    "durationSeconds": 618,
+    "chordMarkers": 42,
+    "melodyNotes": 310,
+    "bytes": 7304,
     "playable": true
   },
   {
@@ -827,6 +1137,16 @@
     "playable": true
   },
   {
+    "file": "All The Way.MID",
+    "title": "All The Way",
+    "bpm": 85,
+    "durationSeconds": 305,
+    "chordMarkers": 167,
+    "melodyNotes": 266,
+    "bytes": 31665,
+    "playable": true
+  },
+  {
     "file": "All This And Heaven Too.MID",
     "title": "All This And Heaven Too",
     "bpm": 60,
@@ -854,6 +1174,26 @@
     "chordMarkers": 53,
     "melodyNotes": 429,
     "bytes": 26873,
+    "playable": true
+  },
+  {
+    "file": "ALLBYMYS_1.MID",
+    "title": "All By Myself",
+    "bpm": 130,
+    "durationSeconds": 532,
+    "chordMarkers": 143,
+    "melodyNotes": 207,
+    "bytes": 25906,
+    "playable": true
+  },
+  {
+    "file": "ALLBYMYS.MID",
+    "title": "All by Myself",
+    "bpm": 65,
+    "durationSeconds": 1111,
+    "chordMarkers": 119,
+    "melodyNotes": 284,
+    "bytes": 11322,
     "playable": true
   },
   {
@@ -917,6 +1257,16 @@
     "playable": true
   },
   {
+    "file": "ALLOFME_.MID",
+    "title": "All Of Me",
+    "bpm": 145,
+    "durationSeconds": 525,
+    "chordMarkers": 129,
+    "melodyNotes": 398,
+    "bytes": 16110,
+    "playable": true
+  },
+  {
     "file": "ALLSHOOK.MID",
     "title": "All Shook Up",
     "bpm": 144,
@@ -944,6 +1294,46 @@
     "chordMarkers": 90,
     "melodyNotes": 465,
     "bytes": 37608,
+    "playable": true
+  },
+  {
+    "file": "Almost Like Being In Love - F. Loewe & A.J.Lerner.MID",
+    "title": "Almost Like Being In Love - F. Loewe & A.J.Lerner",
+    "bpm": 145,
+    "durationSeconds": 723,
+    "chordMarkers": 177,
+    "melodyNotes": 188,
+    "bytes": 87455,
+    "playable": true
+  },
+  {
+    "file": "Almost Like Being In Love.MID",
+    "title": "Almost Like Being In Love",
+    "bpm": 120,
+    "durationSeconds": 586,
+    "chordMarkers": 79,
+    "melodyNotes": 95,
+    "bytes": 12271,
+    "playable": true
+  },
+  {
+    "file": "Almost There.MID",
+    "title": "Almost There",
+    "bpm": 106,
+    "durationSeconds": 584,
+    "chordMarkers": 34,
+    "melodyNotes": 99,
+    "bytes": 6234,
+    "playable": true
+  },
+  {
+    "file": "ALMOST.MID",
+    "title": "ALMOST [CJ]",
+    "bpm": 102,
+    "durationSeconds": 174,
+    "chordMarkers": 43,
+    "melodyNotes": 220,
+    "bytes": 9988,
     "playable": true
   },
   {
@@ -1007,6 +1397,16 @@
     "playable": true
   },
   {
+    "file": "Along The Santa Fe Trail.MID",
+    "title": "Along the Santa Fe Trail",
+    "bpm": 90,
+    "durationSeconds": 685,
+    "chordMarkers": 42,
+    "melodyNotes": 114,
+    "bytes": 14204,
+    "playable": true
+  },
+  {
     "file": "Alouette_1.MID",
     "title": "Alouette",
     "bpm": 220,
@@ -1067,6 +1467,26 @@
     "playable": true
   },
   {
+    "file": "Am I Blue.MID",
+    "title": "Am I Blue",
+    "bpm": 120,
+    "durationSeconds": 72,
+    "chordMarkers": 59,
+    "melodyNotes": 68,
+    "bytes": 6330,
+    "playable": true
+  },
+  {
+    "file": "Amanda.MID",
+    "title": "Amanda",
+    "bpm": 110,
+    "durationSeconds": 493,
+    "chordMarkers": 54,
+    "melodyNotes": 366,
+    "bytes": 24498,
+    "playable": true
+  },
+  {
     "file": "AMARILLO.MID",
     "title": "Amarillo By Morning by George  Strait",
     "bpm": 110,
@@ -1094,6 +1514,16 @@
     "chordMarkers": 17,
     "melodyNotes": 63,
     "bytes": 3738,
+    "playable": true
+  },
+  {
+    "file": "AMAZING1.MID",
+    "title": "AMAZING GRACE   [FD]",
+    "bpm": 120,
+    "durationSeconds": 108,
+    "chordMarkers": 43,
+    "melodyNotes": 109,
+    "bytes": 8319,
     "playable": true
   },
   {
@@ -1167,6 +1597,16 @@
     "playable": true
   },
   {
+    "file": "Amor.MID",
+    "title": "Amor",
+    "bpm": 195,
+    "durationSeconds": 54,
+    "chordMarkers": 46,
+    "melodyNotes": 120,
+    "bytes": 21016,
+    "playable": true
+  },
+  {
     "file": "An Oscar For Treadwell.MID",
     "title": "An Oscar For Treadwell",
     "bpm": 200,
@@ -1207,6 +1647,16 @@
     "playable": true
   },
   {
+    "file": "And I Love You So [pali]_1.MID",
+    "title": "And I Love You So [Pali]",
+    "bpm": 82,
+    "durationSeconds": 752,
+    "chordMarkers": 69,
+    "melodyNotes": 138,
+    "bytes": 16287,
+    "playable": true
+  },
+  {
     "file": "And I Love You So.MID",
     "title": "And I Love You So",
     "bpm": 100,
@@ -1224,6 +1674,16 @@
     "chordMarkers": 95,
     "melodyNotes": 531,
     "bytes": 18964,
+    "playable": true
+  },
+  {
+    "file": "And Your Bird Can Sing .MID",
+    "title": "And Your Bird Can Sing",
+    "bpm": 144,
+    "durationSeconds": 642,
+    "chordMarkers": 76,
+    "melodyNotes": 176,
+    "bytes": 29678,
     "playable": true
   },
   {
@@ -1257,6 +1717,16 @@
     "playable": true
   },
   {
+    "file": "Anniversary Waltz - Al Jolson.MID",
+    "title": "Anniversary Waltz",
+    "bpm": 130,
+    "durationSeconds": 181,
+    "chordMarkers": 169,
+    "melodyNotes": 317,
+    "bytes": 24274,
+    "playable": true
+  },
+  {
     "file": "ANOTHER BRIDGE TO BURN_1.MID",
     "title": "Another Bridge to Burn",
     "bpm": 121,
@@ -1277,6 +1747,26 @@
     "playable": true
   },
   {
+    "file": "ANOTHERU.MID",
+    "title": "THERE WILL NEVER BE ANOTHER YOU",
+    "bpm": 160,
+    "durationSeconds": 530,
+    "chordMarkers": 137,
+    "melodyNotes": 500,
+    "bytes": 20629,
+    "playable": true
+  },
+  {
+    "file": "ANOTHR_S.MID",
+    "title": "ANOTHER SOMEBODY DONE SOMBODY WRONG SONG",
+    "bpm": 122,
+    "durationSeconds": 162,
+    "chordMarkers": 62,
+    "melodyNotes": 272,
+    "bytes": 11956,
+    "playable": true
+  },
+  {
     "file": "Antabus - Dexter Gordon.MID",
     "title": "Antabus - Dexter Gordon",
     "bpm": 185,
@@ -1294,6 +1784,16 @@
     "chordMarkers": 159,
     "melodyNotes": 464,
     "bytes": 16942,
+    "playable": true
+  },
+  {
+    "file": "Anthropology [Charlie Parker Solo].MID",
+    "title": "Anthropology [Charlie Parker solo]",
+    "bpm": 220,
+    "durationSeconds": 454,
+    "chordMarkers": 296,
+    "melodyNotes": 941,
+    "bytes": 33223,
     "playable": true
   },
   {
@@ -1337,6 +1837,16 @@
     "playable": true
   },
   {
+    "file": "ANYWHERI.MID",
+    "title": "ANYWHERE I WANDER           ˇ",
+    "bpm": 96,
+    "durationSeconds": 693,
+    "chordMarkers": 91,
+    "melodyNotes": 436,
+    "bytes": 13746,
+    "playable": true
+  },
+  {
     "file": "APARTMENT #9 [RI].MID",
     "title": "APARTMENT NUMBER 9 [RI]",
     "bpm": 79,
@@ -1344,6 +1854,36 @@
     "chordMarkers": 53,
     "melodyNotes": 234,
     "bytes": 9834,
+    "playable": true
+  },
+  {
+    "file": "Apex Blues.MID",
+    "title": "Apex Blues",
+    "bpm": 130,
+    "durationSeconds": 118,
+    "chordMarkers": 45,
+    "melodyNotes": 254,
+    "bytes": 10399,
+    "playable": true
+  },
+  {
+    "file": "APRIL IN PARIS.MID",
+    "title": "APRIL IN PARIS",
+    "bpm": 130,
+    "durationSeconds": 593,
+    "chordMarkers": 127,
+    "melodyNotes": 349,
+    "bytes": 14928,
+    "playable": true
+  },
+  {
+    "file": "April Showers.MID",
+    "title": "April Showers",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 228,
+    "melodyNotes": 453,
+    "bytes": 65764,
     "playable": true
   },
   {
@@ -1404,6 +1944,16 @@
     "chordMarkers": 68,
     "melodyNotes": 310,
     "bytes": 21366,
+    "playable": true
+  },
+  {
+    "file": "ARA.MID",
+    "title": "A Rá - Donata/Veloso",
+    "bpm": 150,
+    "durationSeconds": 411,
+    "chordMarkers": 30,
+    "melodyNotes": 115,
+    "bytes": 10607,
     "playable": true
   },
   {
@@ -1477,6 +2027,16 @@
     "playable": true
   },
   {
+    "file": "ARTHUR_1.MID",
+    "title": "Arthur's theme",
+    "bpm": 130,
+    "durationSeconds": 210,
+    "chordMarkers": 122,
+    "melodyNotes": 354,
+    "bytes": 33240,
+    "playable": true
+  },
+  {
     "file": "ARTHUR_S THEME.MID",
     "title": "Arthur's theme",
     "bpm": 130,
@@ -1484,6 +2044,16 @@
     "chordMarkers": 122,
     "melodyNotes": 354,
     "bytes": 33168,
+    "playable": true
+  },
+  {
+    "file": "AS TIME GOES BY J&S.MID",
+    "title": "AS TIME GOES BY [J&S]",
+    "bpm": 90,
+    "durationSeconds": 760,
+    "chordMarkers": 119,
+    "melodyNotes": 48,
+    "bytes": 25747,
     "playable": true
   },
   {
@@ -1507,6 +2077,16 @@
     "playable": true
   },
   {
+    "file": "ASTIME_B.MID",
+    "title": "AS TIME GOES BY [B Oconnell]",
+    "bpm": 80,
+    "durationSeconds": 210,
+    "chordMarkers": 107,
+    "melodyNotes": 237,
+    "bytes": 10821,
+    "playable": true
+  },
+  {
     "file": "ASTIMEGO.MID",
     "title": "As Time Goes By",
     "bpm": 72,
@@ -1527,6 +2107,16 @@
     "playable": true
   },
   {
+    "file": "At Sundown_1.MID",
+    "title": "At Sundown",
+    "bpm": 150,
+    "durationSeconds": 514,
+    "chordMarkers": 88,
+    "melodyNotes": 192,
+    "bytes": 67112,
+    "playable": true
+  },
+  {
     "file": "At This Moment.MID",
     "title": "At This Moment",
     "bpm": 95,
@@ -1534,6 +2124,16 @@
     "chordMarkers": 92,
     "melodyNotes": 301,
     "bytes": 17234,
+    "playable": true
+  },
+  {
+    "file": "Atlanta Blues - W.C. Handy.MID",
+    "title": "Atlanta Blues - W.C. Handy (1923)",
+    "bpm": 120,
+    "durationSeconds": 518,
+    "chordMarkers": 48,
+    "melodyNotes": 267,
+    "bytes": 40782,
     "playable": true
   },
   {
@@ -1547,6 +2147,16 @@
     "playable": true
   },
   {
+    "file": "Auld Lang Syne-traditional Auldla~1.MID",
+    "title": "Auld Lang Syne/Traditional",
+    "bpm": 110,
+    "durationSeconds": 588,
+    "chordMarkers": 103,
+    "melodyNotes": 237,
+    "bytes": 16889,
+    "playable": true
+  },
+  {
     "file": "Auld Lang Syne.MID",
     "title": "Auld Lang Syne",
     "bpm": 170,
@@ -1554,6 +2164,16 @@
     "chordMarkers": 94,
     "melodyNotes": 178,
     "bytes": 15752,
+    "playable": true
+  },
+  {
+    "file": "AURA LEE_1.MID",
+    "title": "Aura Lee",
+    "bpm": 100,
+    "durationSeconds": 695,
+    "chordMarkers": 59,
+    "melodyNotes": 141,
+    "bytes": 15269,
     "playable": true
   },
   {
@@ -1577,6 +2197,16 @@
     "playable": true
   },
   {
+    "file": "Autumn In New York_1.MID",
+    "title": "Autumn In New York",
+    "bpm": 85,
+    "durationSeconds": 282,
+    "chordMarkers": 169,
+    "melodyNotes": 297,
+    "bytes": 37386,
+    "playable": true
+  },
+  {
     "file": "Autumn In New York.MID",
     "title": "Autumn In New York",
     "bpm": 80,
@@ -1594,6 +2224,26 @@
     "chordMarkers": 102,
     "melodyNotes": 433,
     "bytes": 50367,
+    "playable": true
+  },
+  {
+    "file": "Autumn Leaves.MID",
+    "title": "Autumn Leaves",
+    "bpm": 125,
+    "durationSeconds": 616,
+    "chordMarkers": 103,
+    "melodyNotes": 208,
+    "bytes": 56702,
+    "playable": true
+  },
+  {
+    "file": "Autumn Morning.MID",
+    "title": "Autumn Morning",
+    "bpm": 95,
+    "durationSeconds": 172,
+    "chordMarkers": 81,
+    "melodyNotes": 214,
+    "bytes": 11561,
     "playable": true
   },
   {
@@ -1657,6 +2307,16 @@
     "playable": true
   },
   {
+    "file": "AWHITER.MID",
+    "title": "A Whiter Shade Of Pale",
+    "bpm": 84,
+    "durationSeconds": 194,
+    "chordMarkers": 129,
+    "melodyNotes": 53,
+    "bytes": 20726,
+    "playable": true
+  },
+  {
     "file": "B BOWMAN HOP_1.MID",
     "title": "B BOWMAN HOP",
     "bpm": 150,
@@ -1707,6 +2367,16 @@
     "playable": true
   },
   {
+    "file": "Back Alley Blues.MID",
+    "title": "Back Alley Blues - Ron Stebbins",
+    "bpm": 90,
+    "durationSeconds": 685,
+    "chordMarkers": 24,
+    "melodyNotes": 228,
+    "bytes": 8468,
+    "playable": true
+  },
+  {
     "file": "Back To Amarillo .MID",
     "title": "Back to Amarillo - ZzJazOld.sty demo - -",
     "bpm": 150,
@@ -1714,6 +2384,16 @@
     "chordMarkers": 83,
     "melodyNotes": 348,
     "bytes": 44002,
+    "playable": true
+  },
+  {
+    "file": "Backbay Shuffle - Artie Shaw & Teddie McRae.MID",
+    "title": "Back Bay Shuffle - Artie Shaw & Teddie MacRae",
+    "bpm": 208,
+    "durationSeconds": 447,
+    "chordMarkers": 152,
+    "melodyNotes": 248,
+    "bytes": 88678,
     "playable": true
   },
   {
@@ -1777,6 +2457,16 @@
     "playable": true
   },
   {
+    "file": "Bars Of Steel [l. Green].MID",
+    "title": "BARS OF STEEL [L. Green]",
+    "bpm": 84,
+    "durationSeconds": 737,
+    "chordMarkers": 32,
+    "melodyNotes": 133,
+    "bytes": 6296,
+    "playable": true
+  },
+  {
     "file": "BARS OF STEEL [SCOTTY BK].MID",
     "title": "BARS OF STEEL [Scotty's Book]",
     "bpm": 88,
@@ -1797,6 +2487,26 @@
     "playable": true
   },
   {
+    "file": "BASIN STREET BLUES 2 (NRB).MID",
+    "title": "Basin Street Blues(NRB)",
+    "bpm": 112,
+    "durationSeconds": 617,
+    "chordMarkers": 114,
+    "melodyNotes": 237,
+    "bytes": 11080,
+    "playable": true
+  },
+  {
+    "file": "BATLHYM.MID",
+    "title": "BATTLE HYMN OF THE REPUBLIC  (March_12 Demo)",
+    "bpm": 115,
+    "durationSeconds": 607,
+    "chordMarkers": 47,
+    "melodyNotes": 255,
+    "bytes": 16434,
+    "playable": true
+  },
+  {
     "file": "Battle Hymn Of The Republic.MID",
     "title": "Battle Hymn Of The Republic",
     "bpm": 155,
@@ -1804,6 +2514,26 @@
     "chordMarkers": 18,
     "melodyNotes": 80,
     "bytes": 4871,
+    "playable": true
+  },
+  {
+    "file": "BBAILY.MID",
+    "title": "bbaily",
+    "bpm": 195,
+    "durationSeconds": 323,
+    "chordMarkers": 31,
+    "melodyNotes": 183,
+    "bytes": 6272,
+    "playable": true
+  },
+  {
+    "file": "Be A Clown.MID",
+    "title": "Be A Clown",
+    "bpm": 220,
+    "durationSeconds": 368,
+    "chordMarkers": 136,
+    "melodyNotes": 331,
+    "bytes": 23714,
     "playable": true
   },
   {
@@ -1827,6 +2557,16 @@
     "playable": true
   },
   {
+    "file": "Beale Street Mama.MID",
+    "title": "Beale Street Mama",
+    "bpm": 150,
+    "durationSeconds": 512,
+    "chordMarkers": 105,
+    "melodyNotes": 333,
+    "bytes": 17634,
+    "playable": true
+  },
+  {
     "file": "BEALSTR.MID",
     "title": "Beale Street Blues",
     "bpm": 140,
@@ -1847,6 +2587,16 @@
     "playable": true
   },
   {
+    "file": "Beautiful Love.MID",
+    "title": "Beautiful love",
+    "bpm": 120,
+    "durationSeconds": 636,
+    "chordMarkers": 141,
+    "melodyNotes": 79,
+    "bytes": 19212,
+    "playable": true
+  },
+  {
     "file": "Beauty And The Beast.MID",
     "title": "Beauty And The Beast",
     "bpm": 80,
@@ -1864,6 +2614,16 @@
     "chordMarkers": 112,
     "melodyNotes": 250,
     "bytes": 30080,
+    "playable": true
+  },
+  {
+    "file": "Beer Barrel Polka_1.MID",
+    "title": "BEER BARREL POLKA",
+    "bpm": 140,
+    "durationSeconds": 206,
+    "chordMarkers": 75,
+    "melodyNotes": 489,
+    "bytes": 42729,
     "playable": true
   },
   {
@@ -1917,6 +2677,16 @@
     "playable": true
   },
   {
+    "file": "BELEIVE_1.MID",
+    "title": "I Beleive, The Platters",
+    "bpm": 115,
+    "durationSeconds": 205,
+    "chordMarkers": 139,
+    "melodyNotes": 225,
+    "bytes": 16270,
+    "playable": true
+  },
+  {
     "file": "BELMAGIC.MID",
     "title": "DO YOU BELIEVE IN MAGIC",
     "bpm": 138,
@@ -1954,6 +2724,16 @@
     "chordMarkers": 48,
     "melodyNotes": 131,
     "bytes": 20423,
+    "playable": true
+  },
+  {
+    "file": "BESBLUES.MID",
+    "title": "BESSIE'S BLUES",
+    "bpm": 170,
+    "durationSeconds": 481,
+    "chordMarkers": 73,
+    "melodyNotes": 414,
+    "bytes": 14724,
     "playable": true
   },
   {
@@ -2037,6 +2817,16 @@
     "playable": true
   },
   {
+    "file": "Beyond The Sunset.MID",
+    "title": "BEYOND THE SUNSET",
+    "bpm": 105,
+    "durationSeconds": 702,
+    "chordMarkers": 34,
+    "melodyNotes": 303,
+    "bytes": 10288,
+    "playable": true
+  },
+  {
     "file": "BEYOND_S.MID",
     "title": "BEYOND THE SUNSET",
     "bpm": 105,
@@ -2097,6 +2887,16 @@
     "playable": true
   },
   {
+    "file": "BIG-CITY.MID",
+    "title": "Big city",
+    "bpm": 140,
+    "durationSeconds": 204,
+    "chordMarkers": 89,
+    "melodyNotes": 674,
+    "bytes": 47673,
+    "playable": true
+  },
+  {
     "file": "Bill Cheatham_1.MID",
     "title": "Bill Cheatham",
     "bpm": 110,
@@ -2104,6 +2904,16 @@
     "chordMarkers": 74,
     "melodyNotes": 524,
     "bytes": 14996,
+    "playable": true
+  },
+  {
+    "file": "Billie_s Bounce - Charlie Parker.MID",
+    "title": "Billie's Bounce",
+    "bpm": 180,
+    "durationSeconds": 136,
+    "chordMarkers": 121,
+    "melodyNotes": 254,
+    "bytes": 18998,
     "playable": true
   },
   {
@@ -2117,6 +2927,16 @@
     "playable": true
   },
   {
+    "file": "Billy In The Lowground.MID",
+    "title": "Billy In The Lowground",
+    "bpm": 190,
+    "durationSeconds": 408,
+    "chordMarkers": 62,
+    "melodyNotes": 701,
+    "bytes": 18341,
+    "playable": true
+  },
+  {
     "file": "Billy.MID",
     "title": "Billy - Melba Liston",
     "bpm": 125,
@@ -2127,6 +2947,16 @@
     "playable": true
   },
   {
+    "file": "BIMIRBIS.MID",
+    "title": "Bei Mir Bist Du Schon",
+    "bpm": 160,
+    "durationSeconds": 482,
+    "chordMarkers": 75,
+    "melodyNotes": 243,
+    "bytes": 16782,
+    "playable": true
+  },
+  {
     "file": "birdland.MID",
     "title": "Birdland, et al.",
     "bpm": 160,
@@ -2134,6 +2964,26 @@
     "chordMarkers": 443,
     "melodyNotes": 870,
     "bytes": 37251,
+    "playable": true
+  },
+  {
+    "file": "Birth Of Passion.MID",
+    "title": "Birth Of Passion",
+    "bpm": 105,
+    "durationSeconds": 229,
+    "chordMarkers": 116,
+    "melodyNotes": 164,
+    "bytes": 19093,
+    "playable": true
+  },
+  {
+    "file": "Birth Of The Blues [j&f Cd].MID",
+    "title": "BIRTH OF THE BLUES [J&F CD]",
+    "bpm": 120,
+    "durationSeconds": 638,
+    "chordMarkers": 132,
+    "melodyNotes": 61,
+    "bytes": 25895,
     "playable": true
   },
   {
@@ -2154,6 +3004,36 @@
     "chordMarkers": 141,
     "melodyNotes": 300,
     "bytes": 17826,
+    "playable": true
+  },
+  {
+    "file": "BLACK COFFEE.MID",
+    "title": "Black Coffee",
+    "bpm": 78,
+    "durationSeconds": 1063,
+    "chordMarkers": 209,
+    "melodyNotes": 1044,
+    "bytes": 40449,
+    "playable": true
+  },
+  {
+    "file": "Black Diamond - Roland Kirk.MID",
+    "title": "Black Diamond - Roland Kirk",
+    "bpm": 100,
+    "durationSeconds": 181,
+    "chordMarkers": 97,
+    "melodyNotes": 104,
+    "bytes": 18729,
+    "playable": true
+  },
+  {
+    "file": "BLACK NARCISSUS.MID",
+    "title": "BLACK NARCISSUS",
+    "bpm": 160,
+    "durationSeconds": 397,
+    "chordMarkers": 121,
+    "melodyNotes": 156,
+    "bytes": 33738,
     "playable": true
   },
   {
@@ -2267,6 +3147,16 @@
     "playable": true
   },
   {
+    "file": "BLNKBLUE.MID",
+    "title": "Under A Blanket Of Blue",
+    "bpm": 90,
+    "durationSeconds": 771,
+    "chordMarkers": 90,
+    "melodyNotes": 222,
+    "bytes": 18886,
+    "playable": true
+  },
+  {
     "file": "BLOOMDID.MID",
     "title": "Bloomdido",
     "bpm": 240,
@@ -2297,6 +3187,16 @@
     "playable": true
   },
   {
+    "file": "BLU_EYES.MID",
+    "title": "BLUES EYES CRYING IN THE RAIN  [MAIERO]",
+    "bpm": 90,
+    "durationSeconds": 768,
+    "chordMarkers": 37,
+    "melodyNotes": 226,
+    "bytes": 10809,
+    "playable": true
+  },
+  {
     "file": "BLU_NEON.MID",
     "title": "NEON MOON",
     "bpm": 110,
@@ -2307,6 +3207,26 @@
     "playable": true
   },
   {
+    "file": "BLUBOSSA.MID",
+    "title": "Blue Bossa",
+    "bpm": 180,
+    "durationSeconds": 428,
+    "chordMarkers": 82,
+    "melodyNotes": 93,
+    "bytes": 48793,
+    "playable": true
+  },
+  {
+    "file": "Blue Bayou_1.MID",
+    "title": "Blue Bayou",
+    "bpm": 110,
+    "durationSeconds": 565,
+    "chordMarkers": 34,
+    "melodyNotes": 239,
+    "bytes": 22589,
+    "playable": true
+  },
+  {
     "file": "Blue Bayou.MID",
     "title": "Blue Bayou",
     "bpm": 95,
@@ -2314,6 +3234,16 @@
     "chordMarkers": 131,
     "melodyNotes": 807,
     "bytes": 40310,
+    "playable": true
+  },
+  {
+    "file": "BLUE CABERET_1.MID",
+    "title": "Blue Caberet",
+    "bpm": 75,
+    "durationSeconds": 166,
+    "chordMarkers": 67,
+    "melodyNotes": 229,
+    "bytes": 16925,
     "playable": true
   },
   {
@@ -2387,6 +3317,26 @@
     "playable": true
   },
   {
+    "file": "Blue Orchids - Hoagy Carmichael.MID",
+    "title": "Blue Orchids - Hoagy Carmichael",
+    "bpm": 60,
+    "durationSeconds": 1028,
+    "chordMarkers": 112,
+    "melodyNotes": 254,
+    "bytes": 19019,
+    "playable": true
+  },
+  {
+    "file": "Blue Room.MID",
+    "title": "Blue Room",
+    "bpm": 160,
+    "durationSeconds": 300,
+    "chordMarkers": 387,
+    "melodyNotes": 210,
+    "bytes": 96157,
+    "playable": true
+  },
+  {
     "file": "BLUE SAND.MID",
     "title": "Blue Sand",
     "bpm": 79,
@@ -2424,6 +3374,26 @@
     "chordMarkers": 47,
     "melodyNotes": 55,
     "bytes": 9264,
+    "playable": true
+  },
+  {
+    "file": "BLUE-BAY.MID",
+    "title": "Blue Bayou",
+    "bpm": 95,
+    "durationSeconds": 273,
+    "chordMarkers": 131,
+    "melodyNotes": 807,
+    "bytes": 40346,
+    "playable": true
+  },
+  {
+    "file": "BLUEBAYO.MID",
+    "title": "BLUE BAYOU",
+    "bpm": 112,
+    "durationSeconds": 624,
+    "chordMarkers": 52,
+    "melodyNotes": 469,
+    "bytes": 16763,
     "playable": true
   },
   {
@@ -2474,6 +3444,16 @@
     "chordMarkers": 22,
     "melodyNotes": 111,
     "bytes": 5625,
+    "playable": true
+  },
+  {
+    "file": "Blues For A Rainy Afternoon.MID",
+    "title": "Blues For A Rainy Afternoon",
+    "bpm": 110,
+    "durationSeconds": 87,
+    "chordMarkers": 40,
+    "melodyNotes": 216,
+    "bytes": 7290,
     "playable": true
   },
   {
@@ -2537,6 +3517,16 @@
     "playable": true
   },
   {
+    "file": "Bluesette - Jean _Toots_ Tielemans.MID",
+    "title": "Bluesette - Jean 'Toots' Thielemans",
+    "bpm": 138,
+    "durationSeconds": 367,
+    "chordMarkers": 138,
+    "melodyNotes": 165,
+    "bytes": 58161,
+    "playable": true
+  },
+  {
     "file": "Bluesette [4-4] - Jean _Toots_ Tielemans.MID",
     "title": "Bluesette [4-4] - Jean 'Toots' Thielemans",
     "bpm": 195,
@@ -2574,6 +3564,36 @@
     "chordMarkers": 85,
     "melodyNotes": 459,
     "bytes": 22436,
+    "playable": true
+  },
+  {
+    "file": "BLUSKIES.MID",
+    "title": "BLUE SKIES",
+    "bpm": 155,
+    "durationSeconds": 155,
+    "chordMarkers": 139,
+    "melodyNotes": 240,
+    "bytes": 17360,
+    "playable": true
+  },
+  {
+    "file": "BLUTRANE.MID",
+    "title": "BLUE TRANE",
+    "bpm": 160,
+    "durationSeconds": 548,
+    "chordMarkers": 171,
+    "melodyNotes": 571,
+    "bytes": 19445,
+    "playable": true
+  },
+  {
+    "file": "BLUTURGR.MID",
+    "title": "Blue Turning Grey Over You",
+    "bpm": 140,
+    "durationSeconds": 552,
+    "chordMarkers": 123,
+    "melodyNotes": 219,
+    "bytes": 16752,
     "playable": true
   },
   {
@@ -2627,6 +3647,26 @@
     "playable": true
   },
   {
+    "file": "BOOGIEW1.MID",
+    "title": "BOOGIE WOOGIE  [JC]",
+    "bpm": 158,
+    "durationSeconds": 149,
+    "chordMarkers": 41,
+    "melodyNotes": 270,
+    "bytes": 12701,
+    "playable": true
+  },
+  {
+    "file": "Boot Heel Drag.MID",
+    "title": "BOOT HEEL DRAG",
+    "bpm": 160,
+    "durationSeconds": 506,
+    "chordMarkers": 38,
+    "melodyNotes": 384,
+    "bytes": 15608,
+    "playable": true
+  },
+  {
     "file": "Boot Scoot_n Boogie.MID",
     "title": "BOOT SCOOT'N BOOGIE",
     "bpm": 130,
@@ -2637,6 +3677,26 @@
     "playable": true
   },
   {
+    "file": "Boot Scootin_ Boogie.MID",
+    "title": "Boot Scootin' Boogie - Ronnie Dunn",
+    "bpm": 155,
+    "durationSeconds": 526,
+    "chordMarkers": 51,
+    "melodyNotes": 578,
+    "bytes": 21606,
+    "playable": true
+  },
+  {
+    "file": "Boppin_ On Charley B.MID",
+    "title": "Boppin' on Charley B - Carlos Barrientos/Johnny P.",
+    "bpm": 160,
+    "durationSeconds": 198,
+    "chordMarkers": 209,
+    "melodyNotes": 246,
+    "bytes": 24825,
+    "playable": true
+  },
+  {
     "file": "BOPPIN.MID",
     "title": "Boppin' With The Blues      Powder Blues/T.Lavin   \"C\"",
     "bpm": 178,
@@ -2644,6 +3704,26 @@
     "chordMarkers": 76,
     "melodyNotes": 964,
     "bytes": 37021,
+    "playable": true
+  },
+  {
+    "file": "BOQUET OF ROSES_1.MID",
+    "title": "Boquet of Roses",
+    "bpm": 110,
+    "durationSeconds": 700,
+    "chordMarkers": 65,
+    "melodyNotes": 55,
+    "bytes": 25567,
+    "playable": true
+  },
+  {
+    "file": "Boquet Of Roses.MID",
+    "title": "Boquet of Roses",
+    "bpm": 110,
+    "durationSeconds": 692,
+    "chordMarkers": 64,
+    "melodyNotes": 287,
+    "bytes": 13888,
     "playable": true
   },
   {
@@ -2677,6 +3757,16 @@
     "playable": true
   },
   {
+    "file": "BORN TO LOSE [JIM].MID",
+    "title": "Born to Lose  [Jim]",
+    "bpm": 97,
+    "durationSeconds": 710,
+    "chordMarkers": 72,
+    "melodyNotes": 248,
+    "bytes": 9186,
+    "playable": true
+  },
+  {
     "file": "BORNBLUE.MID",
     "title": "Born to be Blue",
     "bpm": 140,
@@ -2694,6 +3784,16 @@
     "chordMarkers": 114,
     "melodyNotes": 320,
     "bytes": 11393,
+    "playable": true
+  },
+  {
+    "file": "BORNTO_L.MID",
+    "title": "BORN TO LOSE   [BOB O]",
+    "bpm": 90,
+    "durationSeconds": 155,
+    "chordMarkers": 47,
+    "melodyNotes": 164,
+    "bytes": 8115,
     "playable": true
   },
   {
@@ -2727,6 +3827,16 @@
     "playable": true
   },
   {
+    "file": "Bottle Let Me Down[cr].MID",
+    "title": "THE BOTTLE LET ME DOWN  [cr]",
+    "bpm": 131,
+    "durationSeconds": 172,
+    "chordMarkers": 14,
+    "melodyNotes": 369,
+    "bytes": 13365,
+    "playable": true
+  },
+  {
     "file": "BOUNCY_G.MID",
     "title": "Bouncy G Style Pop Demo",
     "bpm": 110,
@@ -2747,6 +3857,16 @@
     "playable": true
   },
   {
+    "file": "BREAKNUP.MID",
+    "title": "BREAKIN' UP IS HARD TO DO",
+    "bpm": 100,
+    "durationSeconds": 240,
+    "chordMarkers": 193,
+    "melodyNotes": 421,
+    "bytes": 26285,
+    "playable": true
+  },
+  {
     "file": "BREATHE.MID",
     "title": "Breathe",
     "bpm": 125,
@@ -2754,6 +3874,16 @@
     "chordMarkers": 67,
     "melodyNotes": 213,
     "bytes": 23256,
+    "playable": true
+  },
+  {
+    "file": "Breathless - Jacques Press & Eddie Cherkose.MID",
+    "title": "Breathless - Jacques Press & Eddie Cherkose",
+    "bpm": 130,
+    "durationSeconds": 593,
+    "chordMarkers": 165,
+    "melodyNotes": 410,
+    "bytes": 19315,
     "playable": true
   },
   {
@@ -2817,6 +3947,16 @@
     "playable": true
   },
   {
+    "file": "BRILCORN.MID",
+    "title": "Brilliant Corners",
+    "bpm": 120,
+    "durationSeconds": 646,
+    "chordMarkers": 152,
+    "melodyNotes": 430,
+    "bytes": 15460,
+    "playable": true
+  },
+  {
     "file": "BRKMYHRT.MID",
     "title": "You're Breaking My Heart",
     "bpm": 150,
@@ -2824,6 +3964,26 @@
     "chordMarkers": 115,
     "melodyNotes": 97,
     "bytes": 34909,
+    "playable": true
+  },
+  {
+    "file": "BUBBLES.MID",
+    "title": "Bubbles in my beer",
+    "bpm": 140,
+    "durationSeconds": 178,
+    "chordMarkers": 64,
+    "melodyNotes": 390,
+    "bytes": 39953,
+    "playable": true
+  },
+  {
+    "file": "BUBLES IN MY BEER1.MID",
+    "title": "BUBBLES IN MY BEER",
+    "bpm": 150,
+    "durationSeconds": 170,
+    "chordMarkers": 57,
+    "melodyNotes": 328,
+    "bytes": 15084,
     "playable": true
   },
   {
@@ -2847,6 +4007,16 @@
     "playable": true
   },
   {
+    "file": "Bud_s Bounce.MID",
+    "title": "Bud's Bounce",
+    "bpm": 170,
+    "durationSeconds": 363,
+    "chordMarkers": 72,
+    "melodyNotes": 97,
+    "bytes": 14380,
+    "playable": true
+  },
+  {
     "file": "BULLDOG.MID",
     "title": "Bulldog - John Lennon",
     "bpm": 120,
@@ -2854,6 +4024,16 @@
     "chordMarkers": 41,
     "melodyNotes": 431,
     "bytes": 17735,
+    "playable": true
+  },
+  {
+    "file": "Bungle Rye.MID",
+    "title": "Bungle Rye",
+    "bpm": 165,
+    "durationSeconds": 410,
+    "chordMarkers": 92,
+    "melodyNotes": 178,
+    "bytes": 33611,
     "playable": true
   },
   {
@@ -2867,6 +4047,46 @@
     "playable": true
   },
   {
+    "file": "BUTNOT_4.MID",
+    "title": "BUT NOT FOR ME",
+    "bpm": 110,
+    "durationSeconds": 218,
+    "chordMarkers": 148,
+    "melodyNotes": 247,
+    "bytes": 39968,
+    "playable": true
+  },
+  {
+    "file": "BUTNOT4M.MID",
+    "title": "But Not For Me",
+    "bpm": 152,
+    "durationSeconds": 560,
+    "chordMarkers": 186,
+    "melodyNotes": 538,
+    "bytes": 21007,
+    "playable": true
+  },
+  {
+    "file": "Butterfly - Herbie Hancock & Bennie Maupin.MID",
+    "title": "Butterfly - Herbie Hancock & Bennie Maupin",
+    "bpm": 125,
+    "durationSeconds": 359,
+    "chordMarkers": 66,
+    "melodyNotes": 300,
+    "bytes": 31201,
+    "playable": true
+  },
+  {
+    "file": "BUTTERFLY.MID",
+    "title": "Butterfly",
+    "bpm": 109,
+    "durationSeconds": 1024,
+    "chordMarkers": 148,
+    "melodyNotes": 1996,
+    "bytes": 132393,
+    "playable": true
+  },
+  {
     "file": "Buttermilk Mary.MID",
     "title": "Buttermilk Mary",
     "bpm": 115,
@@ -2874,6 +4094,26 @@
     "chordMarkers": 38,
     "melodyNotes": 187,
     "bytes": 9555,
+    "playable": true
+  },
+  {
+    "file": "Buzzy.MID",
+    "title": "Buzzy",
+    "bpm": 224,
+    "durationSeconds": 328,
+    "chordMarkers": 62,
+    "melodyNotes": 306,
+    "bytes": 13420,
+    "playable": true
+  },
+  {
+    "file": "BY MYSELF.MID",
+    "title": "By Myself",
+    "bpm": 176,
+    "durationSeconds": 481,
+    "chordMarkers": 127,
+    "melodyNotes": 501,
+    "bytes": 22282,
     "playable": true
   },
   {
@@ -2894,6 +4134,16 @@
     "chordMarkers": 158,
     "melodyNotes": 76,
     "bytes": 14711,
+    "playable": true
+  },
+  {
+    "file": "Bye Bye Blackbird .MID",
+    "title": "Bye Bye Blackbird",
+    "bpm": 175,
+    "durationSeconds": 443,
+    "chordMarkers": 86,
+    "melodyNotes": 142,
+    "bytes": 79610,
     "playable": true
   },
   {
@@ -2947,6 +4197,16 @@
     "playable": true
   },
   {
+    "file": "C JAM.MID",
+    "title": "C Jam",
+    "bpm": 120,
+    "durationSeconds": 577,
+    "chordMarkers": 32,
+    "melodyNotes": 133,
+    "bytes": 5128,
+    "playable": true
+  },
+  {
     "file": "C_EST20.MID",
     "title": "C'est Si Bon",
     "bpm": 130,
@@ -2957,6 +4217,16 @@
     "playable": true
   },
   {
+    "file": "C_FINGE2.MID",
+    "title": "Country Fingerstyle  Demo 2",
+    "bpm": 90,
+    "durationSeconds": 771,
+    "chordMarkers": 82,
+    "melodyNotes": 149,
+    "bytes": 6394,
+    "playable": true
+  },
+  {
     "file": "C_SIMP24.1.MID",
     "title": "Track 1",
     "bpm": 51,
@@ -2964,6 +4234,26 @@
     "chordMarkers": 127,
     "melodyNotes": 1045,
     "bytes": 38811,
+    "playable": true
+  },
+  {
+    "file": "C-h-r-i-s-t-m-a-s-jcarson&earnold C1949-words-jc,music-ea.MID",
+    "title": "C-H-R-I-S-T-M-A-S/JCarson&EArnold c1949/words:JC,music:EA",
+    "bpm": 110,
+    "durationSeconds": 227,
+    "chordMarkers": 68,
+    "melodyNotes": 476,
+    "bytes": 30034,
+    "playable": true
+  },
+  {
+    "file": "Cab Driver [frank].MID",
+    "title": "Cab Driver [Frank]",
+    "bpm": 135,
+    "durationSeconds": 515,
+    "chordMarkers": 34,
+    "melodyNotes": 182,
+    "bytes": 7883,
     "playable": true
   },
   {
@@ -3007,6 +4297,56 @@
     "playable": true
   },
   {
+    "file": "Cakewalkin_ Babies From Home.MID",
+    "title": "Cakewalkin' Babies From Home",
+    "bpm": 190,
+    "durationSeconds": 424,
+    "chordMarkers": 80,
+    "melodyNotes": 325,
+    "bytes": 23412,
+    "playable": true
+  },
+  {
+    "file": "Caledonian Wedding Anniversary_1.MID",
+    "title": "Caledonian Wedding Anniversary",
+    "bpm": 110,
+    "durationSeconds": 528,
+    "chordMarkers": 102,
+    "melodyNotes": 344,
+    "bytes": 22968,
+    "playable": true
+  },
+  {
+    "file": "CALIFORNIA  [FD].MID",
+    "title": "California  [FD]",
+    "bpm": 230,
+    "durationSeconds": 102,
+    "chordMarkers": 109,
+    "melodyNotes": 198,
+    "bytes": 15843,
+    "playable": true
+  },
+  {
+    "file": "Call Me.MID",
+    "title": "Call Me",
+    "bpm": 140,
+    "durationSeconds": 444,
+    "chordMarkers": 51,
+    "melodyNotes": 203,
+    "bytes": 21655,
+    "playable": true
+  },
+  {
+    "file": "Caminhos Cruzados.MID",
+    "title": "Caminhos Cruzados",
+    "bpm": 120,
+    "durationSeconds": 706,
+    "chordMarkers": 138,
+    "melodyNotes": 138,
+    "bytes": 37763,
+    "playable": true
+  },
+  {
     "file": "CAMPTOWN RACES.MID",
     "title": "Camptown Races",
     "bpm": 135,
@@ -3014,6 +4354,16 @@
     "chordMarkers": 47,
     "melodyNotes": 253,
     "bytes": 15300,
+    "playable": true
+  },
+  {
+    "file": "Can You Tell By Looking At Me - Billy Taylor.MID",
+    "title": "Can You Tell By Looking At Me",
+    "bpm": 120,
+    "durationSeconds": 72,
+    "chordMarkers": 58,
+    "melodyNotes": 119,
+    "bytes": 6627,
     "playable": true
   },
   {
@@ -3137,6 +4487,26 @@
     "playable": true
   },
   {
+    "file": "Cantaloupe Island (herbie Hancock).MID",
+    "title": "Cantaloupe island",
+    "bpm": 140,
+    "durationSeconds": 454,
+    "chordMarkers": 11,
+    "melodyNotes": 34,
+    "bytes": 5862,
+    "playable": true
+  },
+  {
+    "file": "CANTBUY.MID",
+    "title": "CANT BUY ME LOVE",
+    "bpm": 140,
+    "durationSeconds": 591,
+    "chordMarkers": 91,
+    "melodyNotes": 1014,
+    "bytes": 45662,
+    "playable": true
+  },
+  {
     "file": "CANTBUYM.MID",
     "title": "CANT BUY ME LOVE",
     "bpm": 165,
@@ -3144,6 +4514,16 @@
     "chordMarkers": 91,
     "melodyNotes": 498,
     "bytes": 45258,
+    "playable": true
+  },
+  {
+    "file": "CANTGETS.MID",
+    "title": "I CAN'T GET STARTED",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 178,
+    "melodyNotes": 370,
+    "bytes": 16586,
     "playable": true
   },
   {
@@ -3247,6 +4627,16 @@
     "playable": true
   },
   {
+    "file": "CAREFREE.MID",
+    "title": "CAREFREE HIGHWAY",
+    "bpm": 156,
+    "durationSeconds": 397,
+    "chordMarkers": 158,
+    "melodyNotes": 392,
+    "bytes": 23508,
+    "playable": true
+  },
+  {
     "file": "Careless Hands.MID",
     "title": "Careless Hands",
     "bpm": 120,
@@ -3264,6 +4654,16 @@
     "chordMarkers": 86,
     "melodyNotes": 239,
     "bytes": 17867,
+    "playable": true
+  },
+  {
+    "file": "Carnival (mahna De Carnaval) - Luiz Bonfa.MID",
+    "title": "Carnival (Mahna De Carnaval)",
+    "bpm": 140,
+    "durationSeconds": 183,
+    "chordMarkers": 40,
+    "melodyNotes": 239,
+    "bytes": 13607,
     "playable": true
   },
   {
@@ -3297,6 +4697,16 @@
     "playable": true
   },
   {
+    "file": "Carry Me Back To Old Virginny_1.MID",
+    "title": "Carry Me Back To Old Virginny",
+    "bpm": 190,
+    "durationSeconds": 327,
+    "chordMarkers": 22,
+    "melodyNotes": 84,
+    "bytes": 5664,
+    "playable": true
+  },
+  {
     "file": "CARRY ME.MID",
     "title": "Carry Me Back To Old Virginny",
     "bpm": 120,
@@ -3304,6 +4714,16 @@
     "chordMarkers": 62,
     "melodyNotes": 261,
     "bytes": 19623,
+    "playable": true
+  },
+  {
+    "file": "CARRYME.MID",
+    "title": "Carry Me Back To Old Virginny",
+    "bpm": 120,
+    "durationSeconds": 580,
+    "chordMarkers": 62,
+    "melodyNotes": 261,
+    "bytes": 19652,
     "playable": true
   },
   {
@@ -3324,6 +4744,16 @@
     "chordMarkers": 98,
     "melodyNotes": 181,
     "bytes": 20406,
+    "playable": true
+  },
+  {
+    "file": "CELEBRA_1.MID",
+    "title": "Celebrate Jesus      by Gary Oliver",
+    "bpm": 152,
+    "durationSeconds": 407,
+    "chordMarkers": 110,
+    "melodyNotes": 192,
+    "bytes": 34746,
     "playable": true
   },
   {
@@ -3394,6 +4824,16 @@
     "chordMarkers": 88,
     "melodyNotes": 198,
     "bytes": 25836,
+    "playable": true
+  },
+  {
+    "file": "Chantez Les Bas [Sing _em Low] - W.C.Handy.MID",
+    "title": "Chantez les Bas [Sing 'Em Low] - W.C.Handy",
+    "bpm": 100,
+    "durationSeconds": 617,
+    "chordMarkers": 64,
+    "melodyNotes": 215,
+    "bytes": 24307,
     "playable": true
   },
   {
@@ -3537,6 +4977,26 @@
     "playable": true
   },
   {
+    "file": "Checkin_ Up On My Baby.MID",
+    "title": "Checkin' Up On My baby",
+    "bpm": 115,
+    "durationSeconds": 545,
+    "chordMarkers": 17,
+    "melodyNotes": 146,
+    "bytes": 6341,
+    "playable": true
+  },
+  {
+    "file": "Cheek To Cheek - Irving Berlin.MID",
+    "title": "Cheek to Cheek - Irving Berlin",
+    "bpm": 185,
+    "durationSeconds": 288,
+    "chordMarkers": 357,
+    "melodyNotes": 396,
+    "bytes": 37852,
+    "playable": true
+  },
+  {
     "file": "Cheek To Cheek Cheekt~2.MID",
     "title": "Cheek to Cheek  LR",
     "bpm": 136,
@@ -3584,6 +5044,16 @@
     "chordMarkers": 127,
     "melodyNotes": 1218,
     "bytes": 36491,
+    "playable": true
+  },
+  {
+    "file": "CHEROKEE 2_1.MID",
+    "title": "Cherokee 2",
+    "bpm": 320,
+    "durationSeconds": 289,
+    "chordMarkers": 154,
+    "melodyNotes": 243,
+    "bytes": 25523,
     "playable": true
   },
   {
@@ -3657,6 +5127,16 @@
     "playable": true
   },
   {
+    "file": "Chick_s Tango.MID",
+    "title": "Chick's Tango",
+    "bpm": 130,
+    "durationSeconds": 539,
+    "chordMarkers": 23,
+    "melodyNotes": 486,
+    "bytes": 44332,
+    "playable": true
+  },
+  {
     "file": "Chicks Jt.MID",
     "title": "Chicks JT",
     "bpm": 155,
@@ -3664,6 +5144,16 @@
     "chordMarkers": 100,
     "melodyNotes": 81,
     "bytes": 15337,
+    "playable": true
+  },
+  {
+    "file": "CHILBORN.MID",
+    "title": "CHILD IS BORN (A)",
+    "bpm": 100,
+    "durationSeconds": 170,
+    "chordMarkers": 91,
+    "melodyNotes": 162,
+    "bytes": 15303,
     "playable": true
   },
   {
@@ -3684,6 +5174,16 @@
     "chordMarkers": 164,
     "melodyNotes": 833,
     "bytes": 25926,
+    "playable": true
+  },
+  {
+    "file": "China Sweet.MID",
+    "title": "China Sweet - Ron Stebbins",
+    "bpm": 190,
+    "durationSeconds": 327,
+    "chordMarkers": 12,
+    "melodyNotes": 121,
+    "bytes": 3619,
     "playable": true
   },
   {
@@ -3734,6 +5234,26 @@
     "chordMarkers": 43,
     "melodyNotes": 332,
     "bytes": 14700,
+    "playable": true
+  },
+  {
+    "file": "Choppin Chopin.MID",
+    "title": "Choppin Chopin",
+    "bpm": 140,
+    "durationSeconds": 550,
+    "chordMarkers": 91,
+    "melodyNotes": 200,
+    "bytes": 33652,
+    "playable": true
+  },
+  {
+    "file": "Christmas At Our House.MID",
+    "title": "Christmas At Our House",
+    "bpm": 110,
+    "durationSeconds": 473,
+    "chordMarkers": 44,
+    "melodyNotes": 217,
+    "bytes": 12979,
     "playable": true
   },
   {
@@ -3797,6 +5317,16 @@
     "playable": true
   },
   {
+    "file": "Cigana2.MID",
+    "title": "Cigana",
+    "bpm": 120,
+    "durationSeconds": 596,
+    "chordMarkers": 91,
+    "melodyNotes": 359,
+    "bytes": 33072,
+    "playable": true
+  },
+  {
     "file": "CINAMON1.MID",
     "title": "Cinnamon Girl        Neil Young",
     "bpm": 95,
@@ -3807,6 +5337,16 @@
     "playable": true
   },
   {
+    "file": "CINAMON2.MID",
+    "title": "Cinnamon Girl        Neil Young",
+    "bpm": 95,
+    "durationSeconds": 368,
+    "chordMarkers": 69,
+    "melodyNotes": 371,
+    "bytes": 16938,
+    "playable": true
+  },
+  {
     "file": "CIRCLGAM.MID",
     "title": "THE CIRCLE GAME                   ˇ",
     "bpm": 116,
@@ -3814,6 +5354,16 @@
     "chordMarkers": 107,
     "melodyNotes": 152,
     "bytes": 31698,
+    "playable": true
+  },
+  {
+    "file": "CIRCUS LEAVIN TOWN.MID",
+    "title": "Circus Leavin Town",
+    "bpm": 80,
+    "durationSeconds": 873,
+    "chordMarkers": 63,
+    "melodyNotes": 753,
+    "bytes": 22481,
     "playable": true
   },
   {
@@ -3837,6 +5387,26 @@
     "playable": true
   },
   {
+    "file": "City Lights.MID",
+    "title": "City Lights",
+    "bpm": 90,
+    "durationSeconds": 293,
+    "chordMarkers": 171,
+    "melodyNotes": 640,
+    "bytes": 21311,
+    "playable": true
+  },
+  {
+    "file": "CITY OF NEW ORLEANS_1.MID",
+    "title": "City of New Orleans",
+    "bpm": 150,
+    "durationSeconds": 494,
+    "chordMarkers": 56,
+    "melodyNotes": 278,
+    "bytes": 69089,
+    "playable": true
+  },
+  {
     "file": "Civilization_1.MID",
     "title": "Civilization",
     "bpm": 155,
@@ -3857,6 +5427,16 @@
     "playable": true
   },
   {
+    "file": "Clarinet Marmalade.MID",
+    "title": "Clarinet Marmalade",
+    "bpm": 210,
+    "durationSeconds": 295,
+    "chordMarkers": 145,
+    "melodyNotes": 407,
+    "bytes": 26117,
+    "playable": true
+  },
+  {
     "file": "CLARMARM.MID",
     "title": "Clarinet Marmalade",
     "bpm": 150,
@@ -3874,6 +5454,16 @@
     "chordMarkers": 145,
     "melodyNotes": 594,
     "bytes": 21957,
+    "playable": true
+  },
+  {
+    "file": "Classmate.MID",
+    "title": "Classmate",
+    "bpm": 127,
+    "durationSeconds": 487,
+    "chordMarkers": 118,
+    "melodyNotes": 249,
+    "bytes": 22860,
     "playable": true
   },
   {
@@ -3904,6 +5494,16 @@
     "chordMarkers": 50,
     "melodyNotes": 200,
     "bytes": 15280,
+    "playable": true
+  },
+  {
+    "file": "Climb Every Mountain.MID",
+    "title": "Climb Every Mountain",
+    "bpm": 100,
+    "durationSeconds": 781,
+    "chordMarkers": 146,
+    "melodyNotes": 166,
+    "bytes": 42610,
     "playable": true
   },
   {
@@ -3987,6 +5587,16 @@
     "playable": true
   },
   {
+    "file": "COLD DUCK TIME.MID",
+    "title": "Cold Duck Time",
+    "bpm": 150,
+    "durationSeconds": 483,
+    "chordMarkers": 65,
+    "melodyNotes": 583,
+    "bytes": 23721,
+    "playable": true
+  },
+  {
     "file": "Colour My World 2.MID",
     "title": "Colour My World 2",
     "bpm": 210,
@@ -4004,6 +5614,26 @@
     "chordMarkers": 171,
     "melodyNotes": 154,
     "bytes": 18882,
+    "playable": true
+  },
+  {
+    "file": "COLWORLD.MID",
+    "title": "COLOUR MY WORLD (strange chords)",
+    "bpm": 120,
+    "durationSeconds": 176,
+    "chordMarkers": 167,
+    "melodyNotes": 75,
+    "bytes": 28505,
+    "playable": true
+  },
+  {
+    "file": "Come Fly With Me.MID",
+    "title": "Come Fly With Me",
+    "bpm": 145,
+    "durationSeconds": 612,
+    "chordMarkers": 167,
+    "melodyNotes": 244,
+    "bytes": 46714,
     "playable": true
   },
   {
@@ -4027,6 +5657,16 @@
     "playable": true
   },
   {
+    "file": "Come Rain Or Come Shine.MID",
+    "title": "Come Rain Or Come Shine",
+    "bpm": 150,
+    "durationSeconds": 117,
+    "chordMarkers": 114,
+    "melodyNotes": 282,
+    "bytes": 29556,
+    "playable": true
+  },
+  {
     "file": "Comin_ Home Babe.MID",
     "title": "Comin' Home Babe",
     "bpm": 164,
@@ -4037,6 +5677,16 @@
     "playable": true
   },
   {
+    "file": "Common Ground.MID",
+    "title": "Common Ground (Circle of Friends)",
+    "bpm": 140,
+    "durationSeconds": 523,
+    "chordMarkers": 109,
+    "melodyNotes": 121,
+    "bytes": 37522,
+    "playable": true
+  },
+  {
     "file": "COMONDAY.MID",
     "title": "COME MONDAY  -  JIMMY BUFFET",
     "bpm": 120,
@@ -4044,6 +5694,26 @@
     "chordMarkers": 103,
     "melodyNotes": 587,
     "bytes": 15425,
+    "playable": true
+  },
+  {
+    "file": "Con Alma_1.MID",
+    "title": "Con Alma",
+    "bpm": 160,
+    "durationSeconds": 155,
+    "chordMarkers": 189,
+    "melodyNotes": 182,
+    "bytes": 19893,
+    "playable": true
+  },
+  {
+    "file": "CON_ALMA.MID",
+    "title": "Con Alma    ~Dizzy Gillespie~    RedB:52",
+    "bpm": 130,
+    "durationSeconds": 650,
+    "chordMarkers": 243,
+    "melodyNotes": 92,
+    "bytes": 22756,
     "playable": true
   },
   {
@@ -4147,6 +5817,16 @@
     "playable": true
   },
   {
+    "file": "Cool Blues Bird.MID",
+    "title": "Cool Blues Bird",
+    "bpm": 220,
+    "durationSeconds": 214,
+    "chordMarkers": 17,
+    "melodyNotes": 67,
+    "bytes": 2541,
+    "playable": true
+  },
+  {
     "file": "Cool Water.MID",
     "title": "Cool Water",
     "bpm": 120,
@@ -4154,6 +5834,26 @@
     "chordMarkers": 62,
     "melodyNotes": 179,
     "bytes": 48053,
+    "playable": true
+  },
+  {
+    "file": "CORCOVAD.MID",
+    "title": "CORCOVADO",
+    "bpm": 120,
+    "durationSeconds": 990,
+    "chordMarkers": 234,
+    "melodyNotes": 256,
+    "bytes": 93127,
+    "playable": true
+  },
+  {
+    "file": "Corinna Corinna.MID",
+    "title": "Corinna Corinna",
+    "bpm": 160,
+    "durationSeconds": 416,
+    "chordMarkers": 19,
+    "melodyNotes": 112,
+    "bytes": 9568,
     "playable": true
   },
   {
@@ -4197,6 +5897,16 @@
     "playable": true
   },
   {
+    "file": "COULDIHD.MID",
+    "title": "COULD I HAVETHIS DANCE",
+    "bpm": 120,
+    "durationSeconds": 485,
+    "chordMarkers": 85,
+    "melodyNotes": 919,
+    "bytes": 17725,
+    "playable": true
+  },
+  {
     "file": "Count Every Star_1.MID",
     "title": "Count Every Star",
     "bpm": 110,
@@ -4214,6 +5924,16 @@
     "chordMarkers": 103,
     "melodyNotes": 140,
     "bytes": 18725,
+    "playable": true
+  },
+  {
+    "file": "Count Your Blessings_1.MID",
+    "title": "Count Your Blessings",
+    "bpm": 90,
+    "durationSeconds": 771,
+    "chordMarkers": 107,
+    "melodyNotes": 237,
+    "bytes": 19403,
     "playable": true
   },
   {
@@ -4237,6 +5957,16 @@
     "playable": true
   },
   {
+    "file": "Country Roads.MID",
+    "title": "Country Roads",
+    "bpm": 95,
+    "durationSeconds": 695,
+    "chordMarkers": 89,
+    "melodyNotes": 205,
+    "bytes": 13463,
+    "playable": true
+  },
+  {
     "file": "COUNTRYR.MID",
     "title": "COUNTRY ROADS(John Denver)",
     "bpm": 95,
@@ -4254,6 +5984,16 @@
     "chordMarkers": 40,
     "melodyNotes": 186,
     "bytes": 15268,
+    "playable": true
+  },
+  {
+    "file": "COWGIRL.MID",
+    "title": "Cowgirl In The Sand   Neil Young",
+    "bpm": 90,
+    "durationSeconds": 685,
+    "chordMarkers": 89,
+    "melodyNotes": 397,
+    "bytes": 17072,
     "playable": true
   },
   {
@@ -4307,6 +6047,26 @@
     "playable": true
   },
   {
+    "file": "Creek_1.MID",
+    "title": "Creek",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 14,
+    "melodyNotes": 123,
+    "bytes": 4630,
+    "playable": true
+  },
+  {
+    "file": "Creole Love Call.MID",
+    "title": "Creole Love Call",
+    "bpm": 90,
+    "durationSeconds": 693,
+    "chordMarkers": 16,
+    "melodyNotes": 96,
+    "bytes": 7028,
+    "playable": true
+  },
+  {
     "file": "CRISCROS.MID",
     "title": "CRISS-CROSS",
     "bpm": 165,
@@ -4317,6 +6077,26 @@
     "playable": true
   },
   {
+    "file": "Criss-cross.MID",
+    "title": "Criss-Cross",
+    "bpm": 165,
+    "durationSeconds": 49,
+    "chordMarkers": 25,
+    "melodyNotes": 131,
+    "bytes": 5847,
+    "playable": true
+  },
+  {
+    "file": "CROCROCK.MID",
+    "title": "CROCODILE ROCK",
+    "bpm": 140,
+    "durationSeconds": 213,
+    "chordMarkers": 67,
+    "melodyNotes": 546,
+    "bytes": 49194,
+    "playable": true
+  },
+  {
     "file": "Cry Away The Blues_1.MID",
     "title": "Cry away the blues",
     "bpm": 120,
@@ -4324,6 +6104,26 @@
     "chordMarkers": 32,
     "melodyNotes": 101,
     "bytes": 9215,
+    "playable": true
+  },
+  {
+    "file": "Cry Me A River Lr.MID",
+    "title": "Cry Me A River LR",
+    "bpm": 70,
+    "durationSeconds": 346,
+    "chordMarkers": 209,
+    "melodyNotes": 303,
+    "bytes": 21416,
+    "playable": true
+  },
+  {
+    "file": "Cry Of The Wild Goose.MID",
+    "title": "Cry Of The Wild Goose",
+    "bpm": 120,
+    "durationSeconds": 580,
+    "chordMarkers": 41,
+    "melodyNotes": 210,
+    "bytes": 20938,
     "playable": true
   },
   {
@@ -4354,6 +6154,16 @@
     "chordMarkers": 59,
     "melodyNotes": 257,
     "bytes": 10229,
+    "playable": true
+  },
+  {
+    "file": "CRYSTAL SILENCE.MID",
+    "title": "CRYSTAL SILENCE",
+    "bpm": 100,
+    "durationSeconds": 922,
+    "chordMarkers": 202,
+    "melodyNotes": 201,
+    "bytes": 57877,
     "playable": true
   },
   {
@@ -4404,6 +6214,16 @@
     "chordMarkers": 150,
     "melodyNotes": 552,
     "bytes": 32971,
+    "playable": true
+  },
+  {
+    "file": "Cute 2_1.MID",
+    "title": "Cute 2",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 106,
+    "melodyNotes": 106,
+    "bytes": 37064,
     "playable": true
   },
   {
@@ -4487,6 +6307,16 @@
     "playable": true
   },
   {
+    "file": "Dance Of The Goldenrod.MID",
+    "title": "Dance of the Goldenrod",
+    "bpm": 100,
+    "durationSeconds": 524,
+    "chordMarkers": 32,
+    "melodyNotes": 148,
+    "bytes": 12436,
+    "playable": true
+  },
+  {
     "file": "Dancing On The Ceiling.MID",
     "title": "Dancing On The Ceiling",
     "bpm": 120,
@@ -4504,6 +6334,16 @@
     "chordMarkers": 69,
     "melodyNotes": 584,
     "bytes": 50299,
+    "playable": true
+  },
+  {
+    "file": "DANGLING.MID",
+    "title": "The Dangling Conversation (2 Bar Intro)",
+    "bpm": 90,
+    "durationSeconds": 775,
+    "chordMarkers": 90,
+    "melodyNotes": 60,
+    "bytes": 17519,
     "playable": true
   },
   {
@@ -4567,6 +6407,16 @@
     "playable": true
   },
   {
+    "file": "Dardanella 2.MID",
+    "title": "Dardanella 2",
+    "bpm": 160,
+    "durationSeconds": 438,
+    "chordMarkers": 76,
+    "melodyNotes": 200,
+    "bytes": 15167,
+    "playable": true
+  },
+  {
     "file": "Darkness On The Delta.MID",
     "title": "Darkness On The Delta",
     "bpm": 100,
@@ -4604,6 +6454,36 @@
     "chordMarkers": 57,
     "melodyNotes": 267,
     "bytes": 11712,
+    "playable": true
+  },
+  {
+    "file": "DARNDREA.MID",
+    "title": "DARN THAT DREAM",
+    "bpm": 85,
+    "durationSeconds": 282,
+    "chordMarkers": 224,
+    "melodyNotes": 440,
+    "bytes": 29753,
+    "playable": true
+  },
+  {
+    "file": "DARNTHAT.MID",
+    "title": "DARN THAT DREAM",
+    "bpm": 90,
+    "durationSeconds": 857,
+    "chordMarkers": 224,
+    "melodyNotes": 386,
+    "bytes": 17778,
+    "playable": true
+  },
+  {
+    "file": "Dat Dere.MID",
+    "title": "Dat Dere",
+    "bpm": 110,
+    "durationSeconds": 164,
+    "chordMarkers": 152,
+    "melodyNotes": 431,
+    "bytes": 15557,
     "playable": true
   },
   {
@@ -4647,6 +6527,16 @@
     "playable": true
   },
   {
+    "file": "Dawn_1.MID",
+    "title": "Dawn",
+    "bpm": 135,
+    "durationSeconds": 572,
+    "chordMarkers": 122,
+    "melodyNotes": 681,
+    "bytes": 18669,
+    "playable": true
+  },
+  {
     "file": "Dawning_1.MID",
     "title": "Dawning",
     "bpm": 90,
@@ -4654,6 +6544,16 @@
     "chordMarkers": 92,
     "melodyNotes": 774,
     "bytes": 17496,
+    "playable": true
+  },
+  {
+    "file": "Dawning.MID",
+    "title": "Dawning",
+    "bpm": 90,
+    "durationSeconds": 235,
+    "chordMarkers": 92,
+    "melodyNotes": 774,
+    "bytes": 17232,
     "playable": true
   },
   {
@@ -4674,6 +6574,26 @@
     "chordMarkers": 163,
     "melodyNotes": 164,
     "bytes": 48362,
+    "playable": true
+  },
+  {
+    "file": "DAY WAVES.MID",
+    "title": "Day Waves",
+    "bpm": 166,
+    "durationSeconds": 444,
+    "chordMarkers": 76,
+    "melodyNotes": 43,
+    "bytes": 36275,
+    "playable": true
+  },
+  {
+    "file": "DAY YOU LEFT ME  [CJ].MID",
+    "title": "Day You Left Me  [CJ]",
+    "bpm": 72,
+    "durationSeconds": 937,
+    "chordMarkers": 78,
+    "melodyNotes": 329,
+    "bytes": 29275,
     "playable": true
   },
   {
@@ -4717,6 +6637,16 @@
     "playable": true
   },
   {
+    "file": "De Ja Vu.MID",
+    "title": "De Ja Vu",
+    "bpm": 100,
+    "durationSeconds": 617,
+    "chordMarkers": 25,
+    "melodyNotes": 124,
+    "bytes": 8588,
+    "playable": true
+  },
+  {
     "file": "DE POIS DE AMOR O VAZIO.MID",
     "title": "DE POIS DO AMOR O VAZIO",
     "bpm": 160,
@@ -4737,6 +6667,36 @@
     "playable": true
   },
   {
+    "file": "DEARBLVD.MID",
+    "title": "Dearly Beloved",
+    "bpm": 170,
+    "durationSeconds": 499,
+    "chordMarkers": 168,
+    "melodyNotes": 512,
+    "bytes": 21796,
+    "playable": true
+  },
+  {
+    "file": "Decision - Sonny Rollins.MID",
+    "title": "Decision - Sonny Rollins",
+    "bpm": 120,
+    "durationSeconds": 670,
+    "chordMarkers": 154,
+    "melodyNotes": 217,
+    "bytes": 26870,
+    "playable": true
+  },
+  {
+    "file": "DED I DO.MID",
+    "title": "Ded I Do",
+    "bpm": 150,
+    "durationSeconds": 514,
+    "chordMarkers": 119,
+    "melodyNotes": 470,
+    "bytes": 15994,
+    "playable": true
+  },
+  {
     "file": "Deep In The Heart Of Texas.MID",
     "title": "Deep In The Heart Of Texas",
     "bpm": 175,
@@ -4744,6 +6704,16 @@
     "chordMarkers": 10,
     "melodyNotes": 121,
     "bytes": 50308,
+    "playable": true
+  },
+  {
+    "file": "Deep Purple_1.MID",
+    "title": "Deep Purple",
+    "bpm": 125,
+    "durationSeconds": 131,
+    "chordMarkers": 77,
+    "melodyNotes": 189,
+    "bytes": 17800,
     "playable": true
   },
   {
@@ -4767,6 +6737,16 @@
     "playable": true
   },
   {
+    "file": "DEEP-WAT.MID",
+    "title": "Deep Water",
+    "bpm": 180,
+    "durationSeconds": 136,
+    "chordMarkers": 97,
+    "melodyNotes": 436,
+    "bytes": 17230,
+    "playable": true
+  },
+  {
     "file": "DEEPURP1.MID",
     "title": "DEEP PURPLE 1",
     "bpm": 90,
@@ -4784,6 +6764,16 @@
     "chordMarkers": 148,
     "melodyNotes": 663,
     "bytes": 24303,
+    "playable": true
+  },
+  {
+    "file": "DELORES.MID",
+    "title": "DELORES",
+    "bpm": 210,
+    "durationSeconds": 381,
+    "chordMarkers": 157,
+    "melodyNotes": 521,
+    "bytes": 18824,
     "playable": true
   },
   {
@@ -4807,6 +6797,26 @@
     "playable": true
   },
   {
+    "file": "Desafinado  Chrds.MID",
+    "title": "Desafinado  chrds",
+    "bpm": 150,
+    "durationSeconds": 411,
+    "chordMarkers": 109,
+    "melodyNotes": 263,
+    "bytes": 31378,
+    "playable": true
+  },
+  {
+    "file": "Detroit City.MID",
+    "title": "Detroit City",
+    "bpm": 90,
+    "durationSeconds": 688,
+    "chordMarkers": 25,
+    "melodyNotes": 25,
+    "bytes": 14575,
+    "playable": true
+  },
+  {
     "file": "Diane.MID",
     "title": "Diane",
     "bpm": 120,
@@ -4814,6 +6824,16 @@
     "chordMarkers": 43,
     "melodyNotes": 122,
     "bytes": 11712,
+    "playable": true
+  },
+  {
+    "file": "Dick Gossip.MID",
+    "title": "Dick Gossip",
+    "bpm": 150,
+    "durationSeconds": 517,
+    "chordMarkers": 62,
+    "melodyNotes": 828,
+    "bytes": 18728,
     "playable": true
   },
   {
@@ -4834,6 +6854,16 @@
     "chordMarkers": 61,
     "melodyNotes": 415,
     "bytes": 14850,
+    "playable": true
+  },
+  {
+    "file": "Dingle Regatta.MID",
+    "title": "Dingle Regatta",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 34,
+    "melodyNotes": 202,
+    "bytes": 13676,
     "playable": true
   },
   {
@@ -4887,6 +6917,46 @@
     "playable": true
   },
   {
+    "file": "Do Nothin_ Till You Hear From Me.MID",
+    "title": "Do Nothin' Till You Hear From Me",
+    "bpm": 80,
+    "durationSeconds": 504,
+    "chordMarkers": 234,
+    "melodyNotes": 252,
+    "bytes": 52576,
+    "playable": true
+  },
+  {
+    "file": "Do You Care.MID",
+    "title": "Do You Care",
+    "bpm": 135,
+    "durationSeconds": 64,
+    "chordMarkers": 27,
+    "melodyNotes": 77,
+    "bytes": 5809,
+    "playable": true
+  },
+  {
+    "file": "Do You Feel Like We Do.MID",
+    "title": "Do You Feel Like We Do",
+    "bpm": 114,
+    "durationSeconds": 488,
+    "chordMarkers": 216,
+    "melodyNotes": 114,
+    "bytes": 35662,
+    "playable": true
+  },
+  {
+    "file": "Do You Want To Know A Secret.MID",
+    "title": "Do You Want to Know A Secret",
+    "bpm": 120,
+    "durationSeconds": 122,
+    "chordMarkers": 113,
+    "melodyNotes": 208,
+    "bytes": 11423,
+    "playable": true
+  },
+  {
     "file": "Do-Re-Mi.MID",
     "title": "Do-Re-Mi",
     "bpm": 225,
@@ -4904,6 +6974,26 @@
     "chordMarkers": 59,
     "melodyNotes": 171,
     "bytes": 92299,
+    "playable": true
+  },
+  {
+    "file": "Dock Of The Bay.MID",
+    "title": "Dock Of The Bay",
+    "bpm": 110,
+    "durationSeconds": 96,
+    "chordMarkers": 44,
+    "melodyNotes": 185,
+    "bytes": 12953,
+    "playable": true
+  },
+  {
+    "file": "Does He Love You_1.MID",
+    "title": "Does He Love You",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 52,
+    "melodyNotes": 125,
+    "bytes": 6296,
     "playable": true
   },
   {
@@ -4927,6 +7017,16 @@
     "playable": true
   },
   {
+    "file": "DOING WHAT COMES NATURALLY.MID",
+    "title": "Doing What Comes Naturally",
+    "bpm": 160,
+    "durationSeconds": 387,
+    "chordMarkers": 74,
+    "melodyNotes": 176,
+    "bytes": 16200,
+    "playable": true
+  },
+  {
     "file": "Dolores - Frank Loesser & Louis Alter.MID",
     "title": "Dolores - Frank Loesser & Louis Alter",
     "bpm": 120,
@@ -4944,6 +7044,16 @@
     "chordMarkers": 83,
     "melodyNotes": 292,
     "bytes": 25187,
+    "playable": true
+  },
+  {
+    "file": "Domino Effect.MID",
+    "title": "Domino Effect",
+    "bpm": 130,
+    "durationSeconds": 155,
+    "chordMarkers": 83,
+    "melodyNotes": 292,
+    "bytes": 24085,
     "playable": true
   },
   {
@@ -4967,6 +7077,16 @@
     "playable": true
   },
   {
+    "file": "Don_t Dilly Dally On The Way.MID",
+    "title": "Don't Dilly Dally On The Way",
+    "bpm": 224,
+    "durationSeconds": 310,
+    "chordMarkers": 56,
+    "melodyNotes": 168,
+    "bytes": 11186,
+    "playable": true
+  },
+  {
     "file": "Don_t Explain.MID",
     "title": "Don't Explain",
     "bpm": 100,
@@ -4987,6 +7107,26 @@
     "playable": true
   },
   {
+    "file": "Don_t Get Around Much Anymore   Chord Var._1.MID",
+    "title": "Don't Get Around Much Anymore   chord var.",
+    "bpm": 120,
+    "durationSeconds": 515,
+    "chordMarkers": 59,
+    "melodyNotes": 107,
+    "bytes": 6736,
+    "playable": true
+  },
+  {
+    "file": "Don_t Get Around Much Anymore 2.MID",
+    "title": "Don't Get Around Much Anymore 2",
+    "bpm": 120,
+    "durationSeconds": 212,
+    "chordMarkers": 165,
+    "melodyNotes": 333,
+    "bytes": 17833,
+    "playable": true
+  },
+  {
     "file": "DON_T GET AROUND MUCH.MID",
     "title": "DON'T GET AROUND MUCH ANYMORE",
     "bpm": 140,
@@ -4994,6 +7134,26 @@
     "chordMarkers": 103,
     "melodyNotes": 426,
     "bytes": 15232,
+    "playable": true
+  },
+  {
+    "file": "Don_t Let It Bother You.MID",
+    "title": "Don't Let It Bother You",
+    "bpm": 190,
+    "durationSeconds": 325,
+    "chordMarkers": 60,
+    "melodyNotes": 19,
+    "bytes": 15066,
+    "playable": true
+  },
+  {
+    "file": "Don_t Let Your Deal Go Down.MID",
+    "title": "Don't Let Your Deal Go Down",
+    "bpm": 135,
+    "durationSeconds": 571,
+    "chordMarkers": 101,
+    "melodyNotes": 1251,
+    "bytes": 64590,
     "playable": true
   },
   {
@@ -5014,6 +7174,16 @@
     "chordMarkers": 45,
     "melodyNotes": 121,
     "bytes": 6330,
+    "playable": true
+  },
+  {
+    "file": "Don_t Sit Under The Apple Tree_1.MID",
+    "title": "Don't Sit Under The Apple Tree",
+    "bpm": 150,
+    "durationSeconds": 390,
+    "chordMarkers": 176,
+    "melodyNotes": 308,
+    "bytes": 93024,
     "playable": true
   },
   {
@@ -5077,6 +7247,16 @@
     "playable": true
   },
   {
+    "file": "DONTGET_.MID",
+    "title": "DON'T GET AROUND MUCH ANYMORE",
+    "bpm": 110,
+    "durationSeconds": 196,
+    "chordMarkers": 98,
+    "melodyNotes": 259,
+    "bytes": 12633,
+    "playable": true
+  },
+  {
     "file": "DONTGETA.MID",
     "title": "DON'T GET AROUND MUCH ANYMORE",
     "bpm": 100,
@@ -5127,6 +7307,16 @@
     "playable": true
   },
   {
+    "file": "DONTWORY.MID",
+    "title": "Don't Worry 'bout Me",
+    "bpm": 95,
+    "durationSeconds": 227,
+    "chordMarkers": 53,
+    "melodyNotes": 61,
+    "bytes": 21957,
+    "playable": true
+  },
+  {
     "file": "Door Is Still Open To My Heart.MID",
     "title": "Door Is Still Open To My Heart",
     "bpm": 135,
@@ -5157,6 +7347,36 @@
     "playable": true
   },
   {
+    "file": "DOWN YONDER [FD].MID",
+    "title": "Down Yonder [FD]",
+    "bpm": 225,
+    "durationSeconds": 130,
+    "chordMarkers": 79,
+    "melodyNotes": 288,
+    "bytes": 19116,
+    "playable": true
+  },
+  {
+    "file": "Down Yonder Downyo~2.MID",
+    "title": "Down Yonder",
+    "bpm": 120,
+    "durationSeconds": 200,
+    "chordMarkers": 1,
+    "melodyNotes": 2861,
+    "bytes": 55961,
+    "playable": true
+  },
+  {
+    "file": "DOWNBYRV.MID",
+    "title": "Down By The Riverside",
+    "bpm": 180,
+    "durationSeconds": 133,
+    "chordMarkers": 68,
+    "melodyNotes": 364,
+    "bytes": 17453,
+    "playable": true
+  },
+  {
     "file": "DOYOUWNT.MID",
     "title": "Do You Want To Know A Secret",
     "bpm": 132,
@@ -5184,6 +7404,16 @@
     "chordMarkers": 317,
     "melodyNotes": 222,
     "bytes": 53538,
+    "playable": true
+  },
+  {
+    "file": "Dream Dream Dream.MID",
+    "title": "Dream Dream Dream",
+    "bpm": 110,
+    "durationSeconds": 562,
+    "chordMarkers": 68,
+    "melodyNotes": 298,
+    "bytes": 10497,
     "playable": true
   },
   {
@@ -5227,6 +7457,26 @@
     "playable": true
   },
   {
+    "file": "Dreamy.MID",
+    "title": "Dreamy",
+    "bpm": 120,
+    "durationSeconds": 136,
+    "chordMarkers": 122,
+    "melodyNotes": 184,
+    "bytes": 12847,
+    "playable": true
+  },
+  {
+    "file": "Drifting And Dreaming.MID",
+    "title": "Drifting And Dreaming",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 61,
+    "melodyNotes": 72,
+    "bytes": 48753,
+    "playable": true
+  },
+  {
     "file": "Drifting Down The River_1.MID",
     "title": "Drifting Down The River",
     "bpm": 100,
@@ -5234,6 +7484,16 @@
     "chordMarkers": 45,
     "melodyNotes": 249,
     "bytes": 12324,
+    "playable": true
+  },
+  {
+    "file": "Drink Bop.MID",
+    "title": "Drink Bop (previously untitled)",
+    "bpm": 220,
+    "durationSeconds": 109,
+    "chordMarkers": 101,
+    "melodyNotes": 633,
+    "bytes": 22340,
     "playable": true
   },
   {
@@ -5277,6 +7537,26 @@
     "playable": true
   },
   {
+    "file": "DRNKCHAM.MID",
+    "title": "DRINKING CHAMPAGNE",
+    "bpm": 110,
+    "durationSeconds": 665,
+    "chordMarkers": 108,
+    "melodyNotes": 259,
+    "bytes": 12656,
+    "playable": true
+  },
+  {
+    "file": "Drowsy Maggie.MID",
+    "title": "Drowsy Maggie",
+    "bpm": 160,
+    "durationSeconds": 386,
+    "chordMarkers": 13,
+    "melodyNotes": 161,
+    "bytes": 5081,
+    "playable": true
+  },
+  {
     "file": "DRVMYLIF.MID",
     "title": "DRIVING MY LIFE AWAY",
     "bpm": 165,
@@ -5287,6 +7567,16 @@
     "playable": true
   },
   {
+    "file": "Du Ser En Man Dusere~1.MID",
+    "title": "Du ser en man",
+    "bpm": 108,
+    "durationSeconds": 315,
+    "chordMarkers": 119,
+    "melodyNotes": 409,
+    "bytes": 21676,
+    "playable": true
+  },
+  {
     "file": "Duet - Neal Hefti.MID",
     "title": "Duet - Neal Hefti",
     "bpm": 155,
@@ -5294,6 +7584,16 @@
     "chordMarkers": 115,
     "melodyNotes": 668,
     "bytes": 24453,
+    "playable": true
+  },
+  {
+    "file": "EARL_SBR.MID",
+    "title": "earl's breakdown",
+    "bpm": 120,
+    "durationSeconds": 261,
+    "chordMarkers": 63,
+    "melodyNotes": 860,
+    "bytes": 28970,
     "playable": true
   },
   {
@@ -5357,6 +7657,16 @@
     "playable": true
   },
   {
+    "file": "EASTERPD.MID",
+    "title": "Easter Parade",
+    "bpm": 120,
+    "durationSeconds": 641,
+    "chordMarkers": 160,
+    "melodyNotes": 111,
+    "bytes": 30870,
+    "playable": true
+  },
+  {
     "file": "Easy Slider.MID",
     "title": "Easy Slider",
     "bpm": 120,
@@ -5387,6 +7697,26 @@
     "playable": true
   },
   {
+    "file": "EASYLIVN.MID",
+    "title": "EASY LIVING",
+    "bpm": 85,
+    "durationSeconds": 282,
+    "chordMarkers": 193,
+    "melodyNotes": 392,
+    "bytes": 19665,
+    "playable": true
+  },
+  {
+    "file": "Ebb Tide_1.MID",
+    "title": "Ebb Tide",
+    "bpm": 85,
+    "durationSeconds": 816,
+    "chordMarkers": 83,
+    "melodyNotes": 203,
+    "bytes": 11802,
+    "playable": true
+  },
+  {
     "file": "ECLIPSE.MID",
     "title": "TOTAL ECLIPSE OF THE HEART  -  BONNIE TYLER",
     "bpm": 130,
@@ -5407,6 +7737,26 @@
     "playable": true
   },
   {
+    "file": "EDELWEIS.MID",
+    "title": "Edelweiss",
+    "bpm": 150,
+    "durationSeconds": 386,
+    "chordMarkers": 83,
+    "melodyNotes": 104,
+    "bytes": 23010,
+    "playable": true
+  },
+  {
+    "file": "EFLAME.MID",
+    "title": "ETERNAL FLAME",
+    "bpm": 82,
+    "durationSeconds": 752,
+    "chordMarkers": 101,
+    "melodyNotes": 288,
+    "bytes": 21582,
+    "playable": true
+  },
+  {
     "file": "EIGHDAYS.MID",
     "title": "Eight Days A Week",
     "bpm": 160,
@@ -5424,6 +7774,16 @@
     "chordMarkers": 57,
     "melodyNotes": 77,
     "bytes": 31443,
+    "playable": true
+  },
+  {
+    "file": "El Bimbo.MID",
+    "title": "El Bimbo",
+    "bpm": 225,
+    "durationSeconds": 146,
+    "chordMarkers": 94,
+    "melodyNotes": 306,
+    "bytes": 59850,
     "playable": true
   },
   {
@@ -5454,6 +7814,16 @@
     "chordMarkers": 67,
     "melodyNotes": 247,
     "bytes": 11994,
+    "playable": true
+  },
+  {
+    "file": "ELMERS TUNE_1.MID",
+    "title": "Elmers Tune",
+    "bpm": 110,
+    "durationSeconds": 161,
+    "chordMarkers": 129,
+    "melodyNotes": 460,
+    "bytes": 27712,
     "playable": true
   },
   {
@@ -5517,6 +7887,16 @@
     "playable": true
   },
   {
+    "file": "EMILY.MID",
+    "title": "Emily",
+    "bpm": 110,
+    "durationSeconds": 553,
+    "chordMarkers": 119,
+    "melodyNotes": 224,
+    "bytes": 18483,
+    "playable": true
+  },
+  {
     "file": "Emmanuel Has Come.MID",
     "title": "Emmanuel Has Come",
     "bpm": 110,
@@ -5524,6 +7904,16 @@
     "chordMarkers": 30,
     "melodyNotes": 53,
     "bytes": 4021,
+    "playable": true
+  },
+  {
+    "file": "En Del Av Mitt Hjarta.MID",
+    "title": "En del av mitt hjarta",
+    "bpm": 90,
+    "durationSeconds": 283,
+    "chordMarkers": 157,
+    "melodyNotes": 545,
+    "bytes": 33502,
     "playable": true
   },
   {
@@ -5577,6 +7967,16 @@
     "playable": true
   },
   {
+    "file": "Esther.MID",
+    "title": "Esther",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 49,
+    "melodyNotes": 142,
+    "bytes": 9622,
+    "playable": true
+  },
+  {
     "file": "ETERNFLM.MID",
     "title": "Eternal Flame - the Bangles",
     "bpm": 72,
@@ -5617,6 +8017,16 @@
     "playable": true
   },
   {
+    "file": "EV-IHAVE.MID",
+    "title": "EVERYTHING I HAVE IS YOURS",
+    "bpm": 95,
+    "durationSeconds": 253,
+    "chordMarkers": 142,
+    "melodyNotes": 331,
+    "bytes": 17901,
+    "playable": true
+  },
+  {
     "file": "Everybody Loves My Baby.MID",
     "title": "Everybody Loves My Baby",
     "bpm": 185,
@@ -5634,6 +8044,16 @@
     "chordMarkers": 102,
     "melodyNotes": 499,
     "bytes": 37792,
+    "playable": true
+  },
+  {
+    "file": "Everyday.MID",
+    "title": "Everyday",
+    "bpm": 110,
+    "durationSeconds": 81,
+    "chordMarkers": 54,
+    "melodyNotes": 141,
+    "bytes": 9146,
     "playable": true
   },
   {
@@ -5667,6 +8087,16 @@
     "playable": true
   },
   {
+    "file": "Everything_s Coming Up Roses_1.MID",
+    "title": "Everything's Coming Up Roses",
+    "bpm": 260,
+    "durationSeconds": 237,
+    "chordMarkers": 122,
+    "melodyNotes": 161,
+    "bytes": 14296,
+    "playable": true
+  },
+  {
     "file": "Evidence.MID",
     "title": "Evidence",
     "bpm": 175,
@@ -5694,6 +8124,26 @@
     "chordMarkers": 146,
     "melodyNotes": 407,
     "bytes": 19335,
+    "playable": true
+  },
+  {
+    "file": "EVRYBRT2.MID",
+    "title": "Every Breath You Take     by the Police     L.",
+    "bpm": 120,
+    "durationSeconds": 518,
+    "chordMarkers": 82,
+    "melodyNotes": 71,
+    "bytes": 28432,
+    "playable": true
+  },
+  {
+    "file": "EVRYDAYW.MID",
+    "title": "Every Day With You Girl",
+    "bpm": 145,
+    "durationSeconds": 478,
+    "chordMarkers": 92,
+    "melodyNotes": 40,
+    "bytes": 18003,
     "playable": true
   },
   {
@@ -5747,6 +8197,16 @@
     "playable": true
   },
   {
+    "file": "Faded Love  [frank].MID",
+    "title": "Faded Love  [Frank]",
+    "bpm": 100,
+    "durationSeconds": 810,
+    "chordMarkers": 229,
+    "melodyNotes": 471,
+    "bytes": 20055,
+    "playable": true
+  },
+  {
     "file": "FADED LOVE_1.MID",
     "title": "FADED LOVE",
     "bpm": 105,
@@ -5754,6 +8214,16 @@
     "chordMarkers": 180,
     "melodyNotes": 106,
     "bytes": 24518,
+    "playable": true
+  },
+  {
+    "file": "Faith Can Move Mountains.MID",
+    "title": "Faith Can Move Mountains",
+    "bpm": 96,
+    "durationSeconds": 255,
+    "chordMarkers": 165,
+    "melodyNotes": 192,
+    "bytes": 33787,
     "playable": true
   },
   {
@@ -5777,6 +8247,16 @@
     "playable": true
   },
   {
+    "file": "Falling In Love With Love (rogers-hart) Fallin~2.MID",
+    "title": "Falling In Love With Love LR",
+    "bpm": 140,
+    "durationSeconds": 587,
+    "chordMarkers": 137,
+    "melodyNotes": 263,
+    "bytes": 18472,
+    "playable": true
+  },
+  {
     "file": "Falling Star.MID",
     "title": "Falling Star",
     "bpm": 125,
@@ -5794,6 +8274,16 @@
     "chordMarkers": 148,
     "melodyNotes": 75,
     "bytes": 41701,
+    "playable": true
+  },
+  {
+    "file": "Farewell Blues_1.MID",
+    "title": "Farewell Blues",
+    "bpm": 210,
+    "durationSeconds": 294,
+    "chordMarkers": 19,
+    "melodyNotes": 47,
+    "bytes": 7219,
     "playable": true
   },
   {
@@ -5837,6 +8327,46 @@
     "playable": true
   },
   {
+    "file": "Fascinatin_ Rhythm_1.MID",
+    "title": "Fascinatin' Rhythm",
+    "bpm": 200,
+    "durationSeconds": 364,
+    "chordMarkers": 141,
+    "melodyNotes": 324,
+    "bytes": 48221,
+    "playable": true
+  },
+  {
+    "file": "Fascination.MID",
+    "title": "Fascination",
+    "bpm": 105,
+    "durationSeconds": 63,
+    "chordMarkers": 21,
+    "melodyNotes": 87,
+    "bytes": 7430,
+    "playable": true
+  },
+  {
+    "file": "FAT POLKA [FD].MID",
+    "title": "Fat Polka [FD]",
+    "bpm": 216,
+    "durationSeconds": 302,
+    "chordMarkers": 58,
+    "melodyNotes": 173,
+    "bytes": 12090,
+    "playable": true
+  },
+  {
+    "file": "FAVELA.MID",
+    "title": "Favela",
+    "bpm": 139,
+    "durationSeconds": 582,
+    "chordMarkers": 124,
+    "melodyNotes": 68,
+    "bytes": 45647,
+    "playable": true
+  },
+  {
     "file": "Fee Fi Fo Fum - Wayne Shorter.MID",
     "title": "Fee Fi Fo Fum - Wayne Shorter",
     "bpm": 115,
@@ -5844,6 +8374,16 @@
     "chordMarkers": 35,
     "melodyNotes": 66,
     "bytes": 5020,
+    "playable": true
+  },
+  {
+    "file": "Feelings.MID",
+    "title": "Feelings  3",
+    "bpm": 84,
+    "durationSeconds": 734,
+    "chordMarkers": 137,
+    "melodyNotes": 248,
+    "bytes": 31600,
     "playable": true
   },
   {
@@ -5897,6 +8437,16 @@
     "playable": true
   },
   {
+    "file": "FIELDS WE KNEW, THE.MID",
+    "title": "The Fields we Knew",
+    "bpm": 122,
+    "durationSeconds": 569,
+    "chordMarkers": 67,
+    "melodyNotes": 179,
+    "bytes": 8107,
+    "playable": true
+  },
+  {
     "file": "Fierce Piece.MID",
     "title": "Fierce Piece",
     "bpm": 100,
@@ -5914,6 +8464,16 @@
     "chordMarkers": 63,
     "melodyNotes": 178,
     "bytes": 17631,
+    "playable": true
+  },
+  {
+    "file": "Final Pocket.MID",
+    "title": "Final Pocket",
+    "bpm": 80,
+    "durationSeconds": 324,
+    "chordMarkers": 167,
+    "melodyNotes": 426,
+    "bytes": 39725,
     "playable": true
   },
   {
@@ -5947,6 +8507,26 @@
     "playable": true
   },
   {
+    "file": "Fireman.MID",
+    "title": "Fireman",
+    "bpm": 175,
+    "durationSeconds": 118,
+    "chordMarkers": 51,
+    "melodyNotes": 406,
+    "bytes": 56289,
+    "playable": true
+  },
+  {
+    "file": "Firm Foundation.MID",
+    "title": "Firm Foundation",
+    "bpm": 140,
+    "durationSeconds": 471,
+    "chordMarkers": 97,
+    "melodyNotes": 258,
+    "bytes": 13989,
+    "playable": true
+  },
+  {
     "file": "First.MID",
     "title": "First",
     "bpm": 100,
@@ -5957,6 +8537,16 @@
     "playable": true
   },
   {
+    "file": "Five Hundred Miles High  (double Time).MID",
+    "title": "Five Hundred Miles High  (double time)",
+    "bpm": 280,
+    "durationSeconds": 36,
+    "chordMarkers": 12,
+    "melodyNotes": 41,
+    "bytes": 18798,
+    "playable": true
+  },
+  {
     "file": "Five-o-two Blues.MID",
     "title": "Five-O-Two Blues",
     "bpm": 155,
@@ -5964,6 +8554,16 @@
     "chordMarkers": 34,
     "melodyNotes": 86,
     "bytes": 9332,
+    "playable": true
+  },
+  {
+    "file": "FIXHOLE.MID",
+    "title": "Im fixing a hole",
+    "bpm": 105,
+    "durationSeconds": 624,
+    "chordMarkers": 79,
+    "melodyNotes": 58,
+    "bytes": 16846,
     "playable": true
   },
   {
@@ -5994,6 +8594,16 @@
     "chordMarkers": 59,
     "melodyNotes": 672,
     "bytes": 36499,
+    "playable": true
+  },
+  {
+    "file": "Flat Foot Floogie.MID",
+    "title": "Flat Foot Floogie",
+    "bpm": 150,
+    "durationSeconds": 59,
+    "chordMarkers": 66,
+    "melodyNotes": 239,
+    "bytes": 10412,
     "playable": true
   },
   {
@@ -6087,6 +8697,16 @@
     "playable": true
   },
   {
+    "file": "Foggy River.MID",
+    "title": "Foggy River",
+    "bpm": 110,
+    "durationSeconds": 639,
+    "chordMarkers": 22,
+    "melodyNotes": 139,
+    "bytes": 9902,
+    "playable": true
+  },
+  {
     "file": "FOGGYMOU.MID",
     "title": "foggy mountain breakdown",
     "bpm": 127,
@@ -6117,6 +8737,36 @@
     "playable": true
   },
   {
+    "file": "Fool Such As I - Instrumental2.MID",
+    "title": "Fool Such as I",
+    "bpm": 115,
+    "durationSeconds": 217,
+    "chordMarkers": 146,
+    "melodyNotes": 425,
+    "bytes": 18243,
+    "playable": true
+  },
+  {
+    "file": "FOOL SUCH AS I_1.MID",
+    "title": "FOOL SUCH AS I",
+    "bpm": 100,
+    "durationSeconds": 182,
+    "chordMarkers": 68,
+    "melodyNotes": 47,
+    "bytes": 18461,
+    "playable": true
+  },
+  {
+    "file": "Foolin_ Around.MID",
+    "title": "Foolin' Around",
+    "bpm": 170,
+    "durationSeconds": 368,
+    "chordMarkers": 30,
+    "melodyNotes": 291,
+    "bytes": 20772,
+    "playable": true
+  },
+  {
     "file": "Foolin_ Myself.MID",
     "title": "Foolin' Myself",
     "bpm": 80,
@@ -6124,6 +8774,16 @@
     "chordMarkers": 221,
     "melodyNotes": 259,
     "bytes": 43547,
+    "playable": true
+  },
+  {
+    "file": "Foolish Things, These.MID",
+    "title": "Foolish Things, These",
+    "bpm": 90,
+    "durationSeconds": 96,
+    "chordMarkers": 57,
+    "melodyNotes": 146,
+    "bytes": 9478,
     "playable": true
   },
   {
@@ -6144,6 +8804,46 @@
     "chordMarkers": 149,
     "melodyNotes": 425,
     "bytes": 18227,
+    "playable": true
+  },
+  {
+    "file": "FOOLTHNG.MID",
+    "title": "FOOLISH THINGS (THESE)",
+    "bpm": 85,
+    "durationSeconds": 282,
+    "chordMarkers": 121,
+    "melodyNotes": 426,
+    "bytes": 19331,
+    "playable": true
+  },
+  {
+    "file": "Footprints - Wayne Shorter.MID",
+    "title": "Footprints - Wayne Shorter",
+    "bpm": 118,
+    "durationSeconds": 551,
+    "chordMarkers": 27,
+    "melodyNotes": 84,
+    "bytes": 27271,
+    "playable": true
+  },
+  {
+    "file": "For All We Know_1.MID",
+    "title": "For all we know",
+    "bpm": 106,
+    "durationSeconds": 654,
+    "chordMarkers": 58,
+    "melodyNotes": 87,
+    "bytes": 20395,
+    "playable": true
+  },
+  {
+    "file": "For All We Know_2.MID",
+    "title": "For all we know",
+    "bpm": 106,
+    "durationSeconds": 654,
+    "chordMarkers": 58,
+    "melodyNotes": 173,
+    "bytes": 21133,
     "playable": true
   },
   {
@@ -6177,6 +8877,26 @@
     "playable": true
   },
   {
+    "file": "FOR HEAVENS_ SAKE.MID",
+    "title": "For Heavens' Sake",
+    "bpm": 104,
+    "durationSeconds": 741,
+    "chordMarkers": 175,
+    "melodyNotes": 369,
+    "bytes": 16436,
+    "playable": true
+  },
+  {
+    "file": "For Sentimental Reasons.MID",
+    "title": "For Sentimental Reasons",
+    "bpm": 90,
+    "durationSeconds": 771,
+    "chordMarkers": 130,
+    "melodyNotes": 200,
+    "bytes": 12279,
+    "playable": true
+  },
+  {
     "file": "For The Good Times [s#3].MID",
     "title": "For the Good Times [S#3]",
     "bpm": 90,
@@ -6184,6 +8904,26 @@
     "chordMarkers": 119,
     "melodyNotes": 287,
     "bytes": 14622,
+    "playable": true
+  },
+  {
+    "file": "For The Good Times_1.MID",
+    "title": "For The Good Times",
+    "bpm": 90,
+    "durationSeconds": 192,
+    "chordMarkers": 81,
+    "melodyNotes": 439,
+    "bytes": 13441,
+    "playable": true
+  },
+  {
+    "file": "For The Good Times_2.MID",
+    "title": "For The Good Times",
+    "bpm": 90,
+    "durationSeconds": 192,
+    "chordMarkers": 81,
+    "melodyNotes": 439,
+    "bytes": 13634,
     "playable": true
   },
   {
@@ -6197,6 +8937,26 @@
     "playable": true
   },
   {
+    "file": "FOR_FREE.MID",
+    "title": "He Played Real Good For Free - 1 Bar Intro",
+    "bpm": 75,
+    "durationSeconds": 973,
+    "chordMarkers": 140,
+    "melodyNotes": 204,
+    "bytes": 26915,
+    "playable": true
+  },
+  {
+    "file": "FORDANCR.MID",
+    "title": "FOR A DANCER",
+    "bpm": 132,
+    "durationSeconds": 498,
+    "chordMarkers": 102,
+    "melodyNotes": 51,
+    "bytes": 23957,
+    "playable": true
+  },
+  {
     "file": "FORFLOWR.MID",
     "title": "FOREST FLOWER by Charles Lloyd",
     "bpm": 150,
@@ -6204,6 +8964,26 @@
     "chordMarkers": 100,
     "melodyNotes": 387,
     "bytes": 58635,
+    "playable": true
+  },
+  {
+    "file": "FORHEVSK.MID",
+    "title": "FOR HEAVEN'S SAKE",
+    "bpm": 100,
+    "durationSeconds": 770,
+    "chordMarkers": 160,
+    "melodyNotes": 382,
+    "bytes": 16092,
+    "playable": true
+  },
+  {
+    "file": "FORME&MY.MID",
+    "title": "FOR ME AND MY GAL  [BoB O]",
+    "bpm": 100,
+    "durationSeconds": 168,
+    "chordMarkers": 88,
+    "melodyNotes": 383,
+    "bytes": 21067,
     "playable": true
   },
   {
@@ -6217,6 +8997,16 @@
     "playable": true
   },
   {
+    "file": "FOT THE GOOD TIMES [RI].MID",
+    "title": "For the Good Times [RI]",
+    "bpm": 89,
+    "durationSeconds": 787,
+    "chordMarkers": 78,
+    "melodyNotes": 234,
+    "bytes": 11340,
+    "playable": true
+  },
+  {
     "file": "Foul Ball Blues.MID",
     "title": "Foul Ball Blues - Mickey Baker",
     "bpm": 145,
@@ -6224,6 +9014,26 @@
     "chordMarkers": 25,
     "melodyNotes": 202,
     "bytes": 6780,
+    "playable": true
+  },
+  {
+    "file": "FOUR.MID",
+    "title": "FOUR",
+    "bpm": 200,
+    "durationSeconds": 385,
+    "chordMarkers": 103,
+    "melodyNotes": 432,
+    "bytes": 15253,
+    "playable": true
+  },
+  {
+    "file": "Freddie Freeloader - Miles Davis.MID",
+    "title": "Freddie Freeloader - Miles Davis",
+    "bpm": 96,
+    "durationSeconds": 763,
+    "chordMarkers": 37,
+    "melodyNotes": 210,
+    "bytes": 14027,
     "playable": true
   },
   {
@@ -6267,6 +9077,16 @@
     "playable": true
   },
   {
+    "file": "Friday Night At The Cadillac Club.MID",
+    "title": "Friday night at the Cadillac Club",
+    "bpm": 205,
+    "durationSeconds": 301,
+    "chordMarkers": 45,
+    "melodyNotes": 147,
+    "bytes": 18179,
+    "playable": true
+  },
+  {
     "file": "Friends In Low Places2.MID",
     "title": "Friends In Low Places",
     "bpm": 120,
@@ -6274,6 +9094,16 @@
     "chordMarkers": 54,
     "melodyNotes": 119,
     "bytes": 16364,
+    "playable": true
+  },
+  {
+    "file": "From Dan To Eilat.MID",
+    "title": "From Dan To Eilat",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 31,
+    "melodyNotes": 147,
+    "bytes": 4767,
     "playable": true
   },
   {
@@ -6317,6 +9147,16 @@
     "playable": true
   },
   {
+    "file": "Fugitive Fugiti~2.MID",
+    "title": "Fugitive",
+    "bpm": 120,
+    "durationSeconds": 1100,
+    "chordMarkers": 207,
+    "melodyNotes": 1335,
+    "bytes": 48069,
+    "playable": true
+  },
+  {
     "file": "Fugitive.MID",
     "title": "Fugitive",
     "bpm": 120,
@@ -6324,6 +9164,26 @@
     "chordMarkers": 207,
     "melodyNotes": 1321,
     "bytes": 47138,
+    "playable": true
+  },
+  {
+    "file": "Funky - Kenny Burrell.MID",
+    "title": "Funky - Kenny Burrell",
+    "bpm": 120,
+    "durationSeconds": 57,
+    "chordMarkers": 25,
+    "melodyNotes": 99,
+    "bytes": 4869,
+    "playable": true
+  },
+  {
+    "file": "Funky One.MID",
+    "title": "Funky One",
+    "bpm": 125,
+    "durationSeconds": 570,
+    "chordMarkers": 18,
+    "melodyNotes": 94,
+    "bytes": 21120,
     "playable": true
   },
   {
@@ -6347,6 +9207,16 @@
     "playable": true
   },
   {
+    "file": "Funny Valentine.MID",
+    "title": "Funny Valentine",
+    "bpm": 100,
+    "durationSeconds": 96,
+    "chordMarkers": 55,
+    "melodyNotes": 105,
+    "bytes": 6940,
+    "playable": true
+  },
+  {
     "file": "Fusion In The Night_1.MID",
     "title": "Fusion in the Night",
     "bpm": 165,
@@ -6357,6 +9227,36 @@
     "playable": true
   },
   {
+    "file": "Galloping Gourmet.MID",
+    "title": "Galloping Gourmet",
+    "bpm": 240,
+    "durationSeconds": 79,
+    "chordMarkers": 176,
+    "melodyNotes": 973,
+    "bytes": 17959,
+    "playable": true
+  },
+  {
+    "file": "GAME_1.MID",
+    "title": "It's All In The Game",
+    "bpm": 80,
+    "durationSeconds": 222,
+    "chordMarkers": 60,
+    "melodyNotes": 180,
+    "bytes": 22831,
+    "playable": true
+  },
+  {
+    "file": "Gardinia Waltz.MID",
+    "title": "Gardinia Waltz",
+    "bpm": 120,
+    "durationSeconds": 482,
+    "chordMarkers": 89,
+    "melodyNotes": 277,
+    "bytes": 22972,
+    "playable": true
+  },
+  {
     "file": "Gary_s Song.MID",
     "title": "Gary's Song",
     "bpm": 120,
@@ -6364,6 +9264,16 @@
     "chordMarkers": 17,
     "melodyNotes": 100,
     "bytes": 4859,
+    "playable": true
+  },
+  {
+    "file": "Gatorwhale.MID",
+    "title": "Gatorwhale - W. Jackson",
+    "bpm": 200,
+    "durationSeconds": 106,
+    "chordMarkers": 99,
+    "melodyNotes": 453,
+    "bytes": 16429,
     "playable": true
   },
   {
@@ -6397,6 +9307,16 @@
     "playable": true
   },
   {
+    "file": "GEMINI.MID",
+    "title": "Gemini",
+    "bpm": 120,
+    "durationSeconds": 458,
+    "chordMarkers": 73,
+    "melodyNotes": 120,
+    "bytes": 10958,
+    "playable": true
+  },
+  {
     "file": "GENLMIND.MID",
     "title": "Gentle on my Mind",
     "bpm": 110,
@@ -6407,6 +9327,16 @@
     "playable": true
   },
   {
+    "file": "Gentle Rain.MID",
+    "title": "Gentle Rain",
+    "bpm": 120,
+    "durationSeconds": 518,
+    "chordMarkers": 42,
+    "melodyNotes": 105,
+    "bytes": 13230,
+    "playable": true
+  },
+  {
     "file": "Georgia Steel Guitar.MID",
     "title": "Georgia Steel Guitar",
     "bpm": 170,
@@ -6414,6 +9344,26 @@
     "chordMarkers": 42,
     "melodyNotes": 165,
     "bytes": 52250,
+    "playable": true
+  },
+  {
+    "file": "GEORGIA_1.MID",
+    "title": "Sweet Things - Georgia.sty demo - -",
+    "bpm": 80,
+    "durationSeconds": 300,
+    "chordMarkers": 118,
+    "melodyNotes": 307,
+    "bytes": 30369,
+    "playable": true
+  },
+  {
+    "file": "GEORGIA.MID",
+    "title": "GEORGIA",
+    "bpm": 85,
+    "durationSeconds": 282,
+    "chordMarkers": 184,
+    "melodyNotes": 300,
+    "bytes": 18621,
     "playable": true
   },
   {
@@ -6437,6 +9387,16 @@
     "playable": true
   },
   {
+    "file": "GETNSENT.MID",
+    "title": "Gettin' Sentimental Over You",
+    "bpm": 125,
+    "durationSeconds": 77,
+    "chordMarkers": 42,
+    "melodyNotes": 110,
+    "bytes": 6798,
+    "playable": true
+  },
+  {
     "file": "Gettin It Right.MID",
     "title": "Gettin it right",
     "bpm": 155,
@@ -6447,6 +9407,26 @@
     "playable": true
   },
   {
+    "file": "Gettin_ It Togetha - Bobby Timmons.MID",
+    "title": "Gettin' it Togetha - Bobby Timmons",
+    "bpm": 140,
+    "durationSeconds": 171,
+    "chordMarkers": 181,
+    "melodyNotes": 606,
+    "bytes": 19555,
+    "playable": true
+  },
+  {
+    "file": "Ghost Of A Chance  .MID",
+    "title": "Ghost Of A Chance",
+    "bpm": 95,
+    "durationSeconds": 813,
+    "chordMarkers": 113,
+    "melodyNotes": 207,
+    "bytes": 39029,
+    "playable": true
+  },
+  {
     "file": "GHOST_1.MID",
     "title": "Ghost of a Chance *",
     "bpm": 70,
@@ -6454,6 +9434,26 @@
     "chordMarkers": 107,
     "melodyNotes": 130,
     "bytes": 21179,
+    "playable": true
+  },
+  {
+    "file": "GHOST_2.MID",
+    "title": "Ghost of a Chance *",
+    "bpm": 70,
+    "durationSeconds": 247,
+    "chordMarkers": 107,
+    "melodyNotes": 130,
+    "bytes": 21684,
+    "playable": true
+  },
+  {
+    "file": "Giant Steps - John Coltrane.MID",
+    "title": "Giant Steps - John Coltrane [with solo]",
+    "bpm": 273,
+    "durationSeconds": 226,
+    "chordMarkers": 104,
+    "melodyNotes": 443,
+    "bytes": 14037,
     "playable": true
   },
   {
@@ -6477,6 +9477,16 @@
     "playable": true
   },
   {
+    "file": "Girl From Ipanema1.MID",
+    "title": "Girl From Ipanema (Antonio Carlos Jobim)",
+    "bpm": 120,
+    "durationSeconds": 184,
+    "chordMarkers": 63,
+    "melodyNotes": 130,
+    "bytes": 26677,
+    "playable": true
+  },
+  {
     "file": "Girl Of My Dreams_1.MID",
     "title": "Girl of My Dreams",
     "bpm": 80,
@@ -6484,6 +9494,16 @@
     "chordMarkers": 60,
     "melodyNotes": 130,
     "bytes": 12039,
+    "playable": true
+  },
+  {
+    "file": "GIRLTALK.MID",
+    "title": "GIRL TALK",
+    "bpm": 90,
+    "durationSeconds": 813,
+    "chordMarkers": 182,
+    "melodyNotes": 303,
+    "bytes": 14524,
     "playable": true
   },
   {
@@ -6504,6 +9524,16 @@
     "chordMarkers": 35,
     "melodyNotes": 83,
     "bytes": 9301,
+    "playable": true
+  },
+  {
+    "file": "GLENBEIH.MID",
+    "title": "Glenbeigh Hornpipe",
+    "bpm": 135,
+    "durationSeconds": 460,
+    "chordMarkers": 26,
+    "melodyNotes": 212,
+    "bytes": 6154,
     "playable": true
   },
   {
@@ -6534,6 +9564,66 @@
     "chordMarkers": 72,
     "melodyNotes": 199,
     "bytes": 8151,
+    "playable": true
+  },
+  {
+    "file": "GODRESTY.MID",
+    "title": "GOD REST YE MERRY GENTLEMEN",
+    "bpm": 120,
+    "durationSeconds": 593,
+    "chordMarkers": 152,
+    "melodyNotes": 202,
+    "bytes": 24094,
+    "playable": true
+  },
+  {
+    "file": "Goin_ Out Of My Head.MID",
+    "title": "Goin' Out Of My Head - Teddy Randazzo & Bobby Weinstein",
+    "bpm": 130,
+    "durationSeconds": 637,
+    "chordMarkers": 171,
+    "melodyNotes": 363,
+    "bytes": 25582,
+    "playable": true
+  },
+  {
+    "file": "GOING AWAY PARTY.MID",
+    "title": "Going Away Party",
+    "bpm": 117,
+    "durationSeconds": 658,
+    "chordMarkers": 84,
+    "melodyNotes": 355,
+    "bytes": 14862,
+    "playable": true
+  },
+  {
+    "file": "Going Out  Of My Head.MID",
+    "title": "Going Out  Of My Head",
+    "bpm": 105,
+    "durationSeconds": 215,
+    "chordMarkers": 83,
+    "melodyNotes": 468,
+    "bytes": 29045,
+    "playable": true
+  },
+  {
+    "file": "Golden Earrings - Jay Livingston & Victor Young.MID",
+    "title": "Golden Earrings - Jay Livingston & Victor Young",
+    "bpm": 130,
+    "durationSeconds": 185,
+    "chordMarkers": 148,
+    "melodyNotes": 316,
+    "bytes": 25682,
+    "playable": true
+  },
+  {
+    "file": "Golden Lady.MID",
+    "title": "Golden Lady",
+    "bpm": 110,
+    "durationSeconds": 212,
+    "chordMarkers": 116,
+    "melodyNotes": 342,
+    "bytes": 17038,
     "playable": true
   },
   {
@@ -6577,6 +9667,16 @@
     "playable": true
   },
   {
+    "file": "GOODBOYS_1.MID",
+    "title": "GOOD OLD BOYS LIKE ME  -  DON WILLIAMS",
+    "bpm": 120,
+    "durationSeconds": 214,
+    "chordMarkers": 194,
+    "melodyNotes": 379,
+    "bytes": 34973,
+    "playable": true
+  },
+  {
     "file": "GOODBOYS.MID",
     "title": "GOOD OLD BOYS LIKE ME  -  DON WILLIAMS",
     "bpm": 120,
@@ -6614,6 +9714,26 @@
     "chordMarkers": 128,
     "melodyNotes": 159,
     "bytes": 19794,
+    "playable": true
+  },
+  {
+    "file": "GOODMORN.MID",
+    "title": "Good Morning Heartache",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 68,
+    "melodyNotes": 145,
+    "bytes": 6971,
+    "playable": true
+  },
+  {
+    "file": "GOODNIGH.MID",
+    "title": "Goodnight, Sweetheart",
+    "bpm": 120,
+    "durationSeconds": 648,
+    "chordMarkers": 62,
+    "melodyNotes": 52,
+    "bytes": 25942,
     "playable": true
   },
   {
@@ -6664,6 +9784,16 @@
     "chordMarkers": 122,
     "melodyNotes": 250,
     "bytes": 73323,
+    "playable": true
+  },
+  {
+    "file": "Goody Goody.MID",
+    "title": "Goody Goody",
+    "bpm": 175,
+    "durationSeconds": 550,
+    "chordMarkers": 190,
+    "melodyNotes": 250,
+    "bytes": 105254,
     "playable": true
   },
   {
@@ -6747,6 +9877,16 @@
     "playable": true
   },
   {
+    "file": "GRCENTRL.MID",
+    "title": "Grand Central",
+    "bpm": 235,
+    "durationSeconds": 263,
+    "chordMarkers": 43,
+    "melodyNotes": 122,
+    "bytes": 7070,
+    "playable": true
+  },
+  {
     "file": "Great Escape March.MID",
     "title": "Great Escape March - Elmer Bernstein",
     "bpm": 200,
@@ -6797,6 +9937,16 @@
     "playable": true
   },
   {
+    "file": "GREENSLE.MID",
+    "title": "GREENSLEEVES  [BOB O]",
+    "bpm": 105,
+    "durationSeconds": 665,
+    "chordMarkers": 56,
+    "melodyNotes": 192,
+    "bytes": 9159,
+    "playable": true
+  },
+  {
     "file": "Gregory Is Here.MID",
     "title": "Gregory Is Here",
     "bpm": 168,
@@ -6827,6 +9977,16 @@
     "playable": true
   },
   {
+    "file": "Grover And Bobby.MID",
+    "title": "Grover And Bobby - George Mitchell",
+    "bpm": 92,
+    "durationSeconds": 837,
+    "chordMarkers": 98,
+    "melodyNotes": 496,
+    "bytes": 19915,
+    "playable": true
+  },
+  {
     "file": "GRTSOTH_1.MID",
     "title": "The Great South Land",
     "bpm": 85,
@@ -6837,6 +9997,36 @@
     "playable": true
   },
   {
+    "file": "GRTSOTH_2.MID",
+    "title": "The Great South Land",
+    "bpm": 85,
+    "durationSeconds": 164,
+    "chordMarkers": 127,
+    "melodyNotes": 234,
+    "bytes": 20644,
+    "playable": true
+  },
+  {
+    "file": "GRTSOTH.MID",
+    "title": "The Great South Land",
+    "bpm": 85,
+    "durationSeconds": 164,
+    "chordMarkers": 127,
+    "melodyNotes": 234,
+    "bytes": 20847,
+    "playable": true
+  },
+  {
+    "file": "GUANMERA.MID",
+    "title": "Guantanamera",
+    "bpm": 110,
+    "durationSeconds": 735,
+    "chordMarkers": 169,
+    "melodyNotes": 82,
+    "bytes": 39639,
+    "playable": true
+  },
+  {
     "file": "GUANTANA.MID",
     "title": "GUANTANAMERA",
     "bpm": 125,
@@ -6844,6 +10034,46 @@
     "chordMarkers": 125,
     "melodyNotes": 341,
     "bytes": 15523,
+    "playable": true
+  },
+  {
+    "file": "Guardian Angels.MID",
+    "title": "Guardian Angels",
+    "bpm": 90,
+    "durationSeconds": 685,
+    "chordMarkers": 69,
+    "melodyNotes": 213,
+    "bytes": 9461,
+    "playable": true
+  },
+  {
+    "file": "Guilty - Gus Kahn, Harry Akst & Richard Whiting.MID",
+    "title": "Guilty - Gus Kahn, Harry Akst & Richard Whiting",
+    "bpm": 112,
+    "durationSeconds": 520,
+    "chordMarkers": 377,
+    "melodyNotes": 283,
+    "bytes": 33114,
+    "playable": true
+  },
+  {
+    "file": "Guitar Audition Berklee(prova).MID",
+    "title": "Guitar audition Berklee(prova)",
+    "bpm": 126,
+    "durationSeconds": 672,
+    "chordMarkers": 117,
+    "melodyNotes": 68,
+    "bytes": 21595,
+    "playable": true
+  },
+  {
+    "file": "GUMBO_1.MID",
+    "title": "Alexander's Rag Time Band",
+    "bpm": 170,
+    "durationSeconds": 453,
+    "chordMarkers": 76,
+    "melodyNotes": 420,
+    "bytes": 16882,
     "playable": true
   },
   {
@@ -6864,6 +10094,16 @@
     "chordMarkers": 275,
     "melodyNotes": 206,
     "bytes": 32213,
+    "playable": true
+  },
+  {
+    "file": "GYPSY_1.MID",
+    "title": "The Gypsy",
+    "bpm": 95,
+    "durationSeconds": 172,
+    "chordMarkers": 107,
+    "melodyNotes": 236,
+    "bytes": 12731,
     "playable": true
   },
   {
@@ -6937,6 +10177,16 @@
     "playable": true
   },
   {
+    "file": "HALLUCINATIONS.MID",
+    "title": "Hallucinations",
+    "bpm": 156,
+    "durationSeconds": 629,
+    "chordMarkers": 402,
+    "melodyNotes": 840,
+    "bytes": 34327,
+    "playable": true
+  },
+  {
     "file": "Hand In Hand_1.MID",
     "title": "Hand in hand",
     "bpm": 120,
@@ -6974,6 +10224,16 @@
     "chordMarkers": 280,
     "melodyNotes": 1549,
     "bytes": 71371,
+    "playable": true
+  },
+  {
+    "file": "HANOTHER.MID",
+    "title": "Have Another  [ - pno ]",
+    "bpm": 176,
+    "durationSeconds": 390,
+    "chordMarkers": 90,
+    "melodyNotes": 933,
+    "bytes": 71240,
     "playable": true
   },
   {
@@ -7067,6 +10327,16 @@
     "playable": true
   },
   {
+    "file": "HARECORN.MID",
+    "title": "Hare in the Corn",
+    "bpm": 120,
+    "durationSeconds": 515,
+    "chordMarkers": 30,
+    "melodyNotes": 177,
+    "bytes": 8951,
+    "playable": true
+  },
+  {
     "file": "HARLEMN2.MID",
     "title": "Harlem Nocturne  ..",
     "bpm": 80,
@@ -7074,6 +10344,16 @@
     "chordMarkers": 181,
     "melodyNotes": 284,
     "bytes": 19249,
+    "playable": true
+  },
+  {
+    "file": "HARLEMNC.MID",
+    "title": "Harlem Nocturne",
+    "bpm": 85,
+    "durationSeconds": 130,
+    "chordMarkers": 62,
+    "melodyNotes": 183,
+    "bytes": 8141,
     "playable": true
   },
   {
@@ -7094,6 +10374,16 @@
     "chordMarkers": 90,
     "melodyNotes": 714,
     "bytes": 35244,
+    "playable": true
+  },
+  {
+    "file": "HASSAN_S DREAM.MID",
+    "title": "HASSAN'S DREAM",
+    "bpm": 120,
+    "durationSeconds": 756,
+    "chordMarkers": 170,
+    "melodyNotes": 634,
+    "bytes": 22651,
     "playable": true
   },
   {
@@ -7124,6 +10414,16 @@
     "chordMarkers": 63,
     "melodyNotes": 200,
     "bytes": 33158,
+    "playable": true
+  },
+  {
+    "file": "Have You Ever Been Lonely.MID",
+    "title": "HAVE YOU EVER BEEN LONELY",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 29,
+    "melodyNotes": 24,
+    "bytes": 9104,
     "playable": true
   },
   {
@@ -7164,6 +10464,26 @@
     "chordMarkers": 57,
     "melodyNotes": 59,
     "bytes": 26565,
+    "playable": true
+  },
+  {
+    "file": "HAVEITOL.MID",
+    "title": "Have I Told You Lately",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 19,
+    "melodyNotes": 76,
+    "bytes": 7945,
+    "playable": true
+  },
+  {
+    "file": "HAVENIGA.MID",
+    "title": "Havenigala  (Israel)",
+    "bpm": 150,
+    "durationSeconds": 141,
+    "chordMarkers": 44,
+    "melodyNotes": 475,
+    "bytes": 33870,
     "playable": true
   },
   {
@@ -7234,6 +10554,36 @@
     "chordMarkers": 93,
     "melodyNotes": 217,
     "bytes": 11955,
+    "playable": true
+  },
+  {
+    "file": "HAYDENFY.MID",
+    "title": "Hayden Fancy",
+    "bpm": 125,
+    "durationSeconds": 495,
+    "chordMarkers": 24,
+    "melodyNotes": 140,
+    "bytes": 6495,
+    "playable": true
+  },
+  {
+    "file": "HE_AINT_1.MID",
+    "title": "HE AIN'T HEAVY..HE'S MY BROTHER",
+    "bpm": 90,
+    "durationSeconds": 331,
+    "chordMarkers": 141,
+    "melodyNotes": 376,
+    "bytes": 38147,
+    "playable": true
+  },
+  {
+    "file": "HE_LL HAVE TO GO.MID",
+    "title": "HE'LL HAVE TO GO",
+    "bpm": 90,
+    "durationSeconds": 688,
+    "chordMarkers": 52,
+    "melodyNotes": 188,
+    "bytes": 9482,
     "playable": true
   },
   {
@@ -7327,6 +10677,16 @@
     "playable": true
   },
   {
+    "file": "HEARTRR.MID",
+    "title": "Heart of RocknRoll",
+    "bpm": 140,
+    "durationSeconds": 75,
+    "chordMarkers": 10,
+    "melodyNotes": 369,
+    "bytes": 14793,
+    "playable": true
+  },
+  {
     "file": "Heaven - Duke Ellington.MID",
     "title": "Heaven - Duke Ellington",
     "bpm": 80,
@@ -7357,6 +10717,26 @@
     "playable": true
   },
   {
+    "file": "Heaven.MID",
+    "title": "Heaven  ( D.Ellington )",
+    "bpm": 80,
+    "durationSeconds": 867,
+    "chordMarkers": 76,
+    "melodyNotes": 47,
+    "bytes": 8802,
+    "playable": true
+  },
+  {
+    "file": "Heigh-Ho, Heigh-Ho.MID",
+    "title": "Heigh-ho, Heigh-ho - Morey & Churchill",
+    "bpm": 140,
+    "durationSeconds": 495,
+    "chordMarkers": 64,
+    "melodyNotes": 50,
+    "bytes": 16974,
+    "playable": true
+  },
+  {
     "file": "Heigh-ho, Morey, Churchill.MID",
     "title": "Heigh-ho, Morey, Churchill",
     "bpm": 150,
@@ -7364,6 +10744,26 @@
     "chordMarkers": 43,
     "melodyNotes": 50,
     "bytes": 11625,
+    "playable": true
+  },
+  {
+    "file": "HELENAPK_1.MID",
+    "title": "Helena Polka",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 32,
+    "melodyNotes": 386,
+    "bytes": 12911,
+    "playable": true
+  },
+  {
+    "file": "HELENAPK.MID",
+    "title": "Helena Polka",
+    "bpm": 120,
+    "durationSeconds": 626,
+    "chordMarkers": 94,
+    "melodyNotes": 1158,
+    "bytes": 37287,
     "playable": true
   },
   {
@@ -7377,6 +10777,16 @@
     "playable": true
   },
   {
+    "file": "Hello My Baby (ragtime Gal).MID",
+    "title": "Hello My Baby (Ragtime Gal)",
+    "bpm": 250,
+    "durationSeconds": 65,
+    "chordMarkers": 27,
+    "melodyNotes": 181,
+    "bytes": 6511,
+    "playable": true
+  },
+  {
     "file": "Hello Trouble.._1.MID",
     "title": "Hello Trouble..",
     "bpm": 200,
@@ -7384,6 +10794,16 @@
     "chordMarkers": 57,
     "melodyNotes": 201,
     "bytes": 14869,
+    "playable": true
+  },
+  {
+    "file": "Hello Young Lovers - Rodgers & Hammerstein.MID",
+    "title": "Hello Young Lovers - Richard Rodgers & Oscar Hammerstein",
+    "bpm": 100,
+    "durationSeconds": 962,
+    "chordMarkers": 235,
+    "melodyNotes": 161,
+    "bytes": 65612,
     "playable": true
   },
   {
@@ -7427,6 +10847,16 @@
     "playable": true
   },
   {
+    "file": "HELPMAKE.MID",
+    "title": "HELP ME MAKE IT THROUGH THE NIGHT",
+    "bpm": 80,
+    "durationSeconds": 306,
+    "chordMarkers": 77,
+    "melodyNotes": 351,
+    "bytes": 28386,
+    "playable": true
+  },
+  {
     "file": "Here_s a Quarter - Travis Tritt2.MID",
     "title": "Here's a Quarter - Travis Tritt",
     "bpm": 110,
@@ -7464,6 +10894,16 @@
     "chordMarkers": 70,
     "melodyNotes": 712,
     "bytes": 33121,
+    "playable": true
+  },
+  {
+    "file": "Hey Good Lookin_.MID",
+    "title": "Hey Good Lookin'",
+    "bpm": 150,
+    "durationSeconds": 166,
+    "chordMarkers": 129,
+    "melodyNotes": 567,
+    "bytes": 19385,
     "playable": true
   },
   {
@@ -7517,6 +10957,26 @@
     "playable": true
   },
   {
+    "file": "HEYTHERE.MID",
+    "title": "HEY THERE",
+    "bpm": 140,
+    "durationSeconds": 564,
+    "chordMarkers": 193,
+    "melodyNotes": 416,
+    "bytes": 18160,
+    "playable": true
+  },
+  {
+    "file": "Hi-Lili, Hi-Lo.MID",
+    "title": "Hi-Lili, Hi-Lo - Bronislau Kaper",
+    "bpm": 160,
+    "durationSeconds": 578,
+    "chordMarkers": 132,
+    "melodyNotes": 394,
+    "bytes": 30197,
+    "playable": true
+  },
+  {
     "file": "HIGHER&.MID",
     "title": "(Your Love Has Lifted Me) Higher & Higher  Wilson",
     "bpm": 165,
@@ -7547,6 +11007,16 @@
     "playable": true
   },
   {
+    "file": "Hindustan_1.MID",
+    "title": "Hindustan",
+    "bpm": 180,
+    "durationSeconds": 387,
+    "chordMarkers": 62,
+    "melodyNotes": 109,
+    "bytes": 51064,
+    "playable": true
+  },
+  {
     "file": "Hindustan.MID",
     "title": "Hindustan",
     "bpm": 205,
@@ -7564,6 +11034,16 @@
     "chordMarkers": 205,
     "melodyNotes": 408,
     "bytes": 29038,
+    "playable": true
+  },
+  {
+    "file": "Hitch It Up.MID",
+    "title": "Hitch It Up - Johnny Pumphandle",
+    "bpm": 175,
+    "durationSeconds": 138,
+    "chordMarkers": 50,
+    "melodyNotes": 457,
+    "bytes": 16164,
     "playable": true
   },
   {
@@ -7587,6 +11067,26 @@
     "playable": true
   },
   {
+    "file": "Hold It.MID",
+    "title": "HOLD IT",
+    "bpm": 144,
+    "durationSeconds": 143,
+    "chordMarkers": 57,
+    "melodyNotes": 788,
+    "bytes": 38661,
+    "playable": true
+  },
+  {
+    "file": "Hold Me.MID",
+    "title": "Hold Me",
+    "bpm": 130,
+    "durationSeconds": 210,
+    "chordMarkers": 101,
+    "melodyNotes": 168,
+    "bytes": 23853,
+    "playable": true
+  },
+  {
     "file": "HOLDIT.MID",
     "title": "HOLD IT",
     "bpm": 144,
@@ -7607,6 +11107,16 @@
     "playable": true
   },
   {
+    "file": "Home Ruler.MID",
+    "title": "Home Ruler",
+    "bpm": 160,
+    "durationSeconds": 436,
+    "chordMarkers": 74,
+    "melodyNotes": 454,
+    "bytes": 12385,
+    "playable": true
+  },
+  {
     "file": "Homesick, That_s All.MID",
     "title": "Homesick, That's All - Gordon Jenkins",
     "bpm": 90,
@@ -7614,6 +11124,16 @@
     "chordMarkers": 200,
     "melodyNotes": 467,
     "bytes": 15548,
+    "playable": true
+  },
+  {
+    "file": "HOMESICK.MID",
+    "title": "Homesick, That's All  (1945) Gordon Jenkins",
+    "bpm": 90,
+    "durationSeconds": 687,
+    "chordMarkers": 200,
+    "melodyNotes": 467,
+    "bytes": 15493,
     "playable": true
   },
   {
@@ -7667,6 +11187,16 @@
     "playable": true
   },
   {
+    "file": "Hooray For Hollywood - Whiting & Mercer.MID",
+    "title": "Hooray For Hollywood - Whiting & Mercer",
+    "bpm": 230,
+    "durationSeconds": 268,
+    "chordMarkers": 132,
+    "melodyNotes": 253,
+    "bytes": 26324,
+    "playable": true
+  },
+  {
     "file": "Hot Toddy  [frank].MID",
     "title": "Hot Toddy  [frank]",
     "bpm": 145,
@@ -7677,6 +11207,16 @@
     "playable": true
   },
   {
+    "file": "Hot Toddy  [j&f Cd].MID",
+    "title": "Hot Toddy  [J&F CD]",
+    "bpm": 145,
+    "durationSeconds": 530,
+    "chordMarkers": 49,
+    "melodyNotes": 240,
+    "bytes": 19487,
+    "playable": true
+  },
+  {
     "file": "HOTEL OVERTURE.MID",
     "title": "Hotel Overture",
     "bpm": 145,
@@ -7684,6 +11224,16 @@
     "chordMarkers": 55,
     "melodyNotes": 408,
     "bytes": 18941,
+    "playable": true
+  },
+  {
+    "file": "HOTTER_2.MID",
+    "title": "Hotter Than That [Louis Armstrong Solo First Chorus]",
+    "bpm": 208,
+    "durationSeconds": 303,
+    "chordMarkers": 11,
+    "melodyNotes": 168,
+    "bytes": 5534,
     "playable": true
   },
   {
@@ -7714,6 +11264,26 @@
     "chordMarkers": 83,
     "melodyNotes": 174,
     "bytes": 39513,
+    "playable": true
+  },
+  {
+    "file": "How Deep Is The Ocean.MID",
+    "title": "How Deep Is The Ocean",
+    "bpm": 90,
+    "durationSeconds": 448,
+    "chordMarkers": 239,
+    "melodyNotes": 176,
+    "bytes": 52664,
+    "playable": true
+  },
+  {
+    "file": "How Do You Sleep.MID",
+    "title": "How do you sleep?",
+    "bpm": 80,
+    "durationSeconds": 893,
+    "chordMarkers": 35,
+    "melodyNotes": 198,
+    "bytes": 22484,
     "playable": true
   },
   {
@@ -7754,6 +11324,16 @@
     "chordMarkers": 101,
     "melodyNotes": 182,
     "bytes": 15259,
+    "playable": true
+  },
+  {
+    "file": "How Sweet It Is To Be Loved By You.MID",
+    "title": "How Sweet It Is To Be Loved By You",
+    "bpm": 110,
+    "durationSeconds": 196,
+    "chordMarkers": 134,
+    "melodyNotes": 384,
+    "bytes": 28523,
     "playable": true
   },
   {
@@ -7807,6 +11387,16 @@
     "playable": true
   },
   {
+    "file": "Hula Palm.MID",
+    "title": "HULA PALM",
+    "bpm": 92,
+    "durationSeconds": 743,
+    "chordMarkers": 39,
+    "melodyNotes": 210,
+    "bytes": 10136,
+    "playable": true
+  },
+  {
     "file": "Hunter_s Purse.MID",
     "title": "Hunter's Purse",
     "bpm": 180,
@@ -7824,6 +11414,16 @@
     "chordMarkers": 99,
     "melodyNotes": 164,
     "bytes": 11321,
+    "playable": true
+  },
+  {
+    "file": "I Ain_t Got Nobody_1.MID",
+    "title": "I Ain't Got Nobody",
+    "bpm": 155,
+    "durationSeconds": 497,
+    "chordMarkers": 109,
+    "melodyNotes": 137,
+    "bytes": 65616,
     "playable": true
   },
   {
@@ -7897,6 +11497,16 @@
     "playable": true
   },
   {
+    "file": "I Cried For You.MID",
+    "title": "I Cried For You",
+    "bpm": 105,
+    "durationSeconds": 475,
+    "chordMarkers": 235,
+    "melodyNotes": 148,
+    "bytes": 63914,
+    "playable": true
+  },
+  {
     "file": "I Do Like To Be Beside The Seaside.MID",
     "title": "I Do Like To Be Beside The Seaside - Glover & Kind",
     "bpm": 120,
@@ -7924,6 +11534,36 @@
     "chordMarkers": 112,
     "melodyNotes": 305,
     "bytes": 48499,
+    "playable": true
+  },
+  {
+    "file": "I Don_t Know.MID",
+    "title": "I don't know",
+    "bpm": 120,
+    "durationSeconds": 664,
+    "chordMarkers": 89,
+    "melodyNotes": 451,
+    "bytes": 31789,
+    "playable": true
+  },
+  {
+    "file": "I Don_t Want To Join The Army.MID",
+    "title": "I Don't Want To Join The Army",
+    "bpm": 120,
+    "durationSeconds": 578,
+    "chordMarkers": 76,
+    "melodyNotes": 225,
+    "bytes": 31364,
+    "playable": true
+  },
+  {
+    "file": "I Don_t Want To Know.MID",
+    "title": "I Don't Want To Know - Jerry Herman",
+    "bpm": 155,
+    "durationSeconds": 256,
+    "chordMarkers": 208,
+    "melodyNotes": 280,
+    "bytes": 55382,
     "playable": true
   },
   {
@@ -7957,6 +11597,26 @@
     "playable": true
   },
   {
+    "file": "I Forgot More Than You_ll Ever Know.MID",
+    "title": "I Forgot More Than You'll Ever Know",
+    "bpm": 100,
+    "durationSeconds": 572,
+    "chordMarkers": 96,
+    "melodyNotes": 249,
+    "bytes": 34263,
+    "playable": true
+  },
+  {
+    "file": "I Found A Million Dollar Baby.MID",
+    "title": "I Found A Million Dollar Baby",
+    "bpm": 130,
+    "durationSeconds": 369,
+    "chordMarkers": 173,
+    "melodyNotes": 254,
+    "bytes": 70149,
+    "playable": true
+  },
+  {
     "file": "I Get The Blues When It Rains.MID",
     "title": "I GET THE BLUES WHEN IT RAINS",
     "bpm": 120,
@@ -7964,6 +11624,56 @@
     "chordMarkers": 95,
     "melodyNotes": 343,
     "bytes": 14025,
+    "playable": true
+  },
+  {
+    "file": "I Got It Bad (And That Ain_t Good).MID",
+    "title": "I Got It Bad (And That Ain't Good)",
+    "bpm": 75,
+    "durationSeconds": 538,
+    "chordMarkers": 215,
+    "melodyNotes": 172,
+    "bytes": 51909,
+    "playable": true
+  },
+  {
+    "file": "I Hear A Rhapsody_1.MID",
+    "title": "I Hear A Rhapsody",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 127,
+    "melodyNotes": 177,
+    "bytes": 49802,
+    "playable": true
+  },
+  {
+    "file": "I Heard You Cried Last Night.MID",
+    "title": "I Heard You Cried Last Night - Ted Grouya & Jerrie Kruger",
+    "bpm": 140,
+    "durationSeconds": 171,
+    "chordMarkers": 133,
+    "melodyNotes": 182,
+    "bytes": 20232,
+    "playable": true
+  },
+  {
+    "file": "I Know Why_1.MID",
+    "title": "I Know Why",
+    "bpm": 76,
+    "durationSeconds": 815,
+    "chordMarkers": 105,
+    "melodyNotes": 226,
+    "bytes": 19809,
+    "playable": true
+  },
+  {
+    "file": "I Left My Heart In San Francisco_1.MID",
+    "title": "I LEFT MY HEART IN SAN FRANCISCO",
+    "bpm": 105,
+    "durationSeconds": 229,
+    "chordMarkers": 136,
+    "melodyNotes": 244,
+    "bytes": 17238,
     "playable": true
   },
   {
@@ -7987,6 +11697,16 @@
     "playable": true
   },
   {
+    "file": "I LOVE YOU BECAUSE(CHUCK).MID",
+    "title": "I LOVE YOU BECAUSE",
+    "bpm": 115,
+    "durationSeconds": 605,
+    "chordMarkers": 74,
+    "melodyNotes": 36,
+    "bytes": 18464,
+    "playable": true
+  },
+  {
     "file": "I Love You So Much [j&s]_1.MID",
     "title": "I LOVE YOU SO MUCH [J&S]",
     "bpm": 85,
@@ -7994,6 +11714,16 @@
     "chordMarkers": 78,
     "melodyNotes": 154,
     "bytes": 15141,
+    "playable": true
+  },
+  {
+    "file": "I Love You Truly 4-4.MID",
+    "title": "I Love You Truly 4/4",
+    "bpm": 90,
+    "durationSeconds": 772,
+    "chordMarkers": 68,
+    "melodyNotes": 68,
+    "bytes": 19782,
     "playable": true
   },
   {
@@ -8017,6 +11747,26 @@
     "playable": true
   },
   {
+    "file": "I Never Knew I Could Love Anybody Like I_m Loving You.MID",
+    "title": "I Never Knew (I Could Love Anybody Like I'm Loving You)",
+    "bpm": 162,
+    "durationSeconds": 384,
+    "chordMarkers": 176,
+    "melodyNotes": 250,
+    "bytes": 31796,
+    "playable": true
+  },
+  {
+    "file": "I Only Have Eyes For You.MID",
+    "title": "I Only Have Eyes For You",
+    "bpm": 75,
+    "durationSeconds": 269,
+    "chordMarkers": 131,
+    "melodyNotes": 188,
+    "bytes": 27010,
+    "playable": true
+  },
+  {
     "file": "I Remember April.MID",
     "title": "I Remember April",
     "bpm": 190,
@@ -8024,6 +11774,16 @@
     "chordMarkers": 184,
     "melodyNotes": 220,
     "bytes": 262234,
+    "playable": true
+  },
+  {
+    "file": "I Saw Mommy Kissing Santa Claus.MID",
+    "title": "I Saw Mommy Kissing Santa Claus",
+    "bpm": 120,
+    "durationSeconds": 646,
+    "chordMarkers": 92,
+    "melodyNotes": 176,
+    "bytes": 49608,
     "playable": true
   },
   {
@@ -8067,6 +11827,26 @@
     "playable": true
   },
   {
+    "file": "I Thought About You.MID",
+    "title": "I Thought About You",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 207,
+    "melodyNotes": 354,
+    "bytes": 31944,
+    "playable": true
+  },
+  {
+    "file": "I Want To Go With You.MID",
+    "title": "I Want To Go With You - Hank Cochran",
+    "bpm": 120,
+    "durationSeconds": 154,
+    "chordMarkers": 102,
+    "melodyNotes": 378,
+    "bytes": 14227,
+    "playable": true
+  },
+  {
     "file": "I Want To Walk You Home.MID",
     "title": "I Want To Walk You Home",
     "bpm": 120,
@@ -8074,6 +11854,16 @@
     "chordMarkers": 32,
     "melodyNotes": 290,
     "bytes": 26718,
+    "playable": true
+  },
+  {
+    "file": "I Will Wait For You.MID",
+    "title": "I Will Wait For You",
+    "bpm": 135,
+    "durationSeconds": 214,
+    "chordMarkers": 169,
+    "melodyNotes": 347,
+    "bytes": 44264,
     "playable": true
   },
   {
@@ -8107,6 +11897,26 @@
     "playable": true
   },
   {
+    "file": "I Won_t Mention It Again.MID",
+    "title": "I Won't Mention It Again",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 118,
+    "melodyNotes": 235,
+    "bytes": 26411,
+    "playable": true
+  },
+  {
+    "file": "I WONDER WHERE YOU ARE TONIGHT 2.MID",
+    "title": "I Wonder Where You Are Tonight",
+    "bpm": 105,
+    "durationSeconds": 917,
+    "chordMarkers": 97,
+    "melodyNotes": 802,
+    "bytes": 29287,
+    "playable": true
+  },
+  {
     "file": "I WONDER WHERE YOU ARE TONIGHT.MID",
     "title": "I Wonder Where You Are Tonight",
     "bpm": 95,
@@ -8117,6 +11927,26 @@
     "playable": true
   },
   {
+    "file": "I_d Be Lost Without You - Sunny Skylar.MID",
+    "title": "I'd Be Lost Without You - Sunny Skylar",
+    "bpm": 105,
+    "durationSeconds": 587,
+    "chordMarkers": 86,
+    "melodyNotes": 168,
+    "bytes": 8357,
+    "playable": true
+  },
+  {
+    "file": "I_ll Always Love You.MID",
+    "title": "I'll Always Love You",
+    "bpm": 120,
+    "durationSeconds": 208,
+    "chordMarkers": 97,
+    "melodyNotes": 318,
+    "bytes": 40170,
+    "playable": true
+  },
+  {
     "file": "I_ll Be Home For Christmas.MID",
     "title": "I'll Be Home For Christmas",
     "bpm": 100,
@@ -8124,6 +11954,36 @@
     "chordMarkers": 125,
     "melodyNotes": 94,
     "bytes": 39591,
+    "playable": true
+  },
+  {
+    "file": "I_ll Be Seeing You_1.MID",
+    "title": "I'LL BE SEEING YOU",
+    "bpm": 110,
+    "durationSeconds": 696,
+    "chordMarkers": 130,
+    "melodyNotes": 516,
+    "bytes": 28244,
+    "playable": true
+  },
+  {
+    "file": "I_ll Be Seeing You.MID",
+    "title": "I'LL BE SEEING YOU",
+    "bpm": 110,
+    "durationSeconds": 696,
+    "chordMarkers": 130,
+    "melodyNotes": 474,
+    "bytes": 27774,
+    "playable": true
+  },
+  {
+    "file": "I_ll Be Your Sweetheart.MID",
+    "title": "I'll Be Your Sweetheart",
+    "bpm": 135,
+    "durationSeconds": 459,
+    "chordMarkers": 35,
+    "melodyNotes": 41,
+    "bytes": 5423,
     "playable": true
   },
   {
@@ -8197,6 +12057,16 @@
     "playable": true
   },
   {
+    "file": "I_ll See You In My Dreams.MID",
+    "title": "I'll See You In My Dreams",
+    "bpm": 120,
+    "durationSeconds": 226,
+    "chordMarkers": 1,
+    "melodyNotes": 2851,
+    "bytes": 26261,
+    "playable": true
+  },
+  {
     "file": "I_ll Take You Home Again Kathleen.MID",
     "title": "I'll Take You Home Again Kathleen",
     "bpm": 90,
@@ -8214,6 +12084,16 @@
     "chordMarkers": 30,
     "melodyNotes": 268,
     "bytes": 9844,
+    "playable": true
+  },
+  {
+    "file": "I_LLBEAR.MID",
+    "title": "I'll Be Around",
+    "bpm": 80,
+    "durationSeconds": 863,
+    "chordMarkers": 149,
+    "melodyNotes": 241,
+    "bytes": 11667,
     "playable": true
   },
   {
@@ -8257,6 +12137,26 @@
     "playable": true
   },
   {
+    "file": "I_m Confessin_ That I Love You_1.MID",
+    "title": "I'm Confessin' That I Love You",
+    "bpm": 90,
+    "durationSeconds": 851,
+    "chordMarkers": 179,
+    "melodyNotes": 240,
+    "bytes": 41904,
+    "playable": true
+  },
+  {
+    "file": "I_m Forever Blowing Bubbles - Kenbrovin & Kelette.MID",
+    "title": "I'm Forever Blowing Bubbles - Kenbrovin & Kelette",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 81,
+    "melodyNotes": 204,
+    "bytes": 14781,
+    "playable": true
+  },
+  {
     "file": "I_m Gettin_ Sentimental Over You (F).MID",
     "title": "I'm Gettin' Sentimental Over You",
     "bpm": 88,
@@ -8277,6 +12177,16 @@
     "playable": true
   },
   {
+    "file": "I_m Gonna Sit Right Down And Write Myself A Letter.MID",
+    "title": "I'm Gonna Sit Right Down And Write Myself a Letter - Ahlert",
+    "bpm": 145,
+    "durationSeconds": 526,
+    "chordMarkers": 104,
+    "melodyNotes": 304,
+    "bytes": 17377,
+    "playable": true
+  },
+  {
     "file": "I_m In The Mood For Swing - Benny Carter.MID",
     "title": "I'm In The Mood For Swing - Benny Carter",
     "bpm": 185,
@@ -8284,6 +12194,26 @@
     "chordMarkers": 147,
     "melodyNotes": 425,
     "bytes": 19583,
+    "playable": true
+  },
+  {
+    "file": "I_m Just A Lucky So And So.MID",
+    "title": "I'm Just A Lucky So And So",
+    "bpm": 100,
+    "durationSeconds": 403,
+    "chordMarkers": 254,
+    "melodyNotes": 256,
+    "bytes": 53757,
+    "playable": true
+  },
+  {
+    "file": "I_m Old Fashioned - Jerome Kern & Johnny Mercer.MID",
+    "title": "I'm Old Fashioned - Jerome Kern & Johnny Mercer",
+    "bpm": 110,
+    "durationSeconds": 254,
+    "chordMarkers": 198,
+    "melodyNotes": 509,
+    "bytes": 40173,
     "playable": true
   },
   {
@@ -8307,6 +12237,16 @@
     "playable": true
   },
   {
+    "file": "I_R_APRL.MID",
+    "title": "I'll Remember April",
+    "bpm": 150,
+    "durationSeconds": 869,
+    "chordMarkers": 351,
+    "melodyNotes": 250,
+    "bytes": 56329,
+    "playable": true
+  },
+  {
     "file": "I_ve Got A Crush On You.MID",
     "title": "I've Got A Crush On You",
     "bpm": 80,
@@ -8314,6 +12254,16 @@
     "chordMarkers": 113,
     "melodyNotes": 522,
     "bytes": 29925,
+    "playable": true
+  },
+  {
+    "file": "I_ve Got A Right To Sing The Blues.MID",
+    "title": "I've Got A Right To Sing The Blues",
+    "bpm": 85,
+    "durationSeconds": 198,
+    "chordMarkers": 132,
+    "melodyNotes": 403,
+    "bytes": 24679,
     "playable": true
   },
   {
@@ -8344,6 +12294,16 @@
     "chordMarkers": 48,
     "melodyNotes": 9,
     "bytes": 9696,
+    "playable": true
+  },
+  {
+    "file": "I_VEGOTY.MID",
+    "title": "I've Got You Under My Skin",
+    "bpm": 132,
+    "durationSeconds": 509,
+    "chordMarkers": 155,
+    "melodyNotes": 350,
+    "bytes": 15495,
     "playable": true
   },
   {
@@ -8397,6 +12357,16 @@
     "playable": true
   },
   {
+    "file": "ICANTBEL_1.MID",
+    "title": "I Can't Believe That You're In Love With Me",
+    "bpm": 140,
+    "durationSeconds": 168,
+    "chordMarkers": 112,
+    "melodyNotes": 98,
+    "bytes": 15209,
+    "playable": true
+  },
+  {
     "file": "ICDHVDAN.MID",
     "title": "I Could Have Danced All Night",
     "bpm": 130,
@@ -8427,6 +12397,16 @@
     "playable": true
   },
   {
+    "file": "ICOVERWA_1.MID",
+    "title": "I COVER THE WATERFRONT",
+    "bpm": 95,
+    "durationSeconds": 253,
+    "chordMarkers": 190,
+    "melodyNotes": 317,
+    "bytes": 18864,
+    "playable": true
+  },
+  {
     "file": "ICOVERWA.MID",
     "title": "I Cover The Waterfront",
     "bpm": 95,
@@ -8444,6 +12424,26 @@
     "chordMarkers": 88,
     "melodyNotes": 215,
     "bytes": 16005,
+    "playable": true
+  },
+  {
+    "file": "Ida Sweet As Apple Cider.MID",
+    "title": "Ida Sweet As Apple Cider",
+    "bpm": 175,
+    "durationSeconds": 443,
+    "chordMarkers": 50,
+    "melodyNotes": 122,
+    "bytes": 79547,
+    "playable": true
+  },
+  {
+    "file": "IDIDN_NO_1.MID",
+    "title": "I Didn't Know What Time it Was",
+    "bpm": 100,
+    "durationSeconds": 96,
+    "chordMarkers": 63,
+    "melodyNotes": 138,
+    "bytes": 7510,
     "playable": true
   },
   {
@@ -8467,6 +12467,16 @@
     "playable": true
   },
   {
+    "file": "IDONTNO_.MID",
+    "title": "I DON'T KNOW WHY",
+    "bpm": 85,
+    "durationSeconds": 155,
+    "chordMarkers": 88,
+    "melodyNotes": 179,
+    "bytes": 8848,
+    "playable": true
+  },
+  {
     "file": "If Ever I Would Leave You.MID",
     "title": "If Ever I Would Leave You",
     "bpm": 90,
@@ -8487,6 +12497,16 @@
     "playable": true
   },
   {
+    "file": "If I Had My Way.MID",
+    "title": "If I had My Way",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 39,
+    "melodyNotes": 74,
+    "bytes": 6369,
+    "playable": true
+  },
+  {
     "file": "If I Had You.MID",
     "title": "IF I HAD YOU",
     "bpm": 75,
@@ -8504,6 +12524,16 @@
     "chordMarkers": 137,
     "melodyNotes": 192,
     "bytes": 16822,
+    "playable": true
+  },
+  {
+    "file": "If I Were A Bell.MID",
+    "title": "If I Were A Bell",
+    "bpm": 160,
+    "durationSeconds": 300,
+    "chordMarkers": 369,
+    "melodyNotes": 246,
+    "bytes": 98820,
     "playable": true
   },
   {
@@ -8534,6 +12564,26 @@
     "chordMarkers": 56,
     "melodyNotes": 89,
     "bytes": 10403,
+    "playable": true
+  },
+  {
+    "file": "If You Leave Me Now.MID",
+    "title": "If You Leave Me Now",
+    "bpm": 115,
+    "durationSeconds": 637,
+    "chordMarkers": 140,
+    "melodyNotes": 383,
+    "bytes": 50300,
+    "playable": true
+  },
+  {
+    "file": "If You Want To Have A Joy In Your Heart.MID",
+    "title": "If You Want To Have A Joy In Your Heart",
+    "bpm": 100,
+    "durationSeconds": 649,
+    "chordMarkers": 50,
+    "melodyNotes": 119,
+    "bytes": 9945,
     "playable": true
   },
   {
@@ -8707,6 +12757,26 @@
     "playable": true
   },
   {
+    "file": "IGOTRTHM_1.MID",
+    "title": "I GOT RHYTHM",
+    "bpm": 240,
+    "durationSeconds": 106,
+    "chordMarkers": 163,
+    "melodyNotes": 292,
+    "bytes": 19448,
+    "playable": true
+  },
+  {
+    "file": "IHEARRAP.MID",
+    "title": "I HEAR A RHAPSODY",
+    "bpm": 140,
+    "durationSeconds": 171,
+    "chordMarkers": 169,
+    "melodyNotes": 269,
+    "bytes": 18398,
+    "playable": true
+  },
+  {
     "file": "IJTSCALL.MID",
     "title": "I JUST CALLED TO SAY I LOVE YOU",
     "bpm": 145,
@@ -8724,6 +12794,16 @@
     "chordMarkers": 88,
     "melodyNotes": 236,
     "bytes": 24017,
+    "playable": true
+  },
+  {
+    "file": "IKNOWWHY.MID",
+    "title": "I Know Why, And So Do You",
+    "bpm": 90,
+    "durationSeconds": 857,
+    "chordMarkers": 215,
+    "melodyNotes": 173,
+    "bytes": 34459,
     "playable": true
   },
   {
@@ -8754,6 +12834,16 @@
     "chordMarkers": 120,
     "melodyNotes": 177,
     "bytes": 20472,
+    "playable": true
+  },
+  {
+    "file": "ILLBEARO.MID",
+    "title": "I'll Be Around",
+    "bpm": 120,
+    "durationSeconds": 643,
+    "chordMarkers": 200,
+    "melodyNotes": 108,
+    "bytes": 32544,
     "playable": true
   },
   {
@@ -8797,6 +12887,16 @@
     "playable": true
   },
   {
+    "file": "iluvlucy.MID",
+    "title": "I Love Lucy",
+    "bpm": 150,
+    "durationSeconds": 207,
+    "chordMarkers": 38,
+    "melodyNotes": 70,
+    "bytes": 9558,
+    "playable": true
+  },
+  {
     "file": "IMFOOLTO_1.MID",
     "title": "I'M A FOOL TO WANT YOU",
     "bpm": 100,
@@ -8827,6 +12927,16 @@
     "playable": true
   },
   {
+    "file": "IMOODLUV_1.MID",
+    "title": "I'M IN THE MOOD FOR LOVE",
+    "bpm": 85,
+    "durationSeconds": 282,
+    "chordMarkers": 196,
+    "melodyNotes": 344,
+    "bytes": 19298,
+    "playable": true
+  },
+  {
     "file": "IMOODLUV.MID",
     "title": "I'm In The Mood For Love",
     "bpm": 85,
@@ -8844,6 +12954,16 @@
     "chordMarkers": 42,
     "melodyNotes": 184,
     "bytes": 18203,
+    "playable": true
+  },
+  {
+    "file": "Impressions - Ron Stebbins.MID",
+    "title": "Impressions - Ron Stebbins",
+    "bpm": 190,
+    "durationSeconds": 78,
+    "chordMarkers": 90,
+    "melodyNotes": 324,
+    "bytes": 28006,
     "playable": true
   },
   {
@@ -8867,6 +12987,56 @@
     "playable": true
   },
   {
+    "file": "IMWALKIN_1.MID",
+    "title": "I'm Walkin'",
+    "bpm": 155,
+    "durationSeconds": 399,
+    "chordMarkers": 31,
+    "melodyNotes": 135,
+    "bytes": 16894,
+    "playable": true
+  },
+  {
+    "file": "IMWALKIN_2.MID",
+    "title": "I'M WALKIN'",
+    "bpm": 155,
+    "durationSeconds": 499,
+    "chordMarkers": 89,
+    "melodyNotes": 390,
+    "bytes": 52841,
+    "playable": true
+  },
+  {
+    "file": "In A Little Gypsy Tea Room.MID",
+    "title": "In A Little Gypsy Tea Room",
+    "bpm": 120,
+    "durationSeconds": 648,
+    "chordMarkers": 56,
+    "melodyNotes": 393,
+    "bytes": 47725,
+    "playable": true
+  },
+  {
+    "file": "In A Little Spanish Town [j&s]_1.MID",
+    "title": "In a little spanish town [J&S]",
+    "bpm": 125,
+    "durationSeconds": 678,
+    "chordMarkers": 106,
+    "melodyNotes": 157,
+    "bytes": 22699,
+    "playable": true
+  },
+  {
+    "file": "In A Mellow Tone.MID",
+    "title": "In A Mellow Tone",
+    "bpm": 120,
+    "durationSeconds": 336,
+    "chordMarkers": 154,
+    "melodyNotes": 150,
+    "bytes": 56000,
+    "playable": true
+  },
+  {
     "file": "In The Lurch - Dave Brubeck.MID",
     "title": "In The Lurch - Dave Brubeck",
     "bpm": 120,
@@ -8874,6 +13044,16 @@
     "chordMarkers": 108,
     "melodyNotes": 275,
     "bytes": 16655,
+    "playable": true
+  },
+  {
+    "file": "In The Mood.MID",
+    "title": "IN THE MOOD",
+    "bpm": 150,
+    "durationSeconds": 346,
+    "chordMarkers": 246,
+    "melodyNotes": 802,
+    "bytes": 33373,
     "playable": true
   },
   {
@@ -8914,6 +13094,16 @@
     "chordMarkers": 93,
     "melodyNotes": 104,
     "bytes": 28666,
+    "playable": true
+  },
+  {
+    "file": "Indian Summer.MID",
+    "title": "Indian Summer",
+    "bpm": 100,
+    "durationSeconds": 403,
+    "chordMarkers": 165,
+    "melodyNotes": 192,
+    "bytes": 52471,
     "playable": true
   },
   {
@@ -8967,6 +13157,26 @@
     "playable": true
   },
   {
+    "file": "INFLJAZZ.MID",
+    "title": "Influencia do Jaz",
+    "bpm": 140,
+    "durationSeconds": 441,
+    "chordMarkers": 57,
+    "melodyNotes": 161,
+    "bytes": 16917,
+    "playable": true
+  },
+  {
+    "file": "INMOON_1.MID",
+    "title": "In the Moon Mist",
+    "bpm": 120,
+    "durationSeconds": 644,
+    "chordMarkers": 134,
+    "melodyNotes": 88,
+    "bytes": 15845,
+    "playable": true
+  },
+  {
     "file": "INMOON.MID",
     "title": "In the Moon Mist",
     "bpm": 120,
@@ -8984,6 +13194,26 @@
     "chordMarkers": 59,
     "melodyNotes": 379,
     "bytes": 25020,
+    "playable": true
+  },
+  {
+    "file": "Interlude - Pete Rugolo.MID",
+    "title": "Interlude - Billy Taylor",
+    "bpm": 105,
+    "durationSeconds": 229,
+    "chordMarkers": 208,
+    "melodyNotes": 449,
+    "bytes": 20010,
+    "playable": true
+  },
+  {
+    "file": "Interplay.MID",
+    "title": "Interplay",
+    "bpm": 110,
+    "durationSeconds": 87,
+    "chordMarkers": 40,
+    "melodyNotes": 74,
+    "bytes": 7655,
     "playable": true
   },
   {
@@ -9017,6 +13247,16 @@
     "playable": true
   },
   {
+    "file": "INVITATN.MID",
+    "title": "Invitation",
+    "bpm": 120,
+    "durationSeconds": 104,
+    "chordMarkers": 29,
+    "melodyNotes": 130,
+    "bytes": 8440,
+    "playable": true
+  },
+  {
     "file": "INVRSMIL.MID",
     "title": "I'll Never Smile Again",
     "bpm": 100,
@@ -9037,6 +13277,16 @@
     "playable": true
   },
   {
+    "file": "IONLY.MID",
+    "title": "I Only Have Eyes For You",
+    "bpm": 75,
+    "durationSeconds": 269,
+    "chordMarkers": 131,
+    "melodyNotes": 188,
+    "bytes": 26917,
+    "playable": true
+  },
+  {
     "file": "IPANEMA.MID",
     "title": "Ipanema, The Girl From",
     "bpm": 160,
@@ -9054,6 +13304,26 @@
     "chordMarkers": 151,
     "melodyNotes": 383,
     "bytes": 24260,
+    "playable": true
+  },
+  {
+    "file": "Is It True What They Say About Dixie_1.MID",
+    "title": "Is It True What They Say About Dixie",
+    "bpm": 160,
+    "durationSeconds": 483,
+    "chordMarkers": 119,
+    "melodyNotes": 170,
+    "bytes": 71385,
+    "playable": true
+  },
+  {
+    "file": "Is It True What They Say About Dixie.MID",
+    "title": "Is It True What They Say About Dixie",
+    "bpm": 150,
+    "durationSeconds": 176,
+    "chordMarkers": 114,
+    "melodyNotes": 192,
+    "bytes": 19332,
     "playable": true
   },
   {
@@ -9147,6 +13417,16 @@
     "playable": true
   },
   {
+    "file": "It Had To Be You_1.MID",
+    "title": "It Had To Be You",
+    "bpm": 150,
+    "durationSeconds": 514,
+    "chordMarkers": 86,
+    "melodyNotes": 213,
+    "bytes": 66405,
+    "playable": true
+  },
+  {
     "file": "It Happened In Monterey.MID",
     "title": "It Happened In Monterey",
     "bpm": 120,
@@ -9197,6 +13477,16 @@
     "playable": true
   },
   {
+    "file": "It Only Hurts For A Little While.MID",
+    "title": "It Only Hurts For A Little While",
+    "bpm": 140,
+    "durationSeconds": 378,
+    "chordMarkers": 48,
+    "melodyNotes": 192,
+    "bytes": 15904,
+    "playable": true
+  },
+  {
     "file": "It Started All Over Again.MID",
     "title": "It Started All Over Again",
     "bpm": 90,
@@ -9204,6 +13494,16 @@
     "chordMarkers": 108,
     "melodyNotes": 143,
     "bytes": 23683,
+    "playable": true
+  },
+  {
+    "file": "It Was A Very Good Year.MID",
+    "title": "It Was a Very Good Year",
+    "bpm": 95,
+    "durationSeconds": 649,
+    "chordMarkers": 32,
+    "melodyNotes": 138,
+    "bytes": 7047,
     "playable": true
   },
   {
@@ -9217,6 +13517,26 @@
     "playable": true
   },
   {
+    "file": "It_s A Sin.MID",
+    "title": "It's A Sin",
+    "bpm": 110,
+    "durationSeconds": 705,
+    "chordMarkers": 92,
+    "melodyNotes": 172,
+    "bytes": 45808,
+    "playable": true
+  },
+  {
+    "file": "It_s All In The Game.MID",
+    "title": "It's All In The Game",
+    "bpm": 80,
+    "durationSeconds": 318,
+    "chordMarkers": 86,
+    "melodyNotes": 266,
+    "bytes": 31945,
+    "playable": true
+  },
+  {
     "file": "It_s Always You - Jimmy Van Heusen.MID",
     "title": "It's Always You - Jimmy Van Heusen",
     "bpm": 99,
@@ -9224,6 +13544,16 @@
     "chordMarkers": 200,
     "melodyNotes": 1162,
     "bytes": 27951,
+    "playable": true
+  },
+  {
+    "file": "It_s Delov_ly.MID",
+    "title": "It's Delov'ly",
+    "bpm": 140,
+    "durationSeconds": 463,
+    "chordMarkers": 99,
+    "melodyNotes": 248,
+    "bytes": 17930,
     "playable": true
   },
   {
@@ -9317,6 +13647,16 @@
     "playable": true
   },
   {
+    "file": "ITSABLUE.MID",
+    "title": "It's A Blue World",
+    "bpm": 85,
+    "durationSeconds": 279,
+    "chordMarkers": 111,
+    "melodyNotes": 212,
+    "bytes": 16118,
+    "playable": true
+  },
+  {
     "file": "ITSDELUV.MID",
     "title": "It's Delovely    nice chords/arr.",
     "bpm": 140,
@@ -9324,6 +13664,16 @@
     "chordMarkers": 99,
     "melodyNotes": 248,
     "bytes": 13063,
+    "playable": true
+  },
+  {
+    "file": "ITSIMPOS.MID",
+    "title": "IT'S IMPOSSIBLE",
+    "bpm": 100,
+    "durationSeconds": 240,
+    "chordMarkers": 106,
+    "melodyNotes": 485,
+    "bytes": 34735,
     "playable": true
   },
   {
@@ -9387,6 +13737,16 @@
     "playable": true
   },
   {
+    "file": "JALOUSIE_1.MID",
+    "title": "Jalousie GADE",
+    "bpm": 115,
+    "durationSeconds": 670,
+    "chordMarkers": 107,
+    "melodyNotes": 580,
+    "bytes": 61285,
+    "playable": true
+  },
+  {
     "file": "Jambalaya - Country2.MID",
     "title": "Jambalaya",
     "bpm": 140,
@@ -9427,6 +13787,26 @@
     "playable": true
   },
   {
+    "file": "Jay_s Blues.MID",
+    "title": "Jay's Blues",
+    "bpm": 165,
+    "durationSeconds": 111,
+    "chordMarkers": 103,
+    "melodyNotes": 132,
+    "bytes": 12553,
+    "playable": true
+  },
+  {
+    "file": "Jaylick.MID",
+    "title": "jaylick",
+    "bpm": 85,
+    "durationSeconds": 906,
+    "chordMarkers": 71,
+    "melodyNotes": 310,
+    "bytes": 11901,
+    "playable": true
+  },
+  {
     "file": "Jazzgossen.MID",
     "title": "Jazzgossen",
     "bpm": 120,
@@ -9434,6 +13814,16 @@
     "chordMarkers": 174,
     "melodyNotes": 551,
     "bytes": 21348,
+    "playable": true
+  },
+  {
+    "file": "JBGOODE_1.MID",
+    "title": "JOHNNY B. GOODE",
+    "bpm": 150,
+    "durationSeconds": 494,
+    "chordMarkers": 32,
+    "melodyNotes": 379,
+    "bytes": 39199,
     "playable": true
   },
   {
@@ -9484,6 +13874,26 @@
     "chordMarkers": 96,
     "melodyNotes": 301,
     "bytes": 19882,
+    "playable": true
+  },
+  {
+    "file": "JEANNINE.MID",
+    "title": "Jeannine",
+    "bpm": 195,
+    "durationSeconds": 388,
+    "chordMarkers": 96,
+    "melodyNotes": 301,
+    "bytes": 19892,
+    "playable": true
+  },
+  {
+    "file": "JELOUS_H.MID",
+    "title": "JEALOUS HEART",
+    "bpm": 150,
+    "durationSeconds": 466,
+    "chordMarkers": 34,
+    "melodyNotes": 270,
+    "bytes": 15988,
     "playable": true
   },
   {
@@ -9547,6 +13957,26 @@
     "playable": true
   },
   {
+    "file": "jimtown_1.MID",
+    "title": "Jimtown Blues",
+    "bpm": 150,
+    "durationSeconds": 515,
+    "chordMarkers": 96,
+    "melodyNotes": 330,
+    "bytes": 17588,
+    "playable": true
+  },
+  {
+    "file": "JIMTOWN.MID",
+    "title": "Jimtown Blues",
+    "bpm": 150,
+    "durationSeconds": 515,
+    "chordMarkers": 96,
+    "melodyNotes": 330,
+    "bytes": 17632,
+    "playable": true
+  },
+  {
     "file": "Jitterbug Waltz - Thomas _fats_ Waller.MID",
     "title": "Jitterbug Waltz - Thomas 'Fats' Waller",
     "bpm": 175,
@@ -9594,6 +14024,16 @@
     "chordMarkers": 47,
     "melodyNotes": 60,
     "bytes": 28199,
+    "playable": true
+  },
+  {
+    "file": "Johnny Jump Up.MID",
+    "title": "Johnny Jump Up",
+    "bpm": 160,
+    "durationSeconds": 590,
+    "chordMarkers": 62,
+    "melodyNotes": 421,
+    "bytes": 24034,
     "playable": true
   },
   {
@@ -9667,6 +14107,16 @@
     "playable": true
   },
   {
+    "file": "JUNAPPLE.MID",
+    "title": "June Apple",
+    "bpm": 130,
+    "durationSeconds": 476,
+    "chordMarkers": 38,
+    "melodyNotes": 407,
+    "bytes": 17553,
+    "playable": true
+  },
+  {
     "file": "Just A Closer Walk With Thee_1.MID",
     "title": "Just A Closer Walk With Thee",
     "bpm": 120,
@@ -9727,6 +14177,26 @@
     "playable": true
   },
   {
+    "file": "Just The Way You Are.MID",
+    "title": "Just the way you are",
+    "bpm": 100,
+    "durationSeconds": 441,
+    "chordMarkers": 182,
+    "melodyNotes": 1006,
+    "bytes": 29759,
+    "playable": true
+  },
+  {
+    "file": "JUST_U_R.MID",
+    "title": "Just The Way You Are",
+    "bpm": 130,
+    "durationSeconds": 476,
+    "chordMarkers": 77,
+    "melodyNotes": 163,
+    "bytes": 25758,
+    "playable": true
+  },
+  {
     "file": "JUST1OF_.MID",
     "title": "Just One Of Those Things",
     "bpm": 180,
@@ -9757,6 +14227,16 @@
     "playable": true
   },
   {
+    "file": "JUSTHWAY.MID",
+    "title": "I Love You Just The Way You Are",
+    "bpm": 180,
+    "durationSeconds": 429,
+    "chordMarkers": 128,
+    "melodyNotes": 154,
+    "bytes": 21947,
+    "playable": true
+  },
+  {
     "file": "JUSTONE.MID",
     "title": "Just One Of Those Things  w/intro nice chords/arr.",
     "bpm": 200,
@@ -9777,6 +14257,16 @@
     "playable": true
   },
   {
+    "file": "JY2WORLD_1.MID",
+    "title": "JOY TO THE WORLD",
+    "bpm": 130,
+    "durationSeconds": 107,
+    "chordMarkers": 85,
+    "melodyNotes": 228,
+    "bytes": 14762,
+    "playable": true
+  },
+  {
     "file": "Kansas City Dragin.MID",
     "title": "Kansas City Dragin",
     "bpm": 85,
@@ -9784,6 +14274,16 @@
     "chordMarkers": 38,
     "melodyNotes": 442,
     "bytes": 13146,
+    "playable": true
+  },
+  {
+    "file": "Kansas City.MID",
+    "title": "KANSAS CITY",
+    "bpm": 120,
+    "durationSeconds": 658,
+    "chordMarkers": 67,
+    "melodyNotes": 909,
+    "bytes": 37209,
     "playable": true
   },
   {
@@ -9797,6 +14297,16 @@
     "playable": true
   },
   {
+    "file": "KCBOOGIE.MID",
+    "title": "Kansas City Boogie",
+    "bpm": 95,
+    "durationSeconds": 811,
+    "chordMarkers": 47,
+    "melodyNotes": 538,
+    "bytes": 15657,
+    "playable": true
+  },
+  {
     "file": "KCVINE.MID",
     "title": "Kansas City 12 th & Vine",
     "bpm": 85,
@@ -9804,6 +14314,36 @@
     "chordMarkers": 33,
     "melodyNotes": 313,
     "bytes": 8617,
+    "playable": true
+  },
+  {
+    "file": "Keepin_ Out Of Mischief Now.MID",
+    "title": "Keepin' Out Of Mischief Now",
+    "bpm": 120,
+    "durationSeconds": 675,
+    "chordMarkers": 172,
+    "melodyNotes": 249,
+    "bytes": 37505,
+    "playable": true
+  },
+  {
+    "file": "KEEPNOKN_1.MID",
+    "title": "KEEP A KNOCKIN'",
+    "bpm": 180,
+    "durationSeconds": 391,
+    "chordMarkers": 14,
+    "melodyNotes": 259,
+    "bytes": 35201,
+    "playable": true
+  },
+  {
+    "file": "KENTUCKY_1.MID",
+    "title": "My Old Kentucky Home",
+    "bpm": 120,
+    "durationSeconds": 579,
+    "chordMarkers": 59,
+    "melodyNotes": 229,
+    "bytes": 19566,
     "playable": true
   },
   {
@@ -9837,6 +14377,26 @@
     "playable": true
   },
   {
+    "file": "King Of The Road Kingof~2.MID",
+    "title": "King Of The Road",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 61,
+    "melodyNotes": 142,
+    "bytes": 19607,
+    "playable": true
+  },
+  {
+    "file": "KINGROAD.MID",
+    "title": "King Of The Road",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 15,
+    "melodyNotes": 74,
+    "bytes": 5129,
+    "playable": true
+  },
+  {
     "file": "Kiss Me Again.MID",
     "title": "Kiss Me Again",
     "bpm": 145,
@@ -9844,6 +14404,16 @@
     "chordMarkers": 21,
     "melodyNotes": 65,
     "bytes": 6033,
+    "playable": true
+  },
+  {
+    "file": "KITTYLIM.MID",
+    "title": "Kitty come down to Limerick",
+    "bpm": 115,
+    "durationSeconds": 46,
+    "chordMarkers": 28,
+    "melodyNotes": 203,
+    "bytes": 11793,
     "playable": true
   },
   {
@@ -9947,6 +14517,16 @@
     "playable": true
   },
   {
+    "file": "LABAMBA_1.MID",
+    "title": "La Bamba",
+    "bpm": 160,
+    "durationSeconds": 156,
+    "chordMarkers": 151,
+    "melodyNotes": 566,
+    "bytes": 27979,
+    "playable": true
+  },
+  {
     "file": "LABAMBA_2.MID",
     "title": "La Bamba",
     "bpm": 160,
@@ -9964,6 +14544,26 @@
     "chordMarkers": 125,
     "melodyNotes": 260,
     "bytes": 86597,
+    "playable": true
+  },
+  {
+    "file": "Ladybgo2.MID",
+    "title": "Lady Be Good",
+    "bpm": 160,
+    "durationSeconds": 54,
+    "chordMarkers": 46,
+    "melodyNotes": 128,
+    "bytes": 6644,
+    "playable": true
+  },
+  {
+    "file": "LADYBIRD_1.MID",
+    "title": "LADY BIRD",
+    "bpm": 195,
+    "durationSeconds": 64,
+    "chordMarkers": 46,
+    "melodyNotes": 134,
+    "bytes": 8891,
     "playable": true
   },
   {
@@ -10007,6 +14607,16 @@
     "playable": true
   },
   {
+    "file": "LADYTRMP.MID",
+    "title": "The Lady Is A Tramp",
+    "bpm": 155,
+    "durationSeconds": 398,
+    "chordMarkers": 74,
+    "melodyNotes": 111,
+    "bytes": 21017,
+    "playable": true
+  },
+  {
     "file": "LAMENT_1.MID",
     "title": "Lament      ~J. J. Johnson~      RB:257",
     "bpm": 83,
@@ -10027,6 +14637,16 @@
     "playable": true
   },
   {
+    "file": "LAMENT2.MID",
+    "title": "lament - JJ Johnson",
+    "bpm": 100,
+    "durationSeconds": 240,
+    "chordMarkers": 160,
+    "melodyNotes": 94,
+    "bytes": 30037,
+    "playable": true
+  },
+  {
     "file": "LARKMORN.MID",
     "title": "The Lark in the Morning",
     "bpm": 120,
@@ -10034,6 +14654,26 @@
     "chordMarkers": 118,
     "melodyNotes": 757,
     "bytes": 35820,
+    "playable": true
+  },
+  {
+    "file": "Last Cheater_s Waltz_1.MID",
+    "title": "LAST CHEATER'S WALTZ",
+    "bpm": 100,
+    "durationSeconds": 192,
+    "chordMarkers": 24,
+    "melodyNotes": 901,
+    "bytes": 16255,
+    "playable": true
+  },
+  {
+    "file": "Last Cheater_s Waltz.MID",
+    "title": "LAST CHEATER'S WALTZ",
+    "bpm": 100,
+    "durationSeconds": 192,
+    "chordMarkers": 24,
+    "melodyNotes": 873,
+    "bytes": 15931,
     "playable": true
   },
   {
@@ -10077,6 +14717,16 @@
     "playable": true
   },
   {
+    "file": "LASTNGHT.MID",
+    "title": "Last Night When We Were Young",
+    "bpm": 70,
+    "durationSeconds": 984,
+    "chordMarkers": 133,
+    "melodyNotes": 313,
+    "bytes": 22818,
+    "playable": true
+  },
+  {
     "file": "Lastnit.MID",
     "title": "Last Night On The Back Porch - Lew Brown/C.Schraubstader",
     "bpm": 140,
@@ -10107,6 +14757,16 @@
     "playable": true
   },
   {
+    "file": "LAURIE_1.MID",
+    "title": "Laurie",
+    "bpm": 76,
+    "durationSeconds": 812,
+    "chordMarkers": 56,
+    "melodyNotes": 126,
+    "bytes": 7492,
+    "playable": true
+  },
+  {
     "file": "Lazy River.MID",
     "title": "Lazy River",
     "bpm": 100,
@@ -10124,6 +14784,46 @@
     "chordMarkers": 100,
     "melodyNotes": 146,
     "bytes": 29190,
+    "playable": true
+  },
+  {
+    "file": "LAZYBIRD_1.MID",
+    "title": "LAZYBIRD",
+    "bpm": 265,
+    "durationSeconds": 98,
+    "chordMarkers": 136,
+    "melodyNotes": 194,
+    "bytes": 33318,
+    "playable": true
+  },
+  {
+    "file": "LBIRDLAN.MID",
+    "title": "LULLABY OF BIRDLAND",
+    "bpm": 120,
+    "durationSeconds": 200,
+    "chordMarkers": 163,
+    "melodyNotes": 421,
+    "bytes": 18915,
+    "playable": true
+  },
+  {
+    "file": "Ledgend In My Time_1.MID",
+    "title": "LEDGEND IN MY TIME",
+    "bpm": 100,
+    "durationSeconds": 619,
+    "chordMarkers": 30,
+    "melodyNotes": 34,
+    "bytes": 6068,
+    "playable": true
+  },
+  {
+    "file": "Ledgend In My Time.MID",
+    "title": "LEDGEND IN MY TIME",
+    "bpm": 100,
+    "durationSeconds": 619,
+    "chordMarkers": 30,
+    "melodyNotes": 28,
+    "bytes": 6116,
     "playable": true
   },
   {
@@ -10207,6 +14907,16 @@
     "playable": true
   },
   {
+    "file": "letmecal_1.MID",
+    "title": "Let Me Call You Sweetheart",
+    "bpm": 180,
+    "durationSeconds": 321,
+    "chordMarkers": 61,
+    "melodyNotes": 138,
+    "bytes": 28864,
+    "playable": true
+  },
+  {
     "file": "LGWDROAD.MID",
     "title": "The Long And Winding Road/ M55 T55",
     "bpm": 75,
@@ -10214,6 +14924,36 @@
     "chordMarkers": 76,
     "melodyNotes": 145,
     "bytes": 14461,
+    "playable": true
+  },
+  {
+    "file": "LIEBSTRM_1.MID",
+    "title": "Liebestraum  (Country version ! )",
+    "bpm": 140,
+    "durationSeconds": 518,
+    "chordMarkers": 77,
+    "melodyNotes": 187,
+    "bytes": 25534,
+    "playable": true
+  },
+  {
+    "file": "LIFETURN.MID",
+    "title": "LIFE TURNED HER THAT WAY",
+    "bpm": 85,
+    "durationSeconds": 186,
+    "chordMarkers": 42,
+    "melodyNotes": 753,
+    "bytes": 13758,
+    "playable": true
+  },
+  {
+    "file": "LIKALOVE.MID",
+    "title": "Like a Lover(O Cantador) By Dory Caymmi & Nelson Mota 1968",
+    "bpm": 110,
+    "durationSeconds": 591,
+    "chordMarkers": 60,
+    "melodyNotes": 220,
+    "bytes": 21919,
     "playable": true
   },
   {
@@ -10234,6 +14974,26 @@
     "chordMarkers": 137,
     "melodyNotes": 154,
     "bytes": 44334,
+    "playable": true
+  },
+  {
+    "file": "Like Someone In Love.MID",
+    "title": "Like Someone In Love",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 158,
+    "melodyNotes": 154,
+    "bytes": 23443,
+    "playable": true
+  },
+  {
+    "file": "LIKEASNG.MID",
+    "title": "It Was Almost Like A Song By Hal David and Archie Jordan",
+    "bpm": 85,
+    "durationSeconds": 819,
+    "chordMarkers": 62,
+    "melodyNotes": 212,
+    "bytes": 28774,
     "playable": true
   },
   {
@@ -10397,6 +15157,16 @@
     "playable": true
   },
   {
+    "file": "Little Green Valley.MID",
+    "title": "Little Green Valley",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 22,
+    "melodyNotes": 105,
+    "bytes": 16794,
+    "playable": true
+  },
+  {
     "file": "Little Linda.MID",
     "title": "Little Linda - Jay Beckenstein",
     "bpm": 120,
@@ -10457,6 +15227,26 @@
     "playable": true
   },
   {
+    "file": "Liza.MID",
+    "title": "Liza",
+    "bpm": 140,
+    "durationSeconds": 551,
+    "chordMarkers": 173,
+    "melodyNotes": 269,
+    "bytes": 67632,
+    "playable": true
+  },
+  {
+    "file": "Lj.MID",
+    "title": "LJ",
+    "bpm": 70,
+    "durationSeconds": 1046,
+    "chordMarkers": 154,
+    "melodyNotes": 103,
+    "bytes": 23040,
+    "playable": true
+  },
+  {
     "file": "Lollipops And Roses_1.MID",
     "title": "Lollipops And Roses",
     "bpm": 100,
@@ -10467,6 +15257,26 @@
     "playable": true
   },
   {
+    "file": "Lone Jack.MID",
+    "title": "Lone Jack",
+    "bpm": 280,
+    "durationSeconds": 270,
+    "chordMarkers": 220,
+    "melodyNotes": 76,
+    "bytes": 176126,
+    "playable": true
+  },
+  {
+    "file": "Lonely People.MID",
+    "title": "Lonely People",
+    "bpm": 135,
+    "durationSeconds": 459,
+    "chordMarkers": 94,
+    "melodyNotes": 191,
+    "bytes": 62954,
+    "playable": true
+  },
+  {
     "file": "LONER.MID",
     "title": "The Loner - Gary Moore",
     "bpm": 65,
@@ -10474,6 +15284,26 @@
     "chordMarkers": 83,
     "melodyNotes": 247,
     "bytes": 15653,
+    "playable": true
+  },
+  {
+    "file": "LONESOM2.MID",
+    "title": "Lonesome Mary          Chilliwack",
+    "bpm": 162,
+    "durationSeconds": 381,
+    "chordMarkers": 51,
+    "melodyNotes": 977,
+    "bytes": 41527,
+    "playable": true
+  },
+  {
+    "file": "Lonesome (Si Tu Vois Ma Mère).MID",
+    "title": "Lonesome [Si Tu Vois Ma MËre]",
+    "bpm": 85,
+    "durationSeconds": 898,
+    "chordMarkers": 122,
+    "melodyNotes": 253,
+    "bytes": 17591,
     "playable": true
   },
   {
@@ -10527,6 +15357,16 @@
     "playable": true
   },
   {
+    "file": "Look For The Silver Lining, Kern.MID",
+    "title": "Look for the silver lining, Kern",
+    "bpm": 140,
+    "durationSeconds": 550,
+    "chordMarkers": 124,
+    "melodyNotes": 152,
+    "bytes": 65925,
+    "playable": true
+  },
+  {
     "file": "Look To The Sky.MID",
     "title": "Look To The Sky",
     "bpm": 124,
@@ -10537,6 +15377,26 @@
     "playable": true
   },
   {
+    "file": "LOOK2SKY_1.MID",
+    "title": "LOOK TO THE SKY",
+    "bpm": 160,
+    "durationSeconds": 159,
+    "chordMarkers": 83,
+    "melodyNotes": 326,
+    "bytes": 45605,
+    "playable": true
+  },
+  {
+    "file": "LOOK2SKY.MID",
+    "title": "Look To The Sky",
+    "bpm": 180,
+    "durationSeconds": 385,
+    "chordMarkers": 60,
+    "melodyNotes": 227,
+    "bytes": 35022,
+    "playable": true
+  },
+  {
     "file": "LOOKARN2.MID",
     "title": "Look Around by Sergio Mendes 1968",
     "bpm": 130,
@@ -10544,6 +15404,16 @@
     "chordMarkers": 44,
     "melodyNotes": 144,
     "bytes": 7779,
+    "playable": true
+  },
+  {
+    "file": "LOOKFTSL.MID",
+    "title": "Look for the silver lining, Kern",
+    "bpm": 140,
+    "durationSeconds": 550,
+    "chordMarkers": 124,
+    "melodyNotes": 76,
+    "bytes": 36856,
     "playable": true
   },
   {
@@ -10627,6 +15497,36 @@
     "playable": true
   },
   {
+    "file": "Love Is Blue.MID",
+    "title": "Love Is Blue - Andre Popp",
+    "bpm": 115,
+    "durationSeconds": 605,
+    "chordMarkers": 180,
+    "melodyNotes": 405,
+    "bytes": 18012,
+    "playable": true
+  },
+  {
+    "file": "Love Me Tender.MID",
+    "title": "Love Me Tender",
+    "bpm": 80,
+    "durationSeconds": 870,
+    "chordMarkers": 86,
+    "melodyNotes": 193,
+    "bytes": 23498,
+    "playable": true
+  },
+  {
+    "file": "Love Me Tender2.MID",
+    "title": "Love Me Tender",
+    "bpm": 90,
+    "durationSeconds": 219,
+    "chordMarkers": 82,
+    "melodyNotes": 284,
+    "bytes": 11605,
+    "playable": true
+  },
+  {
     "file": "Love Walked In_1.MID",
     "title": "Love Walked In",
     "bpm": 100,
@@ -10634,6 +15534,16 @@
     "chordMarkers": 89,
     "melodyNotes": 189,
     "bytes": 18335,
+    "playable": true
+  },
+  {
+    "file": "LOVE_IS.MID",
+    "title": "Love is here To Stay",
+    "bpm": 110,
+    "durationSeconds": 700,
+    "chordMarkers": 175,
+    "melodyNotes": 270,
+    "bytes": 18468,
     "playable": true
   },
   {
@@ -10707,6 +15617,16 @@
     "playable": true
   },
   {
+    "file": "LOVLKEEP.MID",
+    "title": "Love Will Keep Us Together",
+    "bpm": 160,
+    "durationSeconds": 459,
+    "chordMarkers": 75,
+    "melodyNotes": 36,
+    "bytes": 22600,
+    "playable": true
+  },
+  {
     "file": "LTLEXMAS.MID",
     "title": "HAVE YOURSELF A MERRY LITTLE XMAS",
     "bpm": 90,
@@ -10747,6 +15667,36 @@
     "playable": true
   },
   {
+    "file": "LULLEAVS.MID",
+    "title": "Lullaby of the leaves",
+    "bpm": 110,
+    "durationSeconds": 146,
+    "chordMarkers": 79,
+    "melodyNotes": 137,
+    "bytes": 16189,
+    "playable": true
+  },
+  {
+    "file": "LUNCH.MID",
+    "title": "Let's Do Lunch Some Time(-pno)   ****",
+    "bpm": 82,
+    "durationSeconds": 161,
+    "chordMarkers": 105,
+    "melodyNotes": 661,
+    "bytes": 21155,
+    "playable": true
+  },
+  {
+    "file": "luv4sale.MID",
+    "title": "Love For Sale",
+    "bpm": 235,
+    "durationSeconds": 141,
+    "chordMarkers": 120,
+    "melodyNotes": 280,
+    "bytes": 22363,
+    "playable": true
+  },
+  {
     "file": "LUVKEEPW.MID",
     "title": "I've Got My Love To Keep Me Warm",
     "bpm": 166,
@@ -10767,6 +15717,16 @@
     "playable": true
   },
   {
+    "file": "LUVMETEN_1.MID",
+    "title": "LOVE ME TENDER",
+    "bpm": 90,
+    "durationSeconds": 773,
+    "chordMarkers": 59,
+    "melodyNotes": 149,
+    "bytes": 16527,
+    "playable": true
+  },
+  {
     "file": "Mack The Knife_1.MID",
     "title": "Mack The Knife",
     "bpm": 160,
@@ -10774,6 +15734,16 @@
     "chordMarkers": 121,
     "melodyNotes": 520,
     "bytes": 44772,
+    "playable": true
+  },
+  {
+    "file": "MACKNIFE.MID",
+    "title": "Mac The Knife",
+    "bpm": 160,
+    "durationSeconds": 434,
+    "chordMarkers": 50,
+    "melodyNotes": 138,
+    "bytes": 12364,
     "playable": true
   },
   {
@@ -10837,6 +15807,16 @@
     "playable": true
   },
   {
+    "file": "Mama Don_t Allow No Music Playing Here, Trad Ijc.MID",
+    "title": "Mama don't allow no music playing here, trad IJC",
+    "bpm": 200,
+    "durationSeconds": 354,
+    "chordMarkers": 23,
+    "melodyNotes": 225,
+    "bytes": 21994,
+    "playable": true
+  },
+  {
     "file": "Mama Inez.MID",
     "title": "Mama Inez",
     "bpm": 120,
@@ -10844,6 +15824,16 @@
     "chordMarkers": 22,
     "melodyNotes": 88,
     "bytes": 15055,
+    "playable": true
+  },
+  {
+    "file": "Mama Tried_1.MID",
+    "title": "mama tried",
+    "bpm": 200,
+    "durationSeconds": 376,
+    "chordMarkers": 76,
+    "melodyNotes": 301,
+    "bytes": 15199,
     "playable": true
   },
   {
@@ -10867,6 +15857,16 @@
     "playable": true
   },
   {
+    "file": "MAME_1.MID",
+    "title": "MAME",
+    "bpm": 170,
+    "durationSeconds": 158,
+    "chordMarkers": 130,
+    "melodyNotes": 366,
+    "bytes": 19304,
+    "playable": true
+  },
+  {
     "file": "Man And A Woman.MID",
     "title": "Man and a Woman",
     "bpm": 120,
@@ -10874,6 +15874,26 @@
     "chordMarkers": 99,
     "melodyNotes": 571,
     "bytes": 26178,
+    "playable": true
+  },
+  {
+    "file": "MANHATAN.MID",
+    "title": "Manhattan",
+    "bpm": 100,
+    "durationSeconds": 252,
+    "chordMarkers": 117,
+    "melodyNotes": 138,
+    "bytes": 11802,
+    "playable": true
+  },
+  {
+    "file": "MANHATTN.MID",
+    "title": "Manhattan (with fade out ending)",
+    "bpm": 110,
+    "durationSeconds": 183,
+    "chordMarkers": 175,
+    "melodyNotes": 344,
+    "bytes": 22314,
     "playable": true
   },
   {
@@ -10917,6 +15937,16 @@
     "playable": true
   },
   {
+    "file": "MARRUNAR.MID",
+    "title": "Mark's Runaround",
+    "bpm": 115,
+    "durationSeconds": 645,
+    "chordMarkers": 41,
+    "melodyNotes": 237,
+    "bytes": 25135,
+    "playable": true
+  },
+  {
     "file": "MARTWYN2.MID",
     "title": "Martin Wynne's #2",
     "bpm": 185,
@@ -10934,6 +15964,16 @@
     "chordMarkers": 109,
     "melodyNotes": 76,
     "bytes": 18751,
+    "playable": true
+  },
+  {
+    "file": "MARY_LOU.MID",
+    "title": "Hello Mary Lou",
+    "bpm": 196,
+    "durationSeconds": 315,
+    "chordMarkers": 86,
+    "melodyNotes": 182,
+    "bytes": 30156,
     "playable": true
   },
   {
@@ -10957,6 +15997,16 @@
     "playable": true
   },
   {
+    "file": "MASONSAP.MID",
+    "title": "Mason's Apron",
+    "bpm": 195,
+    "durationSeconds": 358,
+    "chordMarkers": 56,
+    "melodyNotes": 541,
+    "bytes": 12992,
+    "playable": true
+  },
+  {
     "file": "MASQRADE.MID",
     "title": "Masquerade,  This",
     "bpm": 105,
@@ -10967,6 +16017,16 @@
     "playable": true
   },
   {
+    "file": "Masquerade (this).MID",
+    "title": "MASQUERADE (THIS)",
+    "bpm": 120,
+    "durationSeconds": 708,
+    "chordMarkers": 143,
+    "melodyNotes": 414,
+    "bytes": 51093,
+    "playable": true
+  },
+  {
     "file": "MATCHSTK.MID",
     "title": "PICTURES OF MATCHSTICK MEN",
     "bpm": 100,
@@ -10974,6 +16034,16 @@
     "chordMarkers": 275,
     "melodyNotes": 311,
     "bytes": 42386,
+    "playable": true
+  },
+  {
+    "file": "MAXINE.MID",
+    "title": "Maxine",
+    "bpm": 67,
+    "durationSeconds": 258,
+    "chordMarkers": 173,
+    "melodyNotes": 337,
+    "bytes": 24702,
     "playable": true
   },
   {
@@ -11027,6 +16097,16 @@
     "playable": true
   },
   {
+    "file": "Meditat6.MID",
+    "title": "Meditation",
+    "bpm": 140,
+    "durationSeconds": 537,
+    "chordMarkers": 93,
+    "melodyNotes": 536,
+    "bytes": 45361,
+    "playable": true
+  },
+  {
     "file": "Meditation (bossa).MID",
     "title": "Meditation (bossa)",
     "bpm": 130,
@@ -11044,6 +16124,36 @@
     "chordMarkers": 116,
     "melodyNotes": 251,
     "bytes": 110207,
+    "playable": true
+  },
+  {
+    "file": "melanblu_1.MID",
+    "title": "Melancholy Blues",
+    "bpm": 160,
+    "durationSeconds": 456,
+    "chordMarkers": 95,
+    "melodyNotes": 232,
+    "bytes": 16811,
+    "playable": true
+  },
+  {
+    "file": "MEMORY.MID",
+    "title": "MEMORY",
+    "bpm": 64,
+    "durationSeconds": 964,
+    "chordMarkers": 72,
+    "melodyNotes": 274,
+    "bytes": 17958,
+    "playable": true
+  },
+  {
+    "file": "Memphis.MID",
+    "title": "MEMPHIS",
+    "bpm": 170,
+    "durationSeconds": 847,
+    "chordMarkers": 69,
+    "melodyNotes": 205,
+    "bytes": 10343,
     "playable": true
   },
   {
@@ -11087,6 +16197,26 @@
     "playable": true
   },
   {
+    "file": "Midnite Lemon Aid [JayDee].MID",
+    "title": "Midnite Lemon Aid [JayDee]",
+    "bpm": 74,
+    "durationSeconds": 872,
+    "chordMarkers": 47,
+    "melodyNotes": 179,
+    "bytes": 8354,
+    "playable": true
+  },
+  {
+    "file": "MIDNITSP_2.MID",
+    "title": "Midnight Special",
+    "bpm": 155,
+    "durationSeconds": 118,
+    "chordMarkers": 46,
+    "melodyNotes": 376,
+    "bytes": 44116,
+    "playable": true
+  },
+  {
     "file": "MIDNTSUN_1.MID",
     "title": "MIDNIGHT SUN",
     "bpm": 90,
@@ -11104,6 +16234,16 @@
     "chordMarkers": 87,
     "melodyNotes": 1846,
     "bytes": 43185,
+    "playable": true
+  },
+  {
+    "file": "MILESTON.MID",
+    "title": "Milestones",
+    "bpm": 280,
+    "durationSeconds": 72,
+    "chordMarkers": 17,
+    "melodyNotes": 286,
+    "bytes": 28345,
     "playable": true
   },
   {
@@ -11157,6 +16297,36 @@
     "playable": true
   },
   {
+    "file": "Misty2.MID",
+    "title": "Misty",
+    "bpm": 70,
+    "durationSeconds": 343,
+    "chordMarkers": 101,
+    "melodyNotes": 167,
+    "bytes": 12072,
+    "playable": true
+  },
+  {
+    "file": "MIYAKO.MID",
+    "title": "Miyako",
+    "bpm": 145,
+    "durationSeconds": 41,
+    "chordMarkers": 28,
+    "melodyNotes": 60,
+    "bytes": 7000,
+    "playable": true
+  },
+  {
+    "file": "MNTOFLUV.MID",
+    "title": "MOUNTAINS OF LOVE",
+    "bpm": 138,
+    "durationSeconds": 560,
+    "chordMarkers": 103,
+    "melodyNotes": 355,
+    "bytes": 33735,
+    "playable": true
+  },
+  {
     "file": "MNYRIVER.MID",
     "title": "MANY RIVERS TO CROSS",
     "bpm": 60,
@@ -11164,6 +16334,16 @@
     "chordMarkers": 104,
     "melodyNotes": 719,
     "bytes": 24842,
+    "playable": true
+  },
+  {
+    "file": "MOCKHILL.MID",
+    "title": "Mockin' Bird Hill",
+    "bpm": 155,
+    "durationSeconds": 72,
+    "chordMarkers": 35,
+    "melodyNotes": 110,
+    "bytes": 9062,
     "playable": true
   },
   {
@@ -11297,6 +16477,26 @@
     "playable": true
   },
   {
+    "file": "MOONVRMT.MID",
+    "title": "MOONLIGHT IN VERMONT",
+    "bpm": 80,
+    "durationSeconds": 262,
+    "chordMarkers": 160,
+    "melodyNotes": 304,
+    "bytes": 16143,
+    "playable": true
+  },
+  {
+    "file": "More Today Than Yesterday.MID",
+    "title": "More Today Than Yesterday",
+    "bpm": 130,
+    "durationSeconds": 596,
+    "chordMarkers": 113,
+    "melodyNotes": 487,
+    "bytes": 36624,
+    "playable": true
+  },
+  {
     "file": "MORE_ICU.MID",
     "title": "The More I See You",
     "bpm": 155,
@@ -11334,6 +16534,16 @@
     "chordMarkers": 97,
     "melodyNotes": 111,
     "bytes": 13754,
+    "playable": true
+  },
+  {
+    "file": "MOTHERSH_2.MID",
+    "title": "Your Mother Should Know - The Beatles",
+    "bpm": 117,
+    "durationSeconds": 527,
+    "chordMarkers": 52,
+    "melodyNotes": 210,
+    "bytes": 13698,
     "playable": true
   },
   {
@@ -11407,6 +16617,46 @@
     "playable": true
   },
   {
+    "file": "My Foolish Heart.MID",
+    "title": "My Foolish Heart",
+    "bpm": 100,
+    "durationSeconds": 772,
+    "chordMarkers": 176,
+    "melodyNotes": 245,
+    "bytes": 41162,
+    "playable": true
+  },
+  {
+    "file": "My Happiness.MID",
+    "title": "My Happiness",
+    "bpm": 105,
+    "durationSeconds": 702,
+    "chordMarkers": 47,
+    "melodyNotes": 261,
+    "bytes": 11333,
+    "playable": true
+  },
+  {
+    "file": "My Heart Belongs To Daddy.MID",
+    "title": "My Heart Belongs To Daddy",
+    "bpm": 116,
+    "durationSeconds": 440,
+    "chordMarkers": 121,
+    "melodyNotes": 255,
+    "bytes": 14553,
+    "playable": true
+  },
+  {
+    "file": "My Old Flame.MID",
+    "title": "My Old Flame",
+    "bpm": 90,
+    "durationSeconds": 856,
+    "chordMarkers": 160,
+    "melodyNotes": 272,
+    "bytes": 38959,
+    "playable": true
+  },
+  {
     "file": "My Silent Love.MID",
     "title": "My Silent Love",
     "bpm": 100,
@@ -11447,6 +16697,16 @@
     "playable": true
   },
   {
+    "file": "MYDARLIN.MID",
+    "title": "My Darling, My Darling        Frank Loesser",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 28,
+    "melodyNotes": 84,
+    "bytes": 4840,
+    "playable": true
+  },
+  {
     "file": "MYFUNVAL.MID",
     "title": "My Funny Valentine",
     "bpm": 110,
@@ -11477,6 +16737,36 @@
     "playable": true
   },
   {
+    "file": "MYIDEAL.MID",
+    "title": "My Ideal   nice arr.",
+    "bpm": 75,
+    "durationSeconds": 326,
+    "chordMarkers": 184,
+    "melodyNotes": 442,
+    "bytes": 19372,
+    "playable": true
+  },
+  {
+    "file": "MYLASTGO.MID",
+    "title": "My Last Goodbye",
+    "bpm": 120,
+    "durationSeconds": 644,
+    "chordMarkers": 101,
+    "melodyNotes": 68,
+    "bytes": 26963,
+    "playable": true
+  },
+  {
+    "file": "MYPRAYR.MID",
+    "title": "My Prayer",
+    "bpm": 80,
+    "durationSeconds": 826,
+    "chordMarkers": 82,
+    "melodyNotes": 186,
+    "bytes": 15383,
+    "playable": true
+  },
+  {
     "file": "MYS_HOUR.MID",
     "title": "My Shining Hour",
     "bpm": 250,
@@ -11484,6 +16774,16 @@
     "chordMarkers": 36,
     "melodyNotes": 59,
     "bytes": 5901,
+    "playable": true
+  },
+  {
+    "file": "MYSWTLDY.MID",
+    "title": "MY SWEET LADY",
+    "bpm": 96,
+    "durationSeconds": 803,
+    "chordMarkers": 120,
+    "melodyNotes": 135,
+    "bytes": 30384,
     "playable": true
   },
   {
@@ -11504,6 +16804,16 @@
     "chordMarkers": 29,
     "melodyNotes": 81,
     "bytes": 4777,
+    "playable": true
+  },
+  {
+    "file": "Nardis - Miles Davis [compound time].MID",
+    "title": "Nardis - Miles Davis [Compound Time]",
+    "bpm": 142,
+    "durationSeconds": 679,
+    "chordMarkers": 373,
+    "melodyNotes": 70,
+    "bytes": 59094,
     "playable": true
   },
   {
@@ -11587,6 +16897,16 @@
     "playable": true
   },
   {
+    "file": "NELLDEAN.MID",
+    "title": "Nellie Dean",
+    "bpm": 75,
+    "durationSeconds": 823,
+    "chordMarkers": 22,
+    "melodyNotes": 49,
+    "bytes": 1735,
+    "playable": true
+  },
+  {
     "file": "NEVER WILL I MARRY_1.MID",
     "title": "Never Will I Marry",
     "bpm": 192,
@@ -11614,6 +16934,26 @@
     "chordMarkers": 50,
     "melodyNotes": 684,
     "bytes": 24161,
+    "playable": true
+  },
+  {
+    "file": "New Moon Over My Shoulder.MID",
+    "title": "New Moon Over My Shoulder",
+    "bpm": 110,
+    "durationSeconds": 227,
+    "chordMarkers": 164,
+    "melodyNotes": 443,
+    "bytes": 28191,
+    "playable": true
+  },
+  {
+    "file": "New Orleans - Hoagy Carmichael.MID",
+    "title": "New Orleans - Hoagy Carmichael",
+    "bpm": 140,
+    "durationSeconds": 466,
+    "chordMarkers": 82,
+    "melodyNotes": 143,
+    "bytes": 10108,
     "playable": true
   },
   {
@@ -11647,6 +16987,36 @@
     "playable": true
   },
   {
+    "file": "NICDREAM_1.MID",
+    "title": "NICA'S DREAM by Horace Silver",
+    "bpm": 190,
+    "durationSeconds": 489,
+    "chordMarkers": 167,
+    "melodyNotes": 492,
+    "bytes": 96761,
+    "playable": true
+  },
+  {
+    "file": "NICDREAM_2.MID",
+    "title": "NICA'S DREAM",
+    "bpm": 190,
+    "durationSeconds": 489,
+    "chordMarkers": 167,
+    "melodyNotes": 492,
+    "bytes": 96746,
+    "playable": true
+  },
+  {
+    "file": "NICDREAM.MID",
+    "title": "NICA'S DREAM by Horace Silver",
+    "bpm": 190,
+    "durationSeconds": 489,
+    "chordMarkers": 167,
+    "melodyNotes": 492,
+    "bytes": 97688,
+    "playable": true
+  },
+  {
     "file": "NICE WORK IF YOU CAN GET IT.MID",
     "title": "Nice Work If You Can Get It",
     "bpm": 144,
@@ -11667,6 +17037,16 @@
     "playable": true
   },
   {
+    "file": "NIGHT AND DAY.MID",
+    "title": "Night and Day",
+    "bpm": 160,
+    "durationSeconds": 530,
+    "chordMarkers": 118,
+    "melodyNotes": 413,
+    "bytes": 24903,
+    "playable": true
+  },
+  {
     "file": "Night Flight.MID",
     "title": "Night Flight - Rusty Bryant",
     "bpm": 140,
@@ -11674,6 +17054,16 @@
     "chordMarkers": 88,
     "melodyNotes": 241,
     "bytes": 20308,
+    "playable": true
+  },
+  {
+    "file": "Night In Tunisia - Dizzy Gillespie .MID",
+    "title": "Night In Tunisia - Dizzy Gillespie & Frank Paparelli",
+    "bpm": 175,
+    "durationSeconds": 159,
+    "chordMarkers": 122,
+    "melodyNotes": 469,
+    "bytes": 20231,
     "playable": true
   },
   {
@@ -11697,6 +17087,16 @@
     "playable": true
   },
   {
+    "file": "NIGHT WE CALLED IT A DAY_1.MID",
+    "title": "The Night We Called It A Day",
+    "bpm": 98,
+    "durationSeconds": 786,
+    "chordMarkers": 172,
+    "melodyNotes": 378,
+    "bytes": 16639,
+    "playable": true
+  },
+  {
     "file": "NIGHT_S.MID",
     "title": "Nights in white satin",
     "bpm": 145,
@@ -11714,6 +17114,26 @@
     "chordMarkers": 114,
     "melodyNotes": 396,
     "bytes": 16241,
+    "playable": true
+  },
+  {
+    "file": "NIGHTDAY_1.MID",
+    "title": "Night and Day",
+    "bpm": 160,
+    "durationSeconds": 530,
+    "chordMarkers": 118,
+    "melodyNotes": 520,
+    "bytes": 21512,
+    "playable": true
+  },
+  {
+    "file": "Nightingale_1.MID",
+    "title": "Nightingale",
+    "bpm": 120,
+    "durationSeconds": 650,
+    "chordMarkers": 50,
+    "melodyNotes": 281,
+    "bytes": 31624,
     "playable": true
   },
   {
@@ -11747,6 +17167,16 @@
     "playable": true
   },
   {
+    "file": "NISROCK.MID",
+    "title": "Goblin  Rock",
+    "bpm": 140,
+    "durationSeconds": 492,
+    "chordMarkers": 85,
+    "melodyNotes": 162,
+    "bytes": 16735,
+    "playable": true
+  },
+  {
     "file": "NITE&DAY.MID",
     "title": "Night And Day   w/verse  nice arr./chords",
     "bpm": 130,
@@ -11754,6 +17184,16 @@
     "chordMarkers": 155,
     "melodyNotes": 214,
     "bytes": 15553,
+    "playable": true
+  },
+  {
+    "file": "NITEBFOR.MID",
+    "title": "The Night Before",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 53,
+    "melodyNotes": 176,
+    "bytes": 21279,
     "playable": true
   },
   {
@@ -11787,6 +17227,46 @@
     "playable": true
   },
   {
+    "file": "NITEWHIT.MID",
+    "title": "Nights In White Satin - Hayward",
+    "bpm": 80,
+    "durationSeconds": 578,
+    "chordMarkers": 47,
+    "melodyNotes": 129,
+    "bytes": 16898,
+    "playable": true
+  },
+  {
+    "file": "No One Will Ever Know_1.MID",
+    "title": "No One Will Ever Know",
+    "bpm": 120,
+    "durationSeconds": 644,
+    "chordMarkers": 92,
+    "melodyNotes": 177,
+    "bytes": 49190,
+    "playable": true
+  },
+  {
+    "file": "No Teardrops Tonight.MID",
+    "title": "No Teardrops Tonight",
+    "bpm": 115,
+    "durationSeconds": 217,
+    "chordMarkers": 132,
+    "melodyNotes": 496,
+    "bytes": 19459,
+    "playable": true
+  },
+  {
+    "file": "NO_MOON.MID",
+    "title": "No Moon At All",
+    "bpm": 160,
+    "durationSeconds": 54,
+    "chordMarkers": 45,
+    "melodyNotes": 121,
+    "bytes": 6499,
+    "playable": true
+  },
+  {
     "file": "NOBIZLIK.MID",
     "title": "There's No Business Like Show Business",
     "bpm": 250,
@@ -11794,6 +17274,16 @@
     "chordMarkers": 88,
     "melodyNotes": 216,
     "bytes": 40980,
+    "playable": true
+  },
+  {
+    "file": "NOBODY_S DARLIN_ BUT MINE_1.MID",
+    "title": "NOBODY'S DARLIN' BUT MINE",
+    "bpm": 79,
+    "durationSeconds": 881,
+    "chordMarkers": 28,
+    "melodyNotes": 165,
+    "bytes": 7639,
     "playable": true
   },
   {
@@ -11827,6 +17317,16 @@
     "playable": true
   },
   {
+    "file": "NOR_WOOD.MID",
+    "title": "NORWEGIAN WOOD",
+    "bpm": 175,
+    "durationSeconds": 412,
+    "chordMarkers": 137,
+    "melodyNotes": 144,
+    "bytes": 56966,
+    "playable": true
+  },
+  {
     "file": "NORGWOOD.MID",
     "title": "Norwegian Wood  nice arr.",
     "bpm": 160,
@@ -11854,6 +17354,16 @@
     "chordMarkers": 148,
     "melodyNotes": 359,
     "bytes": 15668,
+    "playable": true
+  },
+  {
+    "file": "Now Is The Hour.MID",
+    "title": "Now Is The Hour - Maewa Kaihu",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 70,
+    "melodyNotes": 122,
+    "bytes": 15194,
     "playable": true
   },
   {
@@ -11897,6 +17407,16 @@
     "playable": true
   },
   {
+    "file": "NTEYES2.MID",
+    "title": "The Night Has A Thousand Eyes",
+    "bpm": 150,
+    "durationSeconds": 770,
+    "chordMarkers": 259,
+    "melodyNotes": 275,
+    "bytes": 54018,
+    "playable": true
+  },
+  {
     "file": "Nuages - Django Reinhardt.MID",
     "title": "Nuages - Django Reinhardt",
     "bpm": 88,
@@ -11927,6 +17447,36 @@
     "playable": true
   },
   {
+    "file": "O Little Town Of Bethlehem-pbrooks,lredner Ultimate Book.MID",
+    "title": "O Little Town of Bethlehem/PBrooks,LRedner Ultimate book",
+    "bpm": 90,
+    "durationSeconds": 687,
+    "chordMarkers": 32,
+    "melodyNotes": 57,
+    "bytes": 7462,
+    "playable": true
+  },
+  {
+    "file": "OBLADI.MID",
+    "title": "OB-LA-DI,OB-LA",
+    "bpm": 140,
+    "durationSeconds": 133,
+    "chordMarkers": 81,
+    "melodyNotes": 362,
+    "bytes": 27771,
+    "playable": true
+  },
+  {
+    "file": "OCEANPRL.MID",
+    "title": "Ocean Pearl                  54-40",
+    "bpm": 113,
+    "durationSeconds": 547,
+    "chordMarkers": 154,
+    "melodyNotes": 312,
+    "bytes": 26328,
+    "playable": true
+  },
+  {
     "file": "OCOMEALL.MID",
     "title": "O COME ALL YE FAITHFUL  [BOB O]",
     "bpm": 107,
@@ -11934,6 +17484,16 @@
     "chordMarkers": 182,
     "melodyNotes": 293,
     "bytes": 14797,
+    "playable": true
+  },
+  {
+    "file": "ODEVMOON_1.MID",
+    "title": "Old Devil Moon",
+    "bpm": 120,
+    "durationSeconds": 200,
+    "chordMarkers": 121,
+    "melodyNotes": 140,
+    "bytes": 31827,
     "playable": true
   },
   {
@@ -12007,6 +17567,16 @@
     "playable": true
   },
   {
+    "file": "Oh Yes.MID",
+    "title": "Oh Yes",
+    "bpm": 128,
+    "durationSeconds": 94,
+    "chordMarkers": 64,
+    "melodyNotes": 581,
+    "bytes": 13105,
+    "playable": true
+  },
+  {
     "file": "OH_SUSAN.MID",
     "title": "Oh Susannah",
     "bpm": 120,
@@ -12027,6 +17597,16 @@
     "playable": true
   },
   {
+    "file": "Oh!.MID",
+    "title": "Oh!",
+    "bpm": 100,
+    "durationSeconds": 732,
+    "chordMarkers": 127,
+    "melodyNotes": 240,
+    "bytes": 18844,
+    "playable": true
+  },
+  {
     "file": "OHCOMELE.MID",
     "title": "Oh Come Let Us Adore Him/M20T20",
     "bpm": 120,
@@ -12034,6 +17614,16 @@
     "chordMarkers": 104,
     "melodyNotes": 183,
     "bytes": 11200,
+    "playable": true
+  },
+  {
+    "file": "OHSUZANA.MID",
+    "title": "Oh, Suzannah",
+    "bpm": 120,
+    "durationSeconds": 645,
+    "chordMarkers": 152,
+    "melodyNotes": 1173,
+    "bytes": 44246,
     "playable": true
   },
   {
@@ -12067,6 +17657,36 @@
     "playable": true
   },
   {
+    "file": "OLD CAPE COD J&S.MID",
+    "title": "Old Cape Cod J&S",
+    "bpm": 86,
+    "durationSeconds": 195,
+    "chordMarkers": 111,
+    "melodyNotes": 483,
+    "bytes": 22868,
+    "playable": true
+  },
+  {
+    "file": "Old Chunk Of Coal_1.MID",
+    "title": "Old Chunk of Coal",
+    "bpm": 184,
+    "durationSeconds": 460,
+    "chordMarkers": 74,
+    "melodyNotes": 518,
+    "bytes": 20492,
+    "playable": true
+  },
+  {
+    "file": "Old Chunk Of Coal.MID",
+    "title": "Old Chunk of Coal",
+    "bpm": 184,
+    "durationSeconds": 460,
+    "chordMarkers": 74,
+    "melodyNotes": 527,
+    "bytes": 20269,
+    "playable": true
+  },
+  {
     "file": "Old Fashioned Way_1.MID",
     "title": "Old Fashioned way",
     "bpm": 120,
@@ -12084,6 +17704,26 @@
     "chordMarkers": 114,
     "melodyNotes": 232,
     "bytes": 17255,
+    "playable": true
+  },
+  {
+    "file": "Old Flames Can_t Hold A Candle To You [s Cd].MID",
+    "title": "Old Flames Can't Hold a Candle to You [S cd]",
+    "bpm": 93,
+    "durationSeconds": 299,
+    "chordMarkers": 36,
+    "melodyNotes": 313,
+    "bytes": 15982,
+    "playable": true
+  },
+  {
+    "file": "OLD FOLKS AT HOME [FRANK].MID",
+    "title": "Old Folks At Home [Frank]",
+    "bpm": 230,
+    "durationSeconds": 362,
+    "chordMarkers": 107,
+    "melodyNotes": 258,
+    "bytes": 22520,
     "playable": true
   },
   {
@@ -12137,6 +17777,16 @@
     "playable": true
   },
   {
+    "file": "OLDCOW_2.MID",
+    "title": "Vanha cowboy",
+    "bpm": 120,
+    "durationSeconds": 628,
+    "chordMarkers": 73,
+    "melodyNotes": 469,
+    "bytes": 31297,
+    "playable": true
+  },
+  {
     "file": "OLDFOLKS.MID",
     "title": "Old Folks at Home",
     "bpm": 185,
@@ -12144,6 +17794,16 @@
     "chordMarkers": 103,
     "melodyNotes": 180,
     "bytes": 17726,
+    "playable": true
+  },
+  {
+    "file": "OLDTO3.MID",
+    "title": "When I Grow To Old To Dream",
+    "bpm": 100,
+    "durationSeconds": 824,
+    "chordMarkers": 83,
+    "melodyNotes": 61,
+    "bytes": 47409,
     "playable": true
   },
   {
@@ -12157,6 +17817,16 @@
     "playable": true
   },
   {
+    "file": "OMYPAPA.MID",
+    "title": "Oh Mein Papa/Paul Burkhard/ M57 T57",
+    "bpm": 130,
+    "durationSeconds": 476,
+    "chordMarkers": 23,
+    "melodyNotes": 114,
+    "bytes": 13580,
+    "playable": true
+  },
+  {
     "file": "On Broadway - George Benson.MID",
     "title": "On Broadway - George Benson",
     "bpm": 130,
@@ -12164,6 +17834,16 @@
     "chordMarkers": 301,
     "melodyNotes": 579,
     "bytes": 28088,
+    "playable": true
+  },
+  {
+    "file": "On Moonlight Bay_1.MID",
+    "title": "On Moonlight Bay",
+    "bpm": 120,
+    "durationSeconds": 549,
+    "chordMarkers": 18,
+    "melodyNotes": 115,
+    "bytes": 9686,
     "playable": true
   },
   {
@@ -12187,6 +17867,16 @@
     "playable": true
   },
   {
+    "file": "On The Sunny Side Of The Street_1.MID",
+    "title": "On The Sunny Side Of The Street",
+    "bpm": 136,
+    "durationSeconds": 127,
+    "chordMarkers": 91,
+    "melodyNotes": 225,
+    "bytes": 12419,
+    "playable": true
+  },
+  {
     "file": "ON_T_WAY.MID",
     "title": "On The Way Home              Neil Young",
     "bpm": 120,
@@ -12194,6 +17884,16 @@
     "chordMarkers": 76,
     "melodyNotes": 55,
     "bytes": 15148,
+    "playable": true
+  },
+  {
+    "file": "ONASLOWB.MID",
+    "title": "On A Slow Boat To China",
+    "bpm": 145,
+    "durationSeconds": 60,
+    "chordMarkers": 49,
+    "melodyNotes": 89,
+    "bytes": 6234,
     "playable": true
   },
   {
@@ -12207,6 +17907,16 @@
     "playable": true
   },
   {
+    "file": "ONBROADW.MID",
+    "title": "On Broadway",
+    "bpm": 115,
+    "durationSeconds": 109,
+    "chordMarkers": 103,
+    "melodyNotes": 150,
+    "bytes": 28137,
+    "playable": true
+  },
+  {
     "file": "Once In A While_1.MID",
     "title": "Once in a while",
     "bpm": 110,
@@ -12214,6 +17924,16 @@
     "chordMarkers": 132,
     "melodyNotes": 116,
     "bytes": 32678,
+    "playable": true
+  },
+  {
+    "file": "Once Upon A Time_1.MID",
+    "title": "Once Upon A Time",
+    "bpm": 85,
+    "durationSeconds": 974,
+    "chordMarkers": 229,
+    "melodyNotes": 290,
+    "bytes": 54273,
     "playable": true
   },
   {
@@ -12247,6 +17967,16 @@
     "playable": true
   },
   {
+    "file": "ONCEINAW.MID",
+    "title": "ONCE IN A WHILE [kutay]",
+    "bpm": 90,
+    "durationSeconds": 856,
+    "chordMarkers": 114,
+    "melodyNotes": 397,
+    "bytes": 28716,
+    "playable": true
+  },
+  {
     "file": "ONCEINLV.MID",
     "title": "ONCE IN LOVE WITH AMY",
     "bpm": 110,
@@ -12257,6 +17987,16 @@
     "playable": true
   },
   {
+    "file": "ONCEUPON_1.MID",
+    "title": "ONCE UPON A SUMMERTIME",
+    "bpm": 95,
+    "durationSeconds": 202,
+    "chordMarkers": 109,
+    "melodyNotes": 429,
+    "bytes": 18375,
+    "playable": true
+  },
+  {
     "file": "ONCEWHIL_1.MID",
     "title": "ONCE IN A WHILE",
     "bpm": 115,
@@ -12264,6 +18004,16 @@
     "chordMarkers": 128,
     "melodyNotes": 318,
     "bytes": 17659,
+    "playable": true
+  },
+  {
+    "file": "ONCEWHIL.MID",
+    "title": "ONCE IN A WHILE",
+    "bpm": 120,
+    "durationSeconds": 646,
+    "chordMarkers": 128,
+    "melodyNotes": 382,
+    "bytes": 15964,
     "playable": true
   },
   {
@@ -12287,6 +18037,26 @@
     "playable": true
   },
   {
+    "file": "ONDEANDA.MID",
+    "title": "Onde anda voce",
+    "bpm": 120,
+    "durationSeconds": 644,
+    "chordMarkers": 80,
+    "melodyNotes": 540,
+    "bytes": 32983,
+    "playable": true
+  },
+  {
+    "file": "ONE KISS TOO MANY.MID",
+    "title": "One Kiss Too Many",
+    "bpm": 139,
+    "durationSeconds": 549,
+    "chordMarkers": 53,
+    "melodyNotes": 295,
+    "bytes": 13645,
+    "playable": true
+  },
+  {
     "file": "One Song, Morey, Churchill.MID",
     "title": "One Song, Morey, Churchill",
     "bpm": 80,
@@ -12294,6 +18064,16 @@
     "chordMarkers": 43,
     "melodyNotes": 56,
     "bytes": 9110,
+    "playable": true
+  },
+  {
+    "file": "ONE_NOTE_1.MID",
+    "title": "One Note Samba",
+    "bpm": 156,
+    "durationSeconds": 457,
+    "chordMarkers": 87,
+    "melodyNotes": 339,
+    "bytes": 15007,
     "playable": true
   },
   {
@@ -12307,6 +18087,16 @@
     "playable": true
   },
   {
+    "file": "ONEROSE.MID",
+    "title": "ONE ROSE [CJ]",
+    "bpm": 88,
+    "durationSeconds": 180,
+    "chordMarkers": 40,
+    "melodyNotes": 186,
+    "bytes": 9592,
+    "playable": true
+  },
+  {
     "file": "ONETWO.MID",
     "title": "1-2-3-4 Miami",
     "bpm": 125,
@@ -12314,6 +18104,26 @@
     "chordMarkers": 91,
     "melodyNotes": 110,
     "bytes": 51879,
+    "playable": true
+  },
+  {
+    "file": "Only You  [j&s].MID",
+    "title": "ONLY YOU  [J&S]",
+    "bpm": 75,
+    "durationSeconds": 912,
+    "chordMarkers": 56,
+    "melodyNotes": 200,
+    "bytes": 9942,
+    "playable": true
+  },
+  {
+    "file": "ONLY YOU [J&S].MID",
+    "title": "ONLY YOU  [J&S]",
+    "bpm": 75,
+    "durationSeconds": 912,
+    "chordMarkers": 56,
+    "melodyNotes": 201,
+    "bytes": 9979,
     "playable": true
   },
   {
@@ -12357,6 +18167,26 @@
     "playable": true
   },
   {
+    "file": "OPERATER.MID",
+    "title": "Operater",
+    "bpm": 125,
+    "durationSeconds": 223,
+    "chordMarkers": 122,
+    "melodyNotes": 452,
+    "bytes": 18841,
+    "playable": true
+  },
+  {
+    "file": "Orange Colored Sky.MID",
+    "title": "Orange Colored Sky",
+    "bpm": 135,
+    "durationSeconds": 465,
+    "chordMarkers": 128,
+    "melodyNotes": 243,
+    "bytes": 18680,
+    "playable": true
+  },
+  {
     "file": "ORBITS(RB).MID",
     "title": "Orbits(RB)",
     "bpm": 120,
@@ -12397,6 +18227,16 @@
     "playable": true
   },
   {
+    "file": "Our Delight.MID",
+    "title": "Our Delight - Tadd Dameron",
+    "bpm": 130,
+    "durationSeconds": 186,
+    "chordMarkers": 208,
+    "melodyNotes": 204,
+    "bytes": 19889,
+    "playable": true
+  },
+  {
     "file": "OUR LOVE IS HERE TO STAY.MID",
     "title": "Our Love is Here to Stay",
     "bpm": 120,
@@ -12417,6 +18257,26 @@
     "playable": true
   },
   {
+    "file": "OURLANG.MID",
+    "title": "Our Language Of Love",
+    "bpm": 98,
+    "durationSeconds": 708,
+    "chordMarkers": 136,
+    "melodyNotes": 256,
+    "bytes": 34415,
+    "playable": true
+  },
+  {
+    "file": "OURLUVIS.MID",
+    "title": "Our Love Is Here To Stay",
+    "bpm": 120,
+    "durationSeconds": 200,
+    "chordMarkers": 160,
+    "melodyNotes": 332,
+    "bytes": 17889,
+    "playable": true
+  },
+  {
     "file": "Out Back Of The Barn - Gerry Mulligan.MID",
     "title": "Out Back Of The Barn - Gerry Mulligan",
     "bpm": 95,
@@ -12427,6 +18287,16 @@
     "playable": true
   },
   {
+    "file": "OUTNOWHE_1.MID",
+    "title": "OUT OF NOWHERE",
+    "bpm": 160,
+    "durationSeconds": 150,
+    "chordMarkers": 100,
+    "melodyNotes": 242,
+    "bytes": 16945,
+    "playable": true
+  },
+  {
     "file": "OUTOHEAD.MID",
     "title": "Going Out  Of My Head",
     "bpm": 105,
@@ -12434,6 +18304,16 @@
     "chordMarkers": 83,
     "melodyNotes": 468,
     "bytes": 28781,
+    "playable": true
+  },
+  {
+    "file": "OVERWAVS.MID",
+    "title": "OVER THE WAVES",
+    "bpm": 135,
+    "durationSeconds": 581,
+    "chordMarkers": 101,
+    "melodyNotes": 456,
+    "bytes": 22125,
     "playable": true
   },
   {
@@ -12467,6 +18347,16 @@
     "playable": true
   },
   {
+    "file": "PACKSONG.MID",
+    "title": "PACK'S SONG",
+    "bpm": 80,
+    "durationSeconds": 864,
+    "chordMarkers": 56,
+    "melodyNotes": 276,
+    "bytes": 10572,
+    "playable": true
+  },
+  {
     "file": "Pagan Love Song (in 4)  .MID",
     "title": "Pagan Love Song (in 4)",
     "bpm": 170,
@@ -12497,6 +18387,16 @@
     "playable": true
   },
   {
+    "file": "PAKKE.MID",
+    "title": "Pakke sangen (packet song)",
+    "bpm": 146,
+    "durationSeconds": 493,
+    "chordMarkers": 44,
+    "melodyNotes": 321,
+    "bytes": 55968,
+    "playable": true
+  },
+  {
     "file": "Pale Fable.MID",
     "title": "Pale Fable",
     "bpm": 120,
@@ -12514,6 +18414,26 @@
     "chordMarkers": 69,
     "melodyNotes": 258,
     "bytes": 27614,
+    "playable": true
+  },
+  {
+    "file": "PAPERDOL_1.MID",
+    "title": "Paper Doll",
+    "bpm": 180,
+    "durationSeconds": 383,
+    "chordMarkers": 80,
+    "melodyNotes": 197,
+    "bytes": 10066,
+    "playable": true
+  },
+  {
+    "file": "PARADISE.MID",
+    "title": "Another Day In Paradise",
+    "bpm": 110,
+    "durationSeconds": 611,
+    "chordMarkers": 175,
+    "melodyNotes": 436,
+    "bytes": 69534,
     "playable": true
   },
   {
@@ -12577,6 +18497,26 @@
     "playable": true
   },
   {
+    "file": "PEGOFMYH.MID",
+    "title": "PEG OF MY HEART  [JC]",
+    "bpm": 71,
+    "durationSeconds": 183,
+    "chordMarkers": 77,
+    "melodyNotes": 347,
+    "bytes": 16774,
+    "playable": true
+  },
+  {
+    "file": "Penny For Your Thoughts.MID",
+    "title": "Penny For Your Thoughts",
+    "bpm": 150,
+    "durationSeconds": 517,
+    "chordMarkers": 101,
+    "melodyNotes": 182,
+    "bytes": 69052,
+    "playable": true
+  },
+  {
     "file": "PENSATIVA.MID",
     "title": "PENSATIVA",
     "bpm": 180,
@@ -12584,6 +18524,16 @@
     "chordMarkers": 289,
     "melodyNotes": 210,
     "bytes": 126766,
+    "playable": true
+  },
+  {
+    "file": "PENYSFRM.MID",
+    "title": "Pennies From Heaven",
+    "bpm": 120,
+    "durationSeconds": 72,
+    "chordMarkers": 46,
+    "melodyNotes": 103,
+    "bytes": 6430,
     "playable": true
   },
   {
@@ -12647,6 +18597,16 @@
     "playable": true
   },
   {
+    "file": "PERDIDO.MID",
+    "title": "Perdido",
+    "bpm": 152,
+    "durationSeconds": 507,
+    "chordMarkers": 97,
+    "melodyNotes": 371,
+    "bytes": 14969,
+    "playable": true
+  },
+  {
     "file": "PERFIDIA_1.MID",
     "title": "Perfidia",
     "bpm": 120,
@@ -12697,6 +18657,16 @@
     "playable": true
   },
   {
+    "file": "PGGYDRM.MID",
+    "title": "PEGGY'S DREAM",
+    "bpm": 130,
+    "durationSeconds": 411,
+    "chordMarkers": 99,
+    "melodyNotes": 1480,
+    "bytes": 22103,
+    "playable": true
+  },
+  {
     "file": "Phil_s Tune.MID",
     "title": "Phil's Tune",
     "bpm": 120,
@@ -12724,6 +18694,16 @@
     "chordMarkers": 163,
     "melodyNotes": 405,
     "bytes": 18899,
+    "playable": true
+  },
+  {
+    "file": "Pine Cones & Holly Berries.MID",
+    "title": "Pine Cones & Holly Berries - Meredith Willson",
+    "bpm": 125,
+    "durationSeconds": 667,
+    "chordMarkers": 215,
+    "melodyNotes": 564,
+    "bytes": 26742,
     "playable": true
   },
   {
@@ -12774,6 +18754,16 @@
     "chordMarkers": 163,
     "melodyNotes": 369,
     "bytes": 16065,
+    "playable": true
+  },
+  {
+    "file": "PLEASE DON_T TALK ABOUT ME WHEN I_M GONE [FD].MID",
+    "title": "Please don't talk about me when I'm gone [FD]",
+    "bpm": 259,
+    "durationSeconds": 124,
+    "chordMarkers": 103,
+    "melodyNotes": 407,
+    "bytes": 21886,
     "playable": true
   },
   {
@@ -12857,6 +18847,16 @@
     "playable": true
   },
   {
+    "file": "POPDANCE.MID",
+    "title": "ANOTHER EWE",
+    "bpm": 120,
+    "durationSeconds": 706,
+    "chordMarkers": 137,
+    "melodyNotes": 498,
+    "bytes": 20143,
+    "playable": true
+  },
+  {
     "file": "Popsicle Toes.MID",
     "title": "Popsicle Toes",
     "bpm": 125,
@@ -12874,6 +18874,26 @@
     "chordMarkers": 110,
     "melodyNotes": 359,
     "bytes": 34978,
+    "playable": true
+  },
+  {
+    "file": "Powder Your Face With Sunshine.MID",
+    "title": "Powder Your Face With Sunshine",
+    "bpm": 178,
+    "durationSeconds": 132,
+    "chordMarkers": 61,
+    "melodyNotes": 121,
+    "bytes": 16108,
+    "playable": true
+  },
+  {
+    "file": "Praising Casablanca - Melody Maker.MID",
+    "title": "Praising Casablanca - Melody Maker",
+    "bpm": 75,
+    "durationSeconds": 333,
+    "chordMarkers": 147,
+    "melodyNotes": 387,
+    "bytes": 44945,
     "playable": true
   },
   {
@@ -12917,6 +18937,16 @@
     "playable": true
   },
   {
+    "file": "Prelude.MID",
+    "title": "Prelude",
+    "bpm": 95,
+    "durationSeconds": 192,
+    "chordMarkers": 157,
+    "melodyNotes": 77,
+    "bytes": 25992,
+    "playable": true
+  },
+  {
     "file": "PRETEND1.MID",
     "title": "PRETEND",
     "bpm": 85,
@@ -12944,6 +18974,16 @@
     "chordMarkers": 141,
     "melodyNotes": 168,
     "bytes": 37443,
+    "playable": true
+  },
+  {
+    "file": "PRETTYWO.MID",
+    "title": "PRETTY WOMAN",
+    "bpm": 130,
+    "durationSeconds": 539,
+    "chordMarkers": 74,
+    "melodyNotes": 314,
+    "bytes": 18860,
     "playable": true
   },
   {
@@ -13017,6 +19057,16 @@
     "playable": true
   },
   {
+    "file": "PSILOVEU_1.MID",
+    "title": "PS I love You",
+    "bpm": 120,
+    "durationSeconds": 140,
+    "chordMarkers": 65,
+    "melodyNotes": 252,
+    "bytes": 32227,
+    "playable": true
+  },
+  {
     "file": "PSILUVU.MID",
     "title": "P.S. I Love You",
     "bpm": 80,
@@ -13044,6 +19094,16 @@
     "chordMarkers": 142,
     "melodyNotes": 260,
     "bytes": 18511,
+    "playable": true
+  },
+  {
+    "file": "Put Your Hand in the Hand  [S#4].MID",
+    "title": "Put Your Hand in the Hand  [S#4]",
+    "bpm": 120,
+    "durationSeconds": 579,
+    "chordMarkers": 82,
+    "melodyNotes": 260,
+    "bytes": 11026,
     "playable": true
   },
   {
@@ -13147,6 +19207,16 @@
     "playable": true
   },
   {
+    "file": "Rain Forest.MID",
+    "title": "Rain Forest - Ron Stebbins",
+    "bpm": 190,
+    "durationSeconds": 327,
+    "chordMarkers": 36,
+    "melodyNotes": 297,
+    "bytes": 35993,
+    "playable": true
+  },
+  {
     "file": "RAIN.MID",
     "title": "RAIN - WHEN THE RAIN COMES",
     "bpm": 138,
@@ -13227,6 +19297,36 @@
     "playable": true
   },
   {
+    "file": "Ramblin Rose  [j&s]_1.MID",
+    "title": "Ramblin Rose  [J&S]",
+    "bpm": 120,
+    "durationSeconds": 172,
+    "chordMarkers": 42,
+    "melodyNotes": 322,
+    "bytes": 12100,
+    "playable": true
+  },
+  {
+    "file": "RAMBLIN ROSE [J&S].MID",
+    "title": "Ramblin Rose  [J&S]",
+    "bpm": 120,
+    "durationSeconds": 172,
+    "chordMarkers": 46,
+    "melodyNotes": 250,
+    "bytes": 11849,
+    "playable": true
+  },
+  {
+    "file": "Ramblin_ Rose.MID",
+    "title": "Ramblin' Rose",
+    "bpm": 120,
+    "durationSeconds": 578,
+    "chordMarkers": 61,
+    "melodyNotes": 85,
+    "bytes": 24170,
+    "playable": true
+  },
+  {
     "file": "RAMBROSE.MID",
     "title": "Ramblin Rose",
     "bpm": 120,
@@ -13287,6 +19387,16 @@
     "playable": true
   },
   {
+    "file": "Recorda Me (joe Henderson).MID",
+    "title": "Recorda Me (Joe Henderson)",
+    "bpm": 140,
+    "durationSeconds": 495,
+    "chordMarkers": 46,
+    "melodyNotes": 134,
+    "bytes": 18783,
+    "playable": true
+  },
+  {
     "file": "Red Door - Zoot Sims.MID",
     "title": "Red Door -Gerry Mulligan & Zoot Sims",
     "bpm": 145,
@@ -13337,6 +19447,16 @@
     "playable": true
   },
   {
+    "file": "Red Top_1.MID",
+    "title": "Red Top",
+    "bpm": 140,
+    "durationSeconds": 525,
+    "chordMarkers": 128,
+    "melodyNotes": 168,
+    "bytes": 26654,
+    "playable": true
+  },
+  {
     "file": "REDREDRO.MID",
     "title": "Red Red Robin",
     "bpm": 90,
@@ -13357,6 +19477,16 @@
     "playable": true
   },
   {
+    "file": "REDROSES.MID",
+    "title": "RED ROSES FOR A BLUE LADY   [BOB O]",
+    "bpm": 106,
+    "durationSeconds": 158,
+    "chordMarkers": 99,
+    "melodyNotes": 217,
+    "bytes": 15980,
+    "playable": true
+  },
+  {
     "file": "Redskin Rag_1.MID",
     "title": "REDSKIN RAG",
     "bpm": 190,
@@ -13374,6 +19504,26 @@
     "chordMarkers": 105,
     "melodyNotes": 957,
     "bytes": 58483,
+    "playable": true
+  },
+  {
+    "file": "REDWING.MID",
+    "title": "REDWING",
+    "bpm": 90,
+    "durationSeconds": 853,
+    "chordMarkers": 122,
+    "melodyNotes": 420,
+    "bytes": 30666,
+    "playable": true
+  },
+  {
+    "file": "Reflections.MID",
+    "title": "Reflections",
+    "bpm": 95,
+    "durationSeconds": 253,
+    "chordMarkers": 190,
+    "melodyNotes": 422,
+    "bytes": 19849,
     "playable": true
   },
   {
@@ -13407,6 +19557,36 @@
     "playable": true
   },
   {
+    "file": "Release Me.MID",
+    "title": "Release Me",
+    "bpm": 110,
+    "durationSeconds": 227,
+    "chordMarkers": 112,
+    "melodyNotes": 574,
+    "bytes": 28207,
+    "playable": true
+  },
+  {
+    "file": "Release Me2.MID",
+    "title": "Release Me",
+    "bpm": 110,
+    "durationSeconds": 168,
+    "chordMarkers": 90,
+    "melodyNotes": 283,
+    "bytes": 11051,
+    "playable": true
+  },
+  {
+    "file": "RELEASE.MID",
+    "title": "Release Me",
+    "bpm": 110,
+    "durationSeconds": 227,
+    "chordMarkers": 112,
+    "melodyNotes": 574,
+    "bytes": 28916,
+    "playable": true
+  },
+  {
     "file": "Return To Sender - Elvis Presley2.MID",
     "title": "Return To Sender - Elvis Presley",
     "bpm": 130,
@@ -13437,6 +19617,16 @@
     "playable": true
   },
   {
+    "file": "Rhummbop - Billy Strayhorn & Duke Ellington.MID",
+    "title": "Rhummbop - Billy Strayhorn & Duke Ellington",
+    "bpm": 132,
+    "durationSeconds": 584,
+    "chordMarkers": 147,
+    "melodyNotes": 245,
+    "bytes": 21128,
+    "playable": true
+  },
+  {
     "file": "Ridin Hidin Tear Drops In My Eyes.MID",
     "title": "Ridin Hidin Tear Drops in My Eyes",
     "bpm": 90,
@@ -13454,6 +19644,36 @@
     "chordMarkers": 34,
     "melodyNotes": 192,
     "bytes": 25153,
+    "playable": true
+  },
+  {
+    "file": "RIDSTORM.MID",
+    "title": "Riders On The Storm (The Doors)",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 156,
+    "melodyNotes": 414,
+    "bytes": 50575,
+    "playable": true
+  },
+  {
+    "file": "Right Or Wrong_1.MID",
+    "title": "Right Or Wrong",
+    "bpm": 70,
+    "durationSeconds": 1101,
+    "chordMarkers": 151,
+    "melodyNotes": 765,
+    "bytes": 36476,
+    "playable": true
+  },
+  {
+    "file": "Right Or Wrong.MID",
+    "title": "Right or Wrong",
+    "bpm": 170,
+    "durationSeconds": 455,
+    "chordMarkers": 61,
+    "melodyNotes": 351,
+    "bytes": 14773,
     "playable": true
   },
   {
@@ -13477,6 +19697,16 @@
     "playable": true
   },
   {
+    "file": "Roadside Rag.MID",
+    "title": "Roadside Rag",
+    "bpm": 150,
+    "durationSeconds": 499,
+    "chordMarkers": 56,
+    "melodyNotes": 307,
+    "bytes": 73592,
+    "playable": true
+  },
+  {
     "file": "ROCK-A-BYE YOUR BABY [FD].MID",
     "title": "Rock-A-Bye Your Baby [FD]",
     "bpm": 168,
@@ -13484,6 +19714,26 @@
     "chordMarkers": 46,
     "melodyNotes": 281,
     "bytes": 11921,
+    "playable": true
+  },
+  {
+    "file": "Rock-A-Bye Your Baby.MID",
+    "title": "Rock-A-Bye Your Baby",
+    "bpm": 120,
+    "durationSeconds": 645,
+    "chordMarkers": 119,
+    "melodyNotes": 250,
+    "bytes": 49790,
+    "playable": true
+  },
+  {
+    "file": "ROCKCOLC.MID",
+    "title": "ROCK AROUND THE CLOCK",
+    "bpm": 165,
+    "durationSeconds": 470,
+    "chordMarkers": 34,
+    "melodyNotes": 230,
+    "bytes": 11122,
     "playable": true
   },
   {
@@ -13504,6 +19754,26 @@
     "chordMarkers": 128,
     "melodyNotes": 174,
     "bytes": 51692,
+    "playable": true
+  },
+  {
+    "file": "Rockin_ Chair.MID",
+    "title": "Rockin' Chair",
+    "bpm": 90,
+    "durationSeconds": 448,
+    "chordMarkers": 205,
+    "melodyNotes": 174,
+    "bytes": 54305,
+    "playable": true
+  },
+  {
+    "file": "ROKROBIN.MID",
+    "title": "Rockin' Robin",
+    "bpm": 175,
+    "durationSeconds": 363,
+    "chordMarkers": 26,
+    "melodyNotes": 256,
+    "bytes": 29262,
     "playable": true
   },
   {
@@ -13534,6 +19804,26 @@
     "chordMarkers": 28,
     "melodyNotes": 210,
     "bytes": 10894,
+    "playable": true
+  },
+  {
+    "file": "Roly Poly.MID",
+    "title": "ROLY POLY",
+    "bpm": 165,
+    "durationSeconds": 563,
+    "chordMarkers": 122,
+    "melodyNotes": 597,
+    "bytes": 21949,
+    "playable": true
+  },
+  {
+    "file": "ROMONA  [J&S].MID",
+    "title": "Romona  [J&S]",
+    "bpm": 120,
+    "durationSeconds": 706,
+    "chordMarkers": 116,
+    "melodyNotes": 157,
+    "bytes": 23045,
     "playable": true
   },
   {
@@ -13574,6 +19864,26 @@
     "chordMarkers": 62,
     "melodyNotes": 166,
     "bytes": 68755,
+    "playable": true
+  },
+  {
+    "file": "ROSE_C_G.MID",
+    "title": "ROSE COLORED GLASSES",
+    "bpm": 85,
+    "durationSeconds": 162,
+    "chordMarkers": 73,
+    "melodyNotes": 157,
+    "bytes": 12932,
+    "playable": true
+  },
+  {
+    "file": "ROSECITY.MID",
+    "title": "ROSE CITY CHIMES  [CJ]",
+    "bpm": 125,
+    "durationSeconds": 616,
+    "chordMarkers": 87,
+    "melodyNotes": 562,
+    "bytes": 38117,
     "playable": true
   },
   {
@@ -13627,6 +19937,16 @@
     "playable": true
   },
   {
+    "file": "ROUNDMID_1.MID",
+    "title": "'ROUND MIDNIGHT",
+    "bpm": 65,
+    "durationSeconds": 1185,
+    "chordMarkers": 196,
+    "melodyNotes": 546,
+    "bytes": 20381,
+    "playable": true
+  },
+  {
     "file": "ROUNDMID.MID",
     "title": "'Round Midnight",
     "bpm": 80,
@@ -13634,6 +19954,16 @@
     "chordMarkers": 196,
     "melodyNotes": 398,
     "bytes": 17325,
+    "playable": true
+  },
+  {
+    "file": "ROYALGAR_1.MID",
+    "title": "Royal Garden Blues",
+    "bpm": 160,
+    "durationSeconds": 500,
+    "chordMarkers": 239,
+    "melodyNotes": 580,
+    "bytes": 28290,
     "playable": true
   },
   {
@@ -13677,6 +20007,16 @@
     "playable": true
   },
   {
+    "file": "Runa - Soda.MID",
+    "title": "Runa - Soda",
+    "bpm": 115,
+    "durationSeconds": 688,
+    "chordMarkers": 209,
+    "melodyNotes": 161,
+    "bytes": 19814,
+    "playable": true
+  },
+  {
     "file": "RUNROSES_1.MID",
     "title": "Run For The Roses  -  DAN FOGELBERG",
     "bpm": 115,
@@ -13684,6 +20024,16 @@
     "chordMarkers": 121,
     "melodyNotes": 1048,
     "bytes": 30010,
+    "playable": true
+  },
+  {
+    "file": "RVLUSHUN.MID",
+    "title": "Revolution",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 19,
+    "melodyNotes": 215,
+    "bytes": 27971,
     "playable": true
   },
   {
@@ -13707,6 +20057,26 @@
     "playable": true
   },
   {
+    "file": "S-M-ALWS.MID",
+    "title": "SUNDAY, MONDAY OR ALWAYS",
+    "bpm": 75,
+    "durationSeconds": 925,
+    "chordMarkers": 121,
+    "melodyNotes": 60,
+    "bytes": 15652,
+    "playable": true
+  },
+  {
+    "file": "S2HEAVEN.MID",
+    "title": "Stairway to Heaven",
+    "bpm": 100,
+    "durationSeconds": 240,
+    "chordMarkers": 158,
+    "melodyNotes": 158,
+    "bytes": 31140,
+    "playable": true
+  },
+  {
     "file": "Sack Of Woe.MID",
     "title": "Sack Of Woe",
     "bpm": 90,
@@ -13724,6 +20094,16 @@
     "chordMarkers": 141,
     "melodyNotes": 210,
     "bytes": 26590,
+    "playable": true
+  },
+  {
+    "file": "Saga Of Harrison Crabfeathers.MID",
+    "title": "Saga Of Harrison Crabfeathers",
+    "bpm": 160,
+    "durationSeconds": 415,
+    "chordMarkers": 40,
+    "melodyNotes": 93,
+    "bytes": 40849,
     "playable": true
   },
   {
@@ -13757,6 +20137,26 @@
     "playable": true
   },
   {
+    "file": "SAMBACIDE.MID",
+    "title": "Sambacide",
+    "bpm": 120,
+    "durationSeconds": 614,
+    "chordMarkers": 82,
+    "melodyNotes": 45,
+    "bytes": 26068,
+    "playable": true
+  },
+  {
+    "file": "SAMBAPA_1.MID",
+    "title": "Samba pa ti - Santana",
+    "bpm": 93,
+    "durationSeconds": 287,
+    "chordMarkers": 98,
+    "melodyNotes": 551,
+    "bytes": 25739,
+    "playable": true
+  },
+  {
     "file": "San Antonio Rose [j&f Cd]_1.MID",
     "title": "SAN ANTONIO ROSE [J&F CD]",
     "bpm": 185,
@@ -13764,6 +20164,16 @@
     "chordMarkers": 129,
     "melodyNotes": 465,
     "bytes": 20258,
+    "playable": true
+  },
+  {
+    "file": "San Antonio Rose #1_1.MID",
+    "title": "SAN ANTONIO ROSE #1",
+    "bpm": 185,
+    "durationSeconds": 184,
+    "chordMarkers": 126,
+    "melodyNotes": 462,
+    "bytes": 20366,
     "playable": true
   },
   {
@@ -13807,6 +20217,16 @@
     "playable": true
   },
   {
+    "file": "SANANT-R.MID",
+    "title": "SAN ANTONIO ROSE   [Rem]",
+    "bpm": 180,
+    "durationSeconds": 206,
+    "chordMarkers": 136,
+    "melodyNotes": 517,
+    "bytes": 21975,
+    "playable": true
+  },
+  {
     "file": "SANDU_1.MID",
     "title": "Sandu      ~Clifford Brown~      NRB:307",
     "bpm": 138,
@@ -13827,6 +20247,36 @@
     "playable": true
   },
   {
+    "file": "SANTURCE.MID",
+    "title": "Santurce",
+    "bpm": 108,
+    "durationSeconds": 851,
+    "chordMarkers": 224,
+    "melodyNotes": 86,
+    "bytes": 64831,
+    "playable": true
+  },
+  {
+    "file": "SARIEMAR.MID",
+    "title": "Sarie Marais/Afrikaanse Liedjie/M22 T22",
+    "bpm": 224,
+    "durationSeconds": 317,
+    "chordMarkers": 98,
+    "melodyNotes": 187,
+    "bytes": 14273,
+    "playable": true
+  },
+  {
+    "file": "Satin Doll_1.MID",
+    "title": "SATIN DOLL",
+    "bpm": 135,
+    "durationSeconds": 567,
+    "chordMarkers": 172,
+    "melodyNotes": 338,
+    "bytes": 15913,
+    "playable": true
+  },
+  {
     "file": "SATINDOL.MID",
     "title": "Satin Doll",
     "bpm": 140,
@@ -13834,6 +20284,16 @@
     "chordMarkers": 56,
     "melodyNotes": 157,
     "bytes": 12030,
+    "playable": true
+  },
+  {
+    "file": "Satisfaction.MID",
+    "title": "Satisfaction",
+    "bpm": 125,
+    "durationSeconds": 495,
+    "chordMarkers": 216,
+    "melodyNotes": 298,
+    "bytes": 22620,
     "playable": true
   },
   {
@@ -13867,6 +20327,16 @@
     "playable": true
   },
   {
+    "file": "SAVE YOUR LOVE FOR ME.MID",
+    "title": "Save Your Love For Me",
+    "bpm": 60,
+    "durationSeconds": 1276,
+    "chordMarkers": 126,
+    "melodyNotes": 366,
+    "bytes": 16882,
+    "playable": true
+  },
+  {
     "file": "Save Your Sorrow.MID",
     "title": "Save Your Sorrow",
     "bpm": 165,
@@ -13884,6 +20354,16 @@
     "chordMarkers": 210,
     "melodyNotes": 358,
     "bytes": 21680,
+    "playable": true
+  },
+  {
+    "file": "Scarlet Ribbons.MID",
+    "title": "Scarlet Ribbons",
+    "bpm": 90,
+    "durationSeconds": 687,
+    "chordMarkers": 71,
+    "melodyNotes": 139,
+    "bytes": 16967,
     "playable": true
   },
   {
@@ -13917,6 +20397,16 @@
     "playable": true
   },
   {
+    "file": "Scrub Me Mama With A Boogie Beat.MID",
+    "title": "Scrub Me Mama With A Boogie Beat - Don Raye",
+    "bpm": 165,
+    "durationSeconds": 383,
+    "chordMarkers": 16,
+    "melodyNotes": 597,
+    "bytes": 4613,
+    "playable": true
+  },
+  {
     "file": "Sea Journey.MID",
     "title": "Sea Journey",
     "bpm": 135,
@@ -13947,6 +20437,16 @@
     "playable": true
   },
   {
+    "file": "SECNROSE.MID",
+    "title": "Second Hand Rose",
+    "bpm": 160,
+    "durationSeconds": 72,
+    "chordMarkers": 50,
+    "melodyNotes": 131,
+    "bytes": 8223,
+    "playable": true
+  },
+  {
     "file": "Secret Love     [dw]_1.MID",
     "title": "Secret Love     [DW]",
     "bpm": 175,
@@ -13967,6 +20467,16 @@
     "playable": true
   },
   {
+    "file": "Secrets.MID",
+    "title": "Secrets",
+    "bpm": 145,
+    "durationSeconds": 109,
+    "chordMarkers": 61,
+    "melodyNotes": 296,
+    "bytes": 22376,
+    "playable": true
+  },
+  {
     "file": "SEDIH_1.MID",
     "title": "Sedih",
     "bpm": 100,
@@ -13974,6 +20484,16 @@
     "chordMarkers": 69,
     "melodyNotes": 921,
     "bytes": 21735,
+    "playable": true
+  },
+  {
+    "file": "SEEUINMY.MID",
+    "title": "SEE YOU IN MY DREAMS",
+    "bpm": 145,
+    "durationSeconds": 690,
+    "chordMarkers": 134,
+    "melodyNotes": 5817,
+    "bytes": 66636,
     "playable": true
   },
   {
@@ -13994,6 +20514,16 @@
     "chordMarkers": 195,
     "melodyNotes": 477,
     "bytes": 35741,
+    "playable": true
+  },
+  {
+    "file": "SENDPILL.MID",
+    "title": "SEND ME THE PILLOW",
+    "bpm": 100,
+    "durationSeconds": 178,
+    "chordMarkers": 41,
+    "melodyNotes": 250,
+    "bytes": 9880,
     "playable": true
   },
   {
@@ -14034,6 +20564,16 @@
     "chordMarkers": 43,
     "melodyNotes": 254,
     "bytes": 20801,
+    "playable": true
+  },
+  {
+    "file": "SENTMOOD.MID",
+    "title": "IN A SENTIMENTAL MOOD",
+    "bpm": 90,
+    "durationSeconds": 856,
+    "chordMarkers": 175,
+    "melodyNotes": 381,
+    "bytes": 16610,
     "playable": true
   },
   {
@@ -14167,6 +20707,16 @@
     "playable": true
   },
   {
+    "file": "SHADOWS.MID",
+    "title": "Shadows In Motion  By Will Campbell 1997",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 74,
+    "melodyNotes": 843,
+    "bytes": 17487,
+    "playable": true
+  },
+  {
     "file": "Shall We Dance - Rodgers & Hammerstein.MID",
     "title": "Shall We dance - Richard Rodgers & Oscar Hammerstein III",
     "bpm": 205,
@@ -14247,6 +20797,16 @@
     "playable": true
   },
   {
+    "file": "SHES GOT YOU  [RI].MID",
+    "title": "Shes Got You  [RI]",
+    "bpm": 66,
+    "durationSeconds": 932,
+    "chordMarkers": 60,
+    "melodyNotes": 140,
+    "bytes": 7140,
+    "playable": true
+  },
+  {
     "file": "SHESCLAS.MID",
     "title": "SHE'S CLASSY by D. WRIGHT",
     "bpm": 70,
@@ -14287,6 +20847,16 @@
     "playable": true
   },
   {
+    "file": "Shine.MID",
+    "title": "Shine",
+    "bpm": 235,
+    "durationSeconds": 204,
+    "chordMarkers": 213,
+    "melodyNotes": 132,
+    "bytes": 113440,
+    "playable": true
+  },
+  {
     "file": "SHINEJES.MID",
     "title": "Shine Jesus Shine",
     "bpm": 105,
@@ -14294,6 +20864,16 @@
     "chordMarkers": 125,
     "melodyNotes": 304,
     "bytes": 28693,
+    "playable": true
+  },
+  {
+    "file": "Shining Star.MID",
+    "title": "Shining Star",
+    "bpm": 150,
+    "durationSeconds": 411,
+    "chordMarkers": 81,
+    "melodyNotes": 251,
+    "bytes": 26099,
     "playable": true
   },
   {
@@ -14314,6 +20894,16 @@
     "chordMarkers": 35,
     "melodyNotes": 113,
     "bytes": 6128,
+    "playable": true
+  },
+  {
+    "file": "Shivers.MID",
+    "title": "Shivers - Lionel Hampton & Charlie Christian",
+    "bpm": 180,
+    "durationSeconds": 492,
+    "chordMarkers": 118,
+    "melodyNotes": 519,
+    "bytes": 32322,
     "playable": true
   },
   {
@@ -14357,6 +20947,16 @@
     "playable": true
   },
   {
+    "file": "SHOUT_1.MID",
+    "title": "Shout to the Lord",
+    "bpm": 175,
+    "durationSeconds": 118,
+    "chordMarkers": 145,
+    "melodyNotes": 334,
+    "bytes": 28697,
+    "playable": true
+  },
+  {
     "file": "SHOUTEMA.MID",
     "title": "Shout ¥em Aunt Tilly (Ellington/Barber)",
     "bpm": 135,
@@ -14374,6 +20974,16 @@
     "chordMarkers": 98,
     "melodyNotes": 397,
     "bytes": 43619,
+    "playable": true
+  },
+  {
+    "file": "SIDE BY SIDE  [FD].MID",
+    "title": "Side by Side  [FD]",
+    "bpm": 125,
+    "durationSeconds": 190,
+    "chordMarkers": 115,
+    "melodyNotes": 360,
+    "bytes": 16673,
     "playable": true
   },
   {
@@ -14417,6 +21027,16 @@
     "playable": true
   },
   {
+    "file": "SIDIOS~1.MID",
+    "title": "Si Dios me quita la vida",
+    "bpm": 92,
+    "durationSeconds": 670,
+    "chordMarkers": 98,
+    "melodyNotes": 397,
+    "bytes": 43687,
+    "playable": true
+  },
+  {
     "file": "SILENCE.MID",
     "title": "The Sounds Of Silence/ M74 T74",
     "bpm": 110,
@@ -14424,6 +21044,36 @@
     "chordMarkers": 30,
     "melodyNotes": 130,
     "bytes": 11476,
+    "playable": true
+  },
+  {
+    "file": "SILENT_N.MID",
+    "title": "SILENT NIGHT  [BOB O]",
+    "bpm": 95,
+    "durationSeconds": 149,
+    "chordMarkers": 36,
+    "melodyNotes": 655,
+    "bytes": 11991,
+    "playable": true
+  },
+  {
+    "file": "SILENTNITE[EVE].MID",
+    "title": "SILENT NIGHT  [Eve]",
+    "bpm": 95,
+    "durationSeconds": 525,
+    "chordMarkers": 28,
+    "melodyNotes": 516,
+    "bytes": 9427,
+    "playable": true
+  },
+  {
+    "file": "Silver Dollar.MID",
+    "title": "Silver Dollar",
+    "bpm": 140,
+    "durationSeconds": 442,
+    "chordMarkers": 45,
+    "melodyNotes": 155,
+    "bytes": 6489,
     "playable": true
   },
   {
@@ -14437,6 +21087,16 @@
     "playable": true
   },
   {
+    "file": "Silver Wings_1.MID",
+    "title": "SILVER WINGS",
+    "bpm": 105,
+    "durationSeconds": 645,
+    "chordMarkers": 34,
+    "melodyNotes": 285,
+    "bytes": 12117,
+    "playable": true
+  },
+  {
     "file": "Silver Wings.MID",
     "title": "Silver Wings",
     "bpm": 120,
@@ -14444,6 +21104,26 @@
     "chordMarkers": 50,
     "melodyNotes": 148,
     "bytes": 51533,
+    "playable": true
+  },
+  {
+    "file": "SILVRTGN.MID",
+    "title": "SILVER THREADS AND GOLDEN NEEDLES",
+    "bpm": 150,
+    "durationSeconds": 194,
+    "chordMarkers": 62,
+    "melodyNotes": 391,
+    "bytes": 16193,
+    "playable": true
+  },
+  {
+    "file": "SILWINGS.MID",
+    "title": "SILVER WINGS",
+    "bpm": 105,
+    "durationSeconds": 645,
+    "chordMarkers": 34,
+    "melodyNotes": 299,
+    "bytes": 12177,
     "playable": true
   },
   {
@@ -14457,6 +21137,26 @@
     "playable": true
   },
   {
+    "file": "SIMONSAY.MID",
+    "title": "Simon Says",
+    "bpm": 260,
+    "durationSeconds": 266,
+    "chordMarkers": 31,
+    "melodyNotes": 141,
+    "bytes": 10973,
+    "playable": true
+  },
+  {
+    "file": "Since When.MID",
+    "title": "Since When",
+    "bpm": 118,
+    "durationSeconds": 524,
+    "chordMarkers": 225,
+    "melodyNotes": 810,
+    "bytes": 47907,
+    "playable": true
+  },
+  {
     "file": "Sincerl2.MID",
     "title": "Sincerly",
     "bpm": 85,
@@ -14467,6 +21167,26 @@
     "playable": true
   },
   {
+    "file": "SING A SAD SONG(CHUCK).MID",
+    "title": "Sing A Sad Song(chuck)",
+    "bpm": 85,
+    "durationSeconds": 844,
+    "chordMarkers": 84,
+    "melodyNotes": 299,
+    "bytes": 12779,
+    "playable": true
+  },
+  {
+    "file": "SING ME SOFTLY OF THE BLUES.MID",
+    "title": "Sing Me Softly of the Blues",
+    "bpm": 94,
+    "durationSeconds": 235,
+    "chordMarkers": 132,
+    "melodyNotes": 316,
+    "bytes": 14039,
+    "playable": true
+  },
+  {
     "file": "SINGSONG.MID",
     "title": "Sing!  by Joe Raposo      /     clarkr@sd28.bc.ca",
     "bpm": 118,
@@ -14474,6 +21194,16 @@
     "chordMarkers": 93,
     "melodyNotes": 235,
     "bytes": 16475,
+    "playable": true
+  },
+  {
+    "file": "SINSIFEL.MID",
+    "title": "Since I Fell For You",
+    "bpm": 75,
+    "durationSeconds": 115,
+    "chordMarkers": 61,
+    "melodyNotes": 142,
+    "bytes": 10978,
     "playable": true
   },
   {
@@ -14497,6 +21227,26 @@
     "playable": true
   },
   {
+    "file": "Skating In Central Park.MID",
+    "title": "Skating In Central Park",
+    "bpm": 154,
+    "durationSeconds": 143,
+    "chordMarkers": 118,
+    "melodyNotes": 134,
+    "bytes": 42417,
+    "playable": true
+  },
+  {
+    "file": "SKYLARK_1.MID",
+    "title": "Skylark",
+    "bpm": 90,
+    "durationSeconds": 857,
+    "chordMarkers": 203,
+    "melodyNotes": 298,
+    "bytes": 27805,
+    "playable": true
+  },
+  {
     "file": "Skylark_2.MID",
     "title": "Skylark",
     "bpm": 80,
@@ -14507,6 +21257,16 @@
     "playable": true
   },
   {
+    "file": "SKYLARK.MID",
+    "title": "Skylark",
+    "bpm": 98,
+    "durationSeconds": 786,
+    "chordMarkers": 196,
+    "melodyNotes": 357,
+    "bytes": 16833,
+    "playable": true
+  },
+  {
     "file": "SKYLINER_1.MID",
     "title": "Skyliner",
     "bpm": 205,
@@ -14514,6 +21274,16 @@
     "chordMarkers": 171,
     "melodyNotes": 309,
     "bytes": 30522,
+    "playable": true
+  },
+  {
+    "file": "SKYLPIGE_1.MID",
+    "title": "Skyline pigeon",
+    "bpm": 80,
+    "durationSeconds": 990,
+    "chordMarkers": 134,
+    "melodyNotes": 582,
+    "bytes": 33989,
     "playable": true
   },
   {
@@ -14537,6 +21307,16 @@
     "playable": true
   },
   {
+    "file": "Slippers.MID",
+    "title": "Untitled Song",
+    "bpm": 320,
+    "durationSeconds": 241,
+    "chordMarkers": 98,
+    "melodyNotes": 209,
+    "bytes": 17523,
+    "playable": true
+  },
+  {
     "file": "Slipping Away.MID",
     "title": "Slipping Away",
     "bpm": 85,
@@ -14554,6 +21334,16 @@
     "chordMarkers": 90,
     "melodyNotes": 113,
     "bytes": 24451,
+    "playable": true
+  },
+  {
+    "file": "Slow Hot Wind - Henry Mancini & Norman Gimbel.MID",
+    "title": "Slow Hot Wind - Henry Mancini & Norman Gimbel",
+    "bpm": 91,
+    "durationSeconds": 258,
+    "chordMarkers": 100,
+    "melodyNotes": 54,
+    "bytes": 15528,
     "playable": true
   },
   {
@@ -14604,6 +21394,16 @@
     "chordMarkers": 202,
     "melodyNotes": 167,
     "bytes": 34932,
+    "playable": true
+  },
+  {
+    "file": "SMDAY_UB.MID",
+    "title": "Someday, You'll Be Sorry     (for Johnny Horn RIP)",
+    "bpm": 150,
+    "durationSeconds": 58,
+    "chordMarkers": 36,
+    "melodyNotes": 78,
+    "bytes": 6068,
     "playable": true
   },
   {
@@ -14697,6 +21497,26 @@
     "playable": true
   },
   {
+    "file": "So Many Women (robert Cray).MID",
+    "title": "So many women (Robert Cray)",
+    "bpm": 110,
+    "durationSeconds": 611,
+    "chordMarkers": 70,
+    "melodyNotes": 972,
+    "bytes": 46068,
+    "playable": true
+  },
+  {
+    "file": "So What - Miles Davis.MID",
+    "title": "So What",
+    "bpm": 145,
+    "durationSeconds": 505,
+    "chordMarkers": 12,
+    "melodyNotes": 248,
+    "bytes": 24384,
+    "playable": true
+  },
+  {
     "file": "SO_WHAT.MID",
     "title": "SO WHAT",
     "bpm": 240,
@@ -14704,6 +21524,16 @@
     "chordMarkers": 32,
     "melodyNotes": 783,
     "bytes": 27947,
+    "playable": true
+  },
+  {
+    "file": "SO-LONE.MID",
+    "title": "I'm so lonesome I could cry",
+    "bpm": 90,
+    "durationSeconds": 277,
+    "chordMarkers": 101,
+    "melodyNotes": 445,
+    "bytes": 17922,
     "playable": true
   },
   {
@@ -14757,6 +21587,16 @@
     "playable": true
   },
   {
+    "file": "SOFTLY2.MID",
+    "title": "Softly, as in a morning sunrise (Intro 4 bars)",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 128,
+    "melodyNotes": 103,
+    "bytes": 47964,
+    "playable": true
+  },
+  {
     "file": "SOFTLYAS.MID",
     "title": "Softly As A Morning Sunrise",
     "bpm": 180,
@@ -14807,6 +21647,16 @@
     "playable": true
   },
   {
+    "file": "SOMDAYS.MID",
+    "title": "Someday Soon",
+    "bpm": 110,
+    "durationSeconds": 665,
+    "chordMarkers": 113,
+    "melodyNotes": 314,
+    "bytes": 15189,
+    "playable": true
+  },
+  {
     "file": "Some Day My Prince Will Come_1.MID",
     "title": "Some Day My Prince Will Come",
     "bpm": 120,
@@ -14814,6 +21664,16 @@
     "chordMarkers": 76,
     "melodyNotes": 126,
     "bytes": 15221,
+    "playable": true
+  },
+  {
+    "file": "Some Enchanted Evening - Rodgers & Hammerstein.MID",
+    "title": "Some Enchanted Evening - Rodgers & Hammerstein",
+    "bpm": 125,
+    "durationSeconds": 612,
+    "chordMarkers": 182,
+    "melodyNotes": 350,
+    "bytes": 30922,
     "playable": true
   },
   {
@@ -14887,6 +21747,36 @@
     "playable": true
   },
   {
+    "file": "Someone To Watch Over Me 2.MID",
+    "title": "Someone To Watch Over Me",
+    "bpm": 90,
+    "durationSeconds": 857,
+    "chordMarkers": 143,
+    "melodyNotes": 200,
+    "bytes": 36707,
+    "playable": true
+  },
+  {
+    "file": "SOMEONEW.MID",
+    "title": "Someone Who'll Watch Over Me",
+    "bpm": 80,
+    "durationSeconds": 771,
+    "chordMarkers": 133,
+    "melodyNotes": 271,
+    "bytes": 11814,
+    "playable": true
+  },
+  {
+    "file": "SOMETHIN_1.MID",
+    "title": "Something",
+    "bpm": 118,
+    "durationSeconds": 753,
+    "chordMarkers": 95,
+    "melodyNotes": 396,
+    "bytes": 36933,
+    "playable": true
+  },
+  {
     "file": "Something In The Air_1.MID",
     "title": "Something in the Air",
     "bpm": 140,
@@ -14917,6 +21807,26 @@
     "playable": true
   },
   {
+    "file": "SOMEWHE1.MID",
+    "title": "SOMEWHERE MY LOVE   [BO]",
+    "bpm": 110,
+    "durationSeconds": 153,
+    "chordMarkers": 15,
+    "melodyNotes": 179,
+    "bytes": 9381,
+    "playable": true
+  },
+  {
+    "file": "SOMEWHER.MID",
+    "title": "SOMEWHERE MY LOVE  [CJ]",
+    "bpm": 168,
+    "durationSeconds": 174,
+    "chordMarkers": 30,
+    "melodyNotes": 334,
+    "bytes": 16019,
+    "playable": true
+  },
+  {
     "file": "Somewhere Along The WayUntitled Song.MID",
     "title": "Somewhere Along The Way",
     "bpm": 90,
@@ -14937,6 +21847,16 @@
     "playable": true
   },
   {
+    "file": "SOMEWHERE OUT THERE_1.MID",
+    "title": "Somewhere Out There",
+    "bpm": 80,
+    "durationSeconds": 203,
+    "chordMarkers": 118,
+    "melodyNotes": 308,
+    "bytes": 30529,
+    "playable": true
+  },
+  {
     "file": "Somewhere Out There.MID",
     "title": "Somewhere Out There",
     "bpm": 80,
@@ -14944,6 +21864,16 @@
     "chordMarkers": 118,
     "melodyNotes": 308,
     "bytes": 30566,
+    "playable": true
+  },
+  {
+    "file": "Somewhere Over The Rainbow [frank]_1.MID",
+    "title": "SOMEWHERE OVER THE RAINBOW [Frank]",
+    "bpm": 100,
+    "durationSeconds": 696,
+    "chordMarkers": 102,
+    "melodyNotes": 281,
+    "bytes": 18199,
     "playable": true
   },
   {
@@ -14984,6 +21914,16 @@
     "chordMarkers": 41,
     "melodyNotes": 245,
     "bytes": 55303,
+    "playable": true
+  },
+  {
+    "file": "Song For My Love.MID",
+    "title": "Song For My Love - Dave Akkerman",
+    "bpm": 160,
+    "durationSeconds": 198,
+    "chordMarkers": 141,
+    "melodyNotes": 120,
+    "bytes": 60518,
     "playable": true
   },
   {
@@ -15037,6 +21977,16 @@
     "playable": true
   },
   {
+    "file": "SONGIS_U.MID",
+    "title": "The Song Is You",
+    "bpm": 205,
+    "durationSeconds": 229,
+    "chordMarkers": 208,
+    "melodyNotes": 460,
+    "bytes": 31982,
+    "playable": true
+  },
+  {
     "file": "Songs For The Sunrays.MID",
     "title": "Songs For The Sunrays",
     "bpm": 95,
@@ -15054,6 +22004,16 @@
     "chordMarkers": 154,
     "melodyNotes": 1035,
     "bytes": 35191,
+    "playable": true
+  },
+  {
+    "file": "Sophisticated Lady - Duke Ellington.MID",
+    "title": "Sophisticated Lady - Duke Ellington",
+    "bpm": 72,
+    "durationSeconds": 857,
+    "chordMarkers": 220,
+    "melodyNotes": 665,
+    "bytes": 29380,
     "playable": true
   },
   {
@@ -15084,6 +22044,16 @@
     "chordMarkers": 116,
     "melodyNotes": 260,
     "bytes": 12199,
+    "playable": true
+  },
+  {
+    "file": "SORRY.MID",
+    "title": "Sorry seems to be the hardest word  [ Elton John ]",
+    "bpm": 70,
+    "durationSeconds": 881,
+    "chordMarkers": 110,
+    "melodyNotes": 222,
+    "bytes": 19126,
     "playable": true
   },
   {
@@ -15137,6 +22107,46 @@
     "playable": true
   },
   {
+    "file": "South, To A Warmer Place - Alec Wilder.MID",
+    "title": "South, To A Warmer Place - Alec Wilder",
+    "bpm": 65,
+    "durationSeconds": 1215,
+    "chordMarkers": 148,
+    "melodyNotes": 144,
+    "bytes": 21134,
+    "playable": true
+  },
+  {
+    "file": "SOUTHLND.MID",
+    "title": "THIS IS THE SOUTHLAND",
+    "bpm": 228,
+    "durationSeconds": 325,
+    "chordMarkers": 60,
+    "melodyNotes": 1161,
+    "bytes": 28991,
+    "playable": true
+  },
+  {
+    "file": "Southwind.MID",
+    "title": "Southwind",
+    "bpm": 150,
+    "durationSeconds": 466,
+    "chordMarkers": 32,
+    "melodyNotes": 151,
+    "bytes": 9619,
+    "playable": true
+  },
+  {
+    "file": "Spain - Chick Corea.MID",
+    "title": "Spain - Chick Corea & Rodrigo",
+    "bpm": 105,
+    "durationSeconds": 800,
+    "chordMarkers": 232,
+    "melodyNotes": 1083,
+    "bytes": 33547,
+    "playable": true
+  },
+  {
     "file": "Spanish Eyes    [cj].MID",
     "title": "SPANISH EYES    [CJ]",
     "bpm": 129,
@@ -15154,6 +22164,26 @@
     "chordMarkers": 38,
     "melodyNotes": 190,
     "bytes": 74736,
+    "playable": true
+  },
+  {
+    "file": "SPANISH1.MID",
+    "title": "SPANISH EYES    [CJ]",
+    "bpm": 129,
+    "durationSeconds": 130,
+    "chordMarkers": 38,
+    "melodyNotes": 201,
+    "bytes": 9776,
+    "playable": true
+  },
+  {
+    "file": "Speak Low_1.MID",
+    "title": "Speak Low",
+    "bpm": 120,
+    "durationSeconds": 514,
+    "chordMarkers": 65,
+    "melodyNotes": 134,
+    "bytes": 16933,
     "playable": true
   },
   {
@@ -15184,6 +22214,16 @@
     "chordMarkers": 172,
     "melodyNotes": 616,
     "bytes": 26064,
+    "playable": true
+  },
+  {
+    "file": "Spectacular.MID",
+    "title": "Spectacular - Jim Hall",
+    "bpm": 145,
+    "durationSeconds": 346,
+    "chordMarkers": 154,
+    "melodyNotes": 606,
+    "bytes": 23581,
     "playable": true
   },
   {
@@ -15257,6 +22297,36 @@
     "playable": true
   },
   {
+    "file": "ST_JAMES_1.MID",
+    "title": "St.James Infermary (1st.4 measures intro)",
+    "bpm": 70,
+    "durationSeconds": 910,
+    "chordMarkers": 44,
+    "melodyNotes": 127,
+    "bytes": 11135,
+    "playable": true
+  },
+  {
+    "file": "St. Louis Blues     W.c.handy.MID",
+    "title": "St. Louis Blues     W.C.Handy",
+    "bpm": 120,
+    "durationSeconds": 562,
+    "chordMarkers": 36,
+    "melodyNotes": 147,
+    "bytes": 28866,
+    "playable": true
+  },
+  {
+    "file": "St. Vitus Dance - Horace Silver.MID",
+    "title": "St. Vitus Dance - Horace Silver",
+    "bpm": 155,
+    "durationSeconds": 156,
+    "chordMarkers": 133,
+    "melodyNotes": 331,
+    "bytes": 37925,
+    "playable": true
+  },
+  {
     "file": "STABLEM.MID",
     "title": "Stablemates",
     "bpm": 195,
@@ -15274,6 +22344,16 @@
     "chordMarkers": 182,
     "melodyNotes": 248,
     "bytes": 39519,
+    "playable": true
+  },
+  {
+    "file": "Star City Blues.MID",
+    "title": "Star City Blues - Les Paul",
+    "bpm": 150,
+    "durationSeconds": 413,
+    "chordMarkers": 53,
+    "melodyNotes": 167,
+    "bytes": 28628,
     "playable": true
   },
   {
@@ -15357,6 +22437,16 @@
     "playable": true
   },
   {
+    "file": "State Street Special - Jimmie Yancey.MID",
+    "title": "State Street Special - Jimmie Yancey",
+    "bpm": 95,
+    "durationSeconds": 925,
+    "chordMarkers": 42,
+    "melodyNotes": 1867,
+    "bytes": 43798,
+    "playable": true
+  },
+  {
     "file": "STATUE OF A FOOL.MID",
     "title": "Statue of a Fool",
     "bpm": 82,
@@ -15374,6 +22464,26 @@
     "chordMarkers": 183,
     "melodyNotes": 1478,
     "bytes": 22916,
+    "playable": true
+  },
+  {
+    "file": "STEEL GUITAR RAG STEELRAG.MID",
+    "title": "STEEL GUITAR RAG",
+    "bpm": 97,
+    "durationSeconds": 195,
+    "chordMarkers": 77,
+    "melodyNotes": 382,
+    "bytes": 26988,
+    "playable": true
+  },
+  {
+    "file": "Steel Guitar Rag_1.MID",
+    "title": "STEEL GUITAR RAG",
+    "bpm": 210,
+    "durationSeconds": 231,
+    "chordMarkers": 100,
+    "melodyNotes": 572,
+    "bytes": 27416,
     "playable": true
   },
   {
@@ -15404,6 +22514,36 @@
     "chordMarkers": 55,
     "melodyNotes": 393,
     "bytes": 35262,
+    "playable": true
+  },
+  {
+    "file": "STEELRA1.MID",
+    "title": "STEEL GUITAR RAG",
+    "bpm": 182,
+    "durationSeconds": 203,
+    "chordMarkers": 77,
+    "melodyNotes": 444,
+    "bytes": 20480,
+    "playable": true
+  },
+  {
+    "file": "STEELRA2.MID",
+    "title": "STEEL GUITAR RAG  [WARREN]",
+    "bpm": 130,
+    "durationSeconds": 572,
+    "chordMarkers": 48,
+    "melodyNotes": 332,
+    "bytes": 13715,
+    "playable": true
+  },
+  {
+    "file": "STEELRAG.MID",
+    "title": "STEEL GUITAR RAG",
+    "bpm": 97,
+    "durationSeconds": 195,
+    "chordMarkers": 77,
+    "melodyNotes": 382,
+    "bytes": 27029,
     "playable": true
   },
   {
@@ -15447,6 +22587,16 @@
     "playable": true
   },
   {
+    "file": "STOLENMT_1.MID",
+    "title": "Stolen Moments    by Oliver Nelson",
+    "bpm": 100,
+    "durationSeconds": 48,
+    "chordMarkers": 23,
+    "melodyNotes": 112,
+    "bytes": 3858,
+    "playable": true
+  },
+  {
     "file": "STOLENMT_2.MID",
     "title": "STOLEN MOMENTS",
     "bpm": 115,
@@ -15457,6 +22607,36 @@
     "playable": true
   },
   {
+    "file": "STOLENMT.MID",
+    "title": "STOLEN MOMENTS by Oliver Nelson",
+    "bpm": 100,
+    "durationSeconds": 125,
+    "chordMarkers": 67,
+    "melodyNotes": 326,
+    "bytes": 10551,
+    "playable": true
+  },
+  {
+    "file": "STOMP_N AT THE SAVOY.MID",
+    "title": "STOMP'N AT THE SAVOY",
+    "bpm": 120,
+    "durationSeconds": 208,
+    "chordMarkers": 130,
+    "melodyNotes": 348,
+    "bytes": 16015,
+    "playable": true
+  },
+  {
+    "file": "STOMP_N2.MID",
+    "title": "STOMP'N AT THE SAVOY2",
+    "bpm": 135,
+    "durationSeconds": 571,
+    "chordMarkers": 136,
+    "melodyNotes": 378,
+    "bytes": 16586,
+    "playable": true
+  },
+  {
     "file": "Stompin_ At The Savoy.MID",
     "title": "Stompin' at the Savoy",
     "bpm": 103,
@@ -15464,6 +22644,16 @@
     "chordMarkers": 180,
     "melodyNotes": 343,
     "bytes": 42389,
+    "playable": true
+  },
+  {
+    "file": "Stool Of Repentance.MID",
+    "title": "Stool of Repentance",
+    "bpm": 120,
+    "durationSeconds": 548,
+    "chordMarkers": 58,
+    "melodyNotes": 341,
+    "bytes": 20178,
     "playable": true
   },
   {
@@ -15514,6 +22704,26 @@
     "chordMarkers": 103,
     "melodyNotes": 1132,
     "bytes": 35892,
+    "playable": true
+  },
+  {
+    "file": "STRANGER ON THE SHORE [STEELE CHORDS].MID",
+    "title": "Stranger on the Shore [Steele chords]",
+    "bpm": 95,
+    "durationSeconds": 280,
+    "chordMarkers": 167,
+    "melodyNotes": 384,
+    "bytes": 16634,
+    "playable": true
+  },
+  {
+    "file": "STRANGER.MID",
+    "title": "STRANGER ON THE SHORE  [JC]",
+    "bpm": 94,
+    "durationSeconds": 181,
+    "chordMarkers": 71,
+    "melodyNotes": 206,
+    "bytes": 10075,
     "playable": true
   },
   {
@@ -15647,6 +22857,16 @@
     "playable": true
   },
   {
+    "file": "Sultry Serenade_1.MID",
+    "title": "Sultry Serenade",
+    "bpm": 120,
+    "durationSeconds": 198,
+    "chordMarkers": 151,
+    "melodyNotes": 187,
+    "bytes": 50338,
+    "playable": true
+  },
+  {
     "file": "SUMBREEZ.MID",
     "title": "Summer Breeze",
     "bpm": 88,
@@ -15677,6 +22897,26 @@
     "playable": true
   },
   {
+    "file": "SUMMERTIME BLUES  [RI].MID",
+    "title": "SUMMER TIME BLUES  [RI]",
+    "bpm": 135,
+    "durationSeconds": 576,
+    "chordMarkers": 46,
+    "melodyNotes": 221,
+    "bytes": 11110,
+    "playable": true
+  },
+  {
+    "file": "Summertime_1.MID",
+    "title": "Summertime",
+    "bpm": 115,
+    "durationSeconds": 670,
+    "chordMarkers": 116,
+    "melodyNotes": 339,
+    "bytes": 12824,
+    "playable": true
+  },
+  {
     "file": "Summertime.MID",
     "title": "Summertime",
     "bpm": 115,
@@ -15694,6 +22934,26 @@
     "chordMarkers": 119,
     "melodyNotes": 140,
     "bytes": 12154,
+    "playable": true
+  },
+  {
+    "file": "SUMRTMEB.MID",
+    "title": "SUMMER TIME BLUES",
+    "bpm": 135,
+    "durationSeconds": 576,
+    "chordMarkers": 46,
+    "melodyNotes": 276,
+    "bytes": 11270,
+    "playable": true
+  },
+  {
+    "file": "Sunday Afternoon.MID",
+    "title": "Sunday Afternoon - Heather Cox",
+    "bpm": 75,
+    "durationSeconds": 938,
+    "chordMarkers": 73,
+    "melodyNotes": 394,
+    "bytes": 43173,
     "playable": true
   },
   {
@@ -15747,6 +23007,16 @@
     "playable": true
   },
   {
+    "file": "Sunnyland Blues.MID",
+    "title": "Sunnyland Blues",
+    "bpm": 120,
+    "durationSeconds": 516,
+    "chordMarkers": 39,
+    "melodyNotes": 195,
+    "bytes": 6557,
+    "playable": true
+  },
+  {
     "file": "SUNRISAD.MID",
     "title": "Sunrise Serenade",
     "bpm": 90,
@@ -15767,6 +23037,16 @@
     "playable": true
   },
   {
+    "file": "SUNRISE.MID",
+    "title": "Sunrise, Sunset",
+    "bpm": 160,
+    "durationSeconds": 434,
+    "chordMarkers": 215,
+    "melodyNotes": 4974,
+    "bytes": 49728,
+    "playable": true
+  },
+  {
     "file": "SUNSET.MID",
     "title": "Sunset Mood    [omit pno]",
     "bpm": 70,
@@ -15784,6 +23064,16 @@
     "chordMarkers": 131,
     "melodyNotes": 110,
     "bytes": 18277,
+    "playable": true
+  },
+  {
+    "file": "SUNSHINE.MID",
+    "title": "Sunshine of my life ( can also play as bossa style4)",
+    "bpm": 140,
+    "durationSeconds": 578,
+    "chordMarkers": 140,
+    "melodyNotes": 115,
+    "bytes": 31306,
     "playable": true
   },
   {
@@ -15867,6 +23157,16 @@
     "playable": true
   },
   {
+    "file": "Sweet Chorus.MID",
+    "title": "Sweet Chorus",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 118,
+    "melodyNotes": 103,
+    "bytes": 16136,
+    "playable": true
+  },
+  {
     "file": "Sweet Dreams [s Cd].MID",
     "title": "SWEET DREAMS [S cd]",
     "bpm": 80,
@@ -15917,6 +23217,16 @@
     "playable": true
   },
   {
+    "file": "Sweet Lorraine_1.MID",
+    "title": "Sweet Lorraine",
+    "bpm": 100,
+    "durationSeconds": 771,
+    "chordMarkers": 164,
+    "melodyNotes": 239,
+    "bytes": 40616,
+    "playable": true
+  },
+  {
     "file": "Sweet Lorraine.MID",
     "title": "Sweet Lorraine",
     "bpm": 120,
@@ -15947,6 +23257,16 @@
     "playable": true
   },
   {
+    "file": "Sweethearts On Parade_1.MID",
+    "title": "Sweethearts On Parade",
+    "bpm": 120,
+    "durationSeconds": 646,
+    "chordMarkers": 95,
+    "melodyNotes": 126,
+    "bytes": 52515,
+    "playable": true
+  },
+  {
     "file": "Sweetie.MID",
     "title": "Sweetie - Ron Stebbins",
     "bpm": 165,
@@ -15974,6 +23294,16 @@
     "chordMarkers": 95,
     "melodyNotes": 204,
     "bytes": 11047,
+    "playable": true
+  },
+  {
+    "file": "SWEETSUE.MID",
+    "title": "Sweet Sue-Just You",
+    "bpm": 180,
+    "durationSeconds": 430,
+    "chordMarkers": 91,
+    "melodyNotes": 63,
+    "bytes": 15232,
     "playable": true
   },
   {
@@ -16024,6 +23354,26 @@
     "chordMarkers": 119,
     "melodyNotes": 166,
     "bytes": 63760,
+    "playable": true
+  },
+  {
+    "file": "Syncopated Hula Rhythm.MID",
+    "title": "Syncopated Hula Rhythm",
+    "bpm": 120,
+    "durationSeconds": 585,
+    "chordMarkers": 38,
+    "melodyNotes": 302,
+    "bytes": 37406,
+    "playable": true
+  },
+  {
+    "file": "T J R C.MID",
+    "title": "T J R C",
+    "bpm": 146,
+    "durationSeconds": 528,
+    "chordMarkers": 179,
+    "melodyNotes": 391,
+    "bytes": 16681,
     "playable": true
   },
   {
@@ -16097,6 +23447,16 @@
     "playable": true
   },
   {
+    "file": "Take A Bow.MID",
+    "title": "Take A Bow",
+    "bpm": 165,
+    "durationSeconds": 72,
+    "chordMarkers": 81,
+    "melodyNotes": 705,
+    "bytes": 18561,
+    "playable": true
+  },
+  {
     "file": "Take Back Your Mink.MID",
     "title": "Take Back Your Mink",
     "bpm": 115,
@@ -16157,6 +23517,26 @@
     "playable": true
   },
   {
+    "file": "TAKE THE _A_ TRAIN.MID",
+    "title": "Take The 'A' Train",
+    "bpm": 128,
+    "durationSeconds": 662,
+    "chordMarkers": 109,
+    "melodyNotes": 563,
+    "bytes": 33781,
+    "playable": true
+  },
+  {
+    "file": "TAKE THESE CHAINS FROM MY HEART(CHUCK).MID",
+    "title": "Take These Chains From My Heart(chuck)",
+    "bpm": 90,
+    "durationSeconds": 771,
+    "chordMarkers": 26,
+    "melodyNotes": 177,
+    "bytes": 7698,
+    "playable": true
+  },
+  {
     "file": "Take This Job And Shove It! - Blues2.MID",
     "title": "Take This Job And Shove It!",
     "bpm": 120,
@@ -16187,6 +23567,26 @@
     "playable": true
   },
   {
+    "file": "Taking A Chance On Love - Vernon Duke.MID",
+    "title": "Taking A Chance On Love - Vernon Duke",
+    "bpm": 135,
+    "durationSeconds": 457,
+    "chordMarkers": 69,
+    "melodyNotes": 126,
+    "bytes": 9409,
+    "playable": true
+  },
+  {
+    "file": "Tammy_2.MID",
+    "title": "Tammy",
+    "bpm": 90,
+    "durationSeconds": 580,
+    "chordMarkers": 68,
+    "melodyNotes": 87,
+    "bytes": 14551,
+    "playable": true
+  },
+  {
     "file": "Tandem In The Sun.MID",
     "title": "Tandem In The Sun",
     "bpm": 88,
@@ -16194,6 +23594,26 @@
     "chordMarkers": 112,
     "melodyNotes": 713,
     "bytes": 22910,
+    "playable": true
+  },
+  {
+    "file": "TANGERIN.MID",
+    "title": "Tangerine",
+    "bpm": 165,
+    "durationSeconds": 154,
+    "chordMarkers": 137,
+    "melodyNotes": 83,
+    "bytes": 39227,
+    "playable": true
+  },
+  {
+    "file": "TANGERNE.MID",
+    "title": "TANGERINE",
+    "bpm": 160,
+    "durationSeconds": 482,
+    "chordMarkers": 142,
+    "melodyNotes": 368,
+    "bytes": 15770,
     "playable": true
   },
   {
@@ -16214,6 +23634,16 @@
     "chordMarkers": 130,
     "melodyNotes": 430,
     "bytes": 14297,
+    "playable": true
+  },
+  {
+    "file": "TATANGO.MID",
+    "title": "Ta Ta Tango     [omit pno]",
+    "bpm": 98,
+    "durationSeconds": 103,
+    "chordMarkers": 45,
+    "melodyNotes": 778,
+    "bytes": 19889,
     "playable": true
   },
   {
@@ -16257,6 +23687,26 @@
     "playable": true
   },
   {
+    "file": "Tear In My Beer_1.MID",
+    "title": "Tear in My Beer",
+    "bpm": 140,
+    "durationSeconds": 178,
+    "chordMarkers": 111,
+    "melodyNotes": 497,
+    "bytes": 18790,
+    "playable": true
+  },
+  {
+    "file": "TEARDROP  [CJ].MID",
+    "title": "Teardrop  [CJ]",
+    "bpm": 65,
+    "durationSeconds": 951,
+    "chordMarkers": 53,
+    "melodyNotes": 98,
+    "bytes": 4980,
+    "playable": true
+  },
+  {
     "file": "Tears In Heaven_1.MID",
     "title": "Tears in Heaven",
     "bpm": 90,
@@ -16267,6 +23717,16 @@
     "playable": true
   },
   {
+    "file": "Tears On My Pillow.MID",
+    "title": "Tears On My Pillow",
+    "bpm": 120,
+    "durationSeconds": 459,
+    "chordMarkers": 74,
+    "melodyNotes": 204,
+    "bytes": 17981,
+    "playable": true
+  },
+  {
     "file": "TEARSARE.MID",
     "title": "TEARS ARE ONLY RAIN   [CJ]",
     "bpm": 94,
@@ -16274,6 +23734,16 @@
     "chordMarkers": 91,
     "melodyNotes": 312,
     "bytes": 15166,
+    "playable": true
+  },
+  {
+    "file": "TEARSNH.MID",
+    "title": "Tears in Heaven",
+    "bpm": 85,
+    "durationSeconds": 844,
+    "chordMarkers": 173,
+    "melodyNotes": 1313,
+    "bytes": 32098,
     "playable": true
   },
   {
@@ -16317,6 +23787,36 @@
     "playable": true
   },
   {
+    "file": "TENNESSEE WALTZ  [AH].MID",
+    "title": "Tennessee Waltz  [AH]",
+    "bpm": 95,
+    "durationSeconds": 141,
+    "chordMarkers": 49,
+    "melodyNotes": 660,
+    "bytes": 11806,
+    "playable": true
+  },
+  {
+    "file": "Tennessee Whiskey2.MID",
+    "title": "Tennessee Whiskey",
+    "bpm": 120,
+    "durationSeconds": 180,
+    "chordMarkers": 81,
+    "melodyNotes": 51,
+    "bytes": 21018,
+    "playable": true
+  },
+  {
+    "file": "TEQUILA_1.MID",
+    "title": "Tequila Sunrise",
+    "bpm": 115,
+    "durationSeconds": 536,
+    "chordMarkers": 78,
+    "melodyNotes": 367,
+    "bytes": 13653,
+    "playable": true
+  },
+  {
     "file": "Terry_s Blues.MID",
     "title": "Terry's Blues",
     "bpm": 140,
@@ -16337,6 +23837,16 @@
     "playable": true
   },
   {
+    "file": "Thanks For The Memory.MID",
+    "title": "Thanks For The memory - Robin & Rainger",
+    "bpm": 90,
+    "durationSeconds": 91,
+    "chordMarkers": 47,
+    "melodyNotes": 418,
+    "bytes": 14709,
+    "playable": true
+  },
+  {
     "file": "That Sunday That Summer.MID",
     "title": "That Sunday, That Summer - Sherman & Weiss",
     "bpm": 75,
@@ -16344,6 +23854,16 @@
     "chordMarkers": 105,
     "melodyNotes": 341,
     "bytes": 17897,
+    "playable": true
+  },
+  {
+    "file": "That Sure Would Go Good.MID",
+    "title": "That Sure Would Go Good",
+    "bpm": 110,
+    "durationSeconds": 305,
+    "chordMarkers": 165,
+    "melodyNotes": 954,
+    "bytes": 26429,
     "playable": true
   },
   {
@@ -16374,6 +23894,16 @@
     "chordMarkers": 113,
     "melodyNotes": 336,
     "bytes": 36040,
+    "playable": true
+  },
+  {
+    "file": "That_s My Desire.MID",
+    "title": "That's My Desire - Helmy Kresa",
+    "bpm": 100,
+    "durationSeconds": 240,
+    "chordMarkers": 171,
+    "melodyNotes": 284,
+    "bytes": 18092,
     "playable": true
   },
   {
@@ -16517,6 +24047,16 @@
     "playable": true
   },
   {
+    "file": "The End Of The Road.MID",
+    "title": "The End Of The Road - Dillon & Lauder",
+    "bpm": 200,
+    "durationSeconds": 390,
+    "chordMarkers": 67,
+    "melodyNotes": 201,
+    "bytes": 16636,
+    "playable": true
+  },
+  {
     "file": "The Entertainer  (scott Joplin)_1.MID",
     "title": "The Entertainer  (Scott Joplin)",
     "bpm": 160,
@@ -16534,6 +24074,26 @@
     "chordMarkers": 68,
     "melodyNotes": 340,
     "bytes": 46839,
+    "playable": true
+  },
+  {
+    "file": "The Great Lie - Gene Ammons.MID",
+    "title": "The Great Lie - Gene Ammons",
+    "bpm": 215,
+    "durationSeconds": 538,
+    "chordMarkers": 266,
+    "melodyNotes": 146,
+    "bytes": 39653,
+    "playable": true
+  },
+  {
+    "file": "The Groove Merchant - Thad Jones & Mel Lewis.MID",
+    "title": "The Groove Merchant - Thad Jones & Mel Lewis",
+    "bpm": 129,
+    "durationSeconds": 538,
+    "chordMarkers": 172,
+    "melodyNotes": 342,
+    "bytes": 32461,
     "playable": true
   },
   {
@@ -16677,6 +24237,16 @@
     "playable": true
   },
   {
+    "file": "The Old Rugged Cross_1.MID",
+    "title": "THE OLD RUGGED CROSS",
+    "bpm": 90,
+    "durationSeconds": 368,
+    "chordMarkers": 107,
+    "melodyNotes": 1341,
+    "bytes": 33830,
+    "playable": true
+  },
+  {
     "file": "The One That You Love.MID",
     "title": "The One That You Love",
     "bpm": 95,
@@ -16707,6 +24277,16 @@
     "playable": true
   },
   {
+    "file": "The Preacher - Horace Silver.MID",
+    "title": "The Preacher - Horace Silver",
+    "bpm": 180,
+    "durationSeconds": 160,
+    "chordMarkers": 136,
+    "melodyNotes": 233,
+    "bytes": 17855,
+    "playable": true
+  },
+  {
     "file": "The Psychic.MID",
     "title": "The Psychic - Ron Stebbins",
     "bpm": 125,
@@ -16727,6 +24307,16 @@
     "playable": true
   },
   {
+    "file": "The Song Is Ended (But The Melody Lingers On).MID",
+    "title": "The Song Is Ended (But the Melody Lingers On)",
+    "bpm": 120,
+    "durationSeconds": 483,
+    "chordMarkers": 125,
+    "melodyNotes": 335,
+    "bytes": 43982,
+    "playable": true
+  },
+  {
     "file": "THE SONG IS YOU.MID",
     "title": "THE SONG IS YOU",
     "bpm": 240,
@@ -16734,6 +24324,16 @@
     "chordMarkers": 277,
     "melodyNotes": 1139,
     "bytes": 38665,
+    "playable": true
+  },
+  {
+    "file": "The Tailgate Ramble - Wingy Manonem & Johnny Mercer.MID",
+    "title": "The Tailgate Ramble - Wingy Manone & Johnny Mercer",
+    "bpm": 180,
+    "durationSeconds": 123,
+    "chordMarkers": 62,
+    "melodyNotes": 297,
+    "bytes": 15087,
     "playable": true
   },
   {
@@ -16767,6 +24367,26 @@
     "playable": true
   },
   {
+    "file": "The Touch Of Your Hand.MID",
+    "title": "The Touch Of Your Hand",
+    "bpm": 106,
+    "durationSeconds": 438,
+    "chordMarkers": 62,
+    "melodyNotes": 100,
+    "bytes": 5864,
+    "playable": true
+  },
+  {
+    "file": "The Waltz You Saved For Me [j&s]_1.MID",
+    "title": "The Waltz You Saved for Me [J&S]",
+    "bpm": 110,
+    "durationSeconds": 772,
+    "chordMarkers": 130,
+    "melodyNotes": 114,
+    "bytes": 22748,
+    "playable": true
+  },
+  {
     "file": "THE WALTZ YOU SAVED FOR ME.MID",
     "title": "THE WALTZ YOU SAVED FOR ME",
     "bpm": 100,
@@ -16794,6 +24414,16 @@
     "chordMarkers": 82,
     "melodyNotes": 130,
     "bytes": 5717,
+    "playable": true
+  },
+  {
+    "file": "The Yancey Special.MID",
+    "title": "The Yancey Special - Meade 'Lux' Lewis",
+    "bpm": 94,
+    "durationSeconds": 789,
+    "chordMarkers": 81,
+    "melodyNotes": 2556,
+    "bytes": 63837,
     "playable": true
   },
   {
@@ -16867,6 +24497,26 @@
     "playable": true
   },
   {
+    "file": "THEME FOR ERNIE.MID",
+    "title": "Theme For Ernie",
+    "bpm": 60,
+    "durationSeconds": 1300,
+    "chordMarkers": 219,
+    "melodyNotes": 411,
+    "bytes": 18759,
+    "playable": true
+  },
+  {
+    "file": "THEMTHE.MID",
+    "title": "Them There Eyes (Intro 4 bars)",
+    "bpm": 120,
+    "durationSeconds": 644,
+    "chordMarkers": 85,
+    "melodyNotes": 113,
+    "bytes": 18197,
+    "playable": true
+  },
+  {
     "file": "THENITE.MID",
     "title": "The Night",
     "bpm": 125,
@@ -16884,6 +24534,16 @@
     "chordMarkers": 92,
     "melodyNotes": 3428,
     "bytes": 24119,
+    "playable": true
+  },
+  {
+    "file": "THERE GOES MY EVERYTHING.MID",
+    "title": "THERE GOES MY EVERYTHING",
+    "bpm": 105,
+    "durationSeconds": 176,
+    "chordMarkers": 96,
+    "melodyNotes": 909,
+    "bytes": 17249,
     "playable": true
   },
   {
@@ -16914,6 +24574,16 @@
     "chordMarkers": 54,
     "melodyNotes": 37,
     "bytes": 16910,
+    "playable": true
+  },
+  {
+    "file": "There Was A Time.MID",
+    "title": "There Was A Time",
+    "bpm": 160,
+    "durationSeconds": 470,
+    "chordMarkers": 86,
+    "melodyNotes": 135,
+    "bytes": 20516,
     "playable": true
   },
   {
@@ -16967,6 +24637,16 @@
     "playable": true
   },
   {
+    "file": "There_s Been A Change In Me_1.MID",
+    "title": "THERE'S BEEN A CHANGE IN ME",
+    "bpm": 170,
+    "durationSeconds": 464,
+    "chordMarkers": 52,
+    "melodyNotes": 375,
+    "bytes": 14860,
+    "playable": true
+  },
+  {
     "file": "There_s Been A Change In Me.MID",
     "title": "THERE'S BEEN A CHANGE IN ME",
     "bpm": 170,
@@ -16997,6 +24677,16 @@
     "playable": true
   },
   {
+    "file": "These Foolish Things_1.MID",
+    "title": "These Foolish Things",
+    "bpm": 100,
+    "durationSeconds": 694,
+    "chordMarkers": 129,
+    "melodyNotes": 270,
+    "bytes": 28268,
+    "playable": true
+  },
+  {
     "file": "THESHEIK_1.MID",
     "title": "The sheik of arabia (1st.4 measures intro)",
     "bpm": 210,
@@ -17014,6 +24704,26 @@
     "chordMarkers": 98,
     "melodyNotes": 160,
     "bytes": 13029,
+    "playable": true
+  },
+  {
+    "file": "THEWAYWE.MID",
+    "title": "The Way We Were",
+    "bpm": 75,
+    "durationSeconds": 298,
+    "chordMarkers": 161,
+    "melodyNotes": 281,
+    "bytes": 43387,
+    "playable": true
+  },
+  {
+    "file": "THEWAYYO.MID",
+    "title": "The Way You Look Tonight   ***",
+    "bpm": 300,
+    "durationSeconds": 53,
+    "chordMarkers": 78,
+    "melodyNotes": 16,
+    "bytes": 8836,
     "playable": true
   },
   {
@@ -17037,6 +24747,16 @@
     "playable": true
   },
   {
+    "file": "They Didn_t Believe Me.MID",
+    "title": "They Didn't Believe Me",
+    "bpm": 120,
+    "durationSeconds": 562,
+    "chordMarkers": 124,
+    "melodyNotes": 214,
+    "bytes": 18156,
+    "playable": true
+  },
+  {
     "file": "Thing In G Minor.MID",
     "title": "Thing In G-Minor",
     "bpm": 172,
@@ -17047,6 +24767,16 @@
     "playable": true
   },
   {
+    "file": "Things We Did Last Summer.MID",
+    "title": "Things We Did Last Summer",
+    "bpm": 75,
+    "durationSeconds": 926,
+    "chordMarkers": 122,
+    "melodyNotes": 151,
+    "bytes": 24766,
+    "playable": true
+  },
+  {
     "file": "THINKOME.MID",
     "title": "Think Of Me",
     "bpm": 110,
@@ -17054,6 +24784,26 @@
     "chordMarkers": 82,
     "melodyNotes": 125,
     "bytes": 22667,
+    "playable": true
+  },
+  {
+    "file": "THIRD RATE ROMANCE [RI].MID",
+    "title": "THIRD RATE ROMANCE [RI]",
+    "bpm": 115,
+    "durationSeconds": 196,
+    "chordMarkers": 35,
+    "melodyNotes": 2,
+    "bytes": 32421,
+    "playable": true
+  },
+  {
+    "file": "THIRSTY.MID",
+    "title": "Thirsty Ears  Jack Lavin   \"C\"",
+    "bpm": 161,
+    "durationSeconds": 392,
+    "chordMarkers": 91,
+    "melodyNotes": 126,
+    "bytes": 30903,
     "playable": true
   },
   {
@@ -17087,6 +24837,16 @@
     "playable": true
   },
   {
+    "file": "THIS IS THE SOUTHLAND.MID",
+    "title": "THIS IS THE SOUTHLAND",
+    "bpm": 188,
+    "durationSeconds": 394,
+    "chordMarkers": 60,
+    "melodyNotes": 331,
+    "bytes": 16150,
+    "playable": true
+  },
+  {
     "file": "This Masquerade_1.MID",
     "title": "This Masquerade",
     "bpm": 110,
@@ -17107,6 +24867,16 @@
     "playable": true
   },
   {
+    "file": "THISTRAN.MID",
+    "title": "This Train Is Bound For Glory",
+    "bpm": 120,
+    "durationSeconds": 579,
+    "chordMarkers": 50,
+    "melodyNotes": 306,
+    "bytes": 19527,
+    "playable": true
+  },
+  {
     "file": "THOSEWER.MID",
     "title": "Those Were The Days/M4T4",
     "bpm": 190,
@@ -17124,6 +24894,16 @@
     "chordMarkers": 237,
     "melodyNotes": 209,
     "bytes": 26452,
+    "playable": true
+  },
+  {
+    "file": "THOUGHTS.MID",
+    "title": "Thoughts Of You   [omit pno]",
+    "bpm": 90,
+    "durationSeconds": 156,
+    "chordMarkers": 86,
+    "melodyNotes": 744,
+    "bytes": 26510,
     "playable": true
   },
   {
@@ -17154,6 +24934,16 @@
     "chordMarkers": 38,
     "melodyNotes": 113,
     "bytes": 9536,
+    "playable": true
+  },
+  {
+    "file": "Three-way Boogie.MID",
+    "title": "Three-Way Boogie",
+    "bpm": 120,
+    "durationSeconds": 618,
+    "chordMarkers": 34,
+    "melodyNotes": 352,
+    "bytes": 51438,
     "playable": true
   },
   {
@@ -17207,6 +24997,16 @@
     "playable": true
   },
   {
+    "file": "TIGERRAG_1.MID",
+    "title": "Tiger Rag",
+    "bpm": 190,
+    "durationSeconds": 436,
+    "chordMarkers": 139,
+    "melodyNotes": 502,
+    "bytes": 29375,
+    "playable": true
+  },
+  {
     "file": "Til There Was You.MID",
     "title": "Til There Was You",
     "bpm": 120,
@@ -17224,6 +25024,16 @@
     "chordMarkers": 142,
     "melodyNotes": 233,
     "bytes": 12262,
+    "playable": true
+  },
+  {
+    "file": "Tilther2.MID",
+    "title": "Till There Was You",
+    "bpm": 110,
+    "durationSeconds": 79,
+    "chordMarkers": 45,
+    "melodyNotes": 109,
+    "bytes": 12286,
     "playable": true
   },
   {
@@ -17277,6 +25087,76 @@
     "playable": true
   },
   {
+    "file": "TIMEREMB.MID",
+    "title": "Time remembered (B. Evans)",
+    "bpm": 60,
+    "durationSeconds": 1236,
+    "chordMarkers": 76,
+    "melodyNotes": 63,
+    "bytes": 22398,
+    "playable": true
+  },
+  {
+    "file": "TIMES LIE.MID",
+    "title": "Times Lie",
+    "bpm": 150,
+    "durationSeconds": 418,
+    "chordMarkers": 176,
+    "melodyNotes": 2794,
+    "bytes": 32774,
+    "playable": true
+  },
+  {
+    "file": "TINROOFB_1.MID",
+    "title": "Tinroof Blues",
+    "bpm": 85,
+    "durationSeconds": 226,
+    "chordMarkers": 92,
+    "melodyNotes": 95,
+    "bytes": 24161,
+    "playable": true
+  },
+  {
+    "file": "Tiny Bubbles   [j&s]_1.MID",
+    "title": "TINY BUBBLES   [J&S]",
+    "bpm": 130,
+    "durationSeconds": 233,
+    "chordMarkers": 60,
+    "melodyNotes": 380,
+    "bytes": 16929,
+    "playable": true
+  },
+  {
+    "file": "Tiny Bubbles   [j&s].MID",
+    "title": "TINY BUBBLES   [J&S]",
+    "bpm": 130,
+    "durationSeconds": 233,
+    "chordMarkers": 60,
+    "melodyNotes": 400,
+    "bytes": 17633,
+    "playable": true
+  },
+  {
+    "file": "TINYBUBB.MID",
+    "title": "TINY BUBBLES   [BOB O]",
+    "bpm": 130,
+    "durationSeconds": 159,
+    "chordMarkers": 41,
+    "melodyNotes": 253,
+    "bytes": 12136,
+    "playable": true
+  },
+  {
+    "file": "TIPERARY.MID",
+    "title": "Tipperary/British Army/M1T1",
+    "bpm": 220,
+    "durationSeconds": 351,
+    "chordMarkers": 87,
+    "melodyNotes": 210,
+    "bytes": 16289,
+    "playable": true
+  },
+  {
     "file": "Tiptoe Thru The Tulips.MID",
     "title": "Tiptoe Thru The Tulips",
     "bpm": 112,
@@ -17284,6 +25164,26 @@
     "chordMarkers": 176,
     "melodyNotes": 203,
     "bytes": 19432,
+    "playable": true
+  },
+  {
+    "file": "Tiree Bridal Song.MID",
+    "title": "Tiree Bridal Song",
+    "bpm": 180,
+    "durationSeconds": 388,
+    "chordMarkers": 54,
+    "melodyNotes": 124,
+    "bytes": 9751,
+    "playable": true
+  },
+  {
+    "file": "TMDESIRE.MID",
+    "title": "That's My Desire  (Music by Helmy Kresa)",
+    "bpm": 100,
+    "durationSeconds": 240,
+    "chordMarkers": 171,
+    "melodyNotes": 284,
+    "bytes": 18206,
     "playable": true
   },
   {
@@ -17327,6 +25227,26 @@
     "playable": true
   },
   {
+    "file": "TOGETHER AGAIN [RI].MID",
+    "title": "TOGETHER AGAIN   [RI]",
+    "bpm": 80,
+    "durationSeconds": 891,
+    "chordMarkers": 43,
+    "melodyNotes": 199,
+    "bytes": 9638,
+    "playable": true
+  },
+  {
+    "file": "Together We_re In This Love.MID",
+    "title": "Together We're In This Love",
+    "bpm": 84,
+    "durationSeconds": 220,
+    "chordMarkers": 153,
+    "melodyNotes": 311,
+    "bytes": 37582,
+    "playable": true
+  },
+  {
     "file": "TOGETHER_1.MID",
     "title": "Together(We're In This Love)",
     "bpm": 84,
@@ -17337,6 +25257,16 @@
     "playable": true
   },
   {
+    "file": "TOGETHER_2.MID",
+    "title": "Together",
+    "bpm": 120,
+    "durationSeconds": 518,
+    "chordMarkers": 26,
+    "melodyNotes": 63,
+    "bytes": 5527,
+    "playable": true
+  },
+  {
     "file": "TOLOVBDY.MID",
     "title": "To Love Somebody /Melody /Brothers Gibb/C.balad.Sty/pg",
     "bpm": 95,
@@ -17344,6 +25274,26 @@
     "chordMarkers": 76,
     "melodyNotes": 269,
     "bytes": 12936,
+    "playable": true
+  },
+  {
+    "file": "Tom Cat Blues - Jelly Roll Morton.MID",
+    "title": "Tom Cat Blues - Jelly Roll Morton",
+    "bpm": 145,
+    "durationSeconds": 192,
+    "chordMarkers": 187,
+    "melodyNotes": 604,
+    "bytes": 22336,
+    "playable": true
+  },
+  {
+    "file": "TOMWARDS.MID",
+    "title": "Tom Ward's Downfall",
+    "bpm": 175,
+    "durationSeconds": 354,
+    "chordMarkers": 34,
+    "melodyNotes": 292,
+    "bytes": 6560,
     "playable": true
   },
   {
@@ -17387,6 +25337,26 @@
     "playable": true
   },
   {
+    "file": "TOO_LATE.MID",
+    "title": "Too Late Baby, It's",
+    "bpm": 110,
+    "durationSeconds": 561,
+    "chordMarkers": 68,
+    "melodyNotes": 274,
+    "bytes": 23128,
+    "playable": true
+  },
+  {
+    "file": "TOOTTOOT.MID",
+    "title": "TOOT TOOT TOOTSIE   [FD]",
+    "bpm": 215,
+    "durationSeconds": 145,
+    "chordMarkers": 121,
+    "melodyNotes": 243,
+    "bytes": 20686,
+    "playable": true
+  },
+  {
     "file": "TOUCH OF YOUR LIPS, THE.MID",
     "title": "Touch Of Your Lips, The",
     "bpm": 120,
@@ -17394,6 +25364,16 @@
     "chordMarkers": 154,
     "melodyNotes": 350,
     "bytes": 16073,
+    "playable": true
+  },
+  {
+    "file": "TOUCHAND.MID",
+    "title": "The Touch Of Your Hand",
+    "bpm": 106,
+    "durationSeconds": 438,
+    "chordMarkers": 62,
+    "melodyNotes": 100,
+    "bytes": 5847,
     "playable": true
   },
   {
@@ -17424,6 +25404,26 @@
     "chordMarkers": 91,
     "melodyNotes": 256,
     "bytes": 23418,
+    "playable": true
+  },
+  {
+    "file": "True Blue.MID",
+    "title": "True Blue - John Williamson",
+    "bpm": 120,
+    "durationSeconds": 594,
+    "chordMarkers": 100,
+    "melodyNotes": 220,
+    "bytes": 13904,
+    "playable": true
+  },
+  {
+    "file": "TRUELOVW_1.MID",
+    "title": "True Love Ways         Buddy Holly          [Paul Anka]",
+    "bpm": 80,
+    "durationSeconds": 869,
+    "chordMarkers": 98,
+    "melodyNotes": 167,
+    "bytes": 11434,
     "playable": true
   },
   {
@@ -17477,6 +25477,16 @@
     "playable": true
   },
   {
+    "file": "Tulsa Time.MID",
+    "title": "TULSA TIME",
+    "bpm": 120,
+    "durationSeconds": 624,
+    "chordMarkers": 20,
+    "melodyNotes": 218,
+    "bytes": 11090,
+    "playable": true
+  },
+  {
     "file": "TUNE UP.MID",
     "title": "TUNE UP.SG1",
     "bpm": 240,
@@ -17484,6 +25494,26 @@
     "chordMarkers": 91,
     "melodyNotes": 370,
     "bytes": 14772,
+    "playable": true
+  },
+  {
+    "file": "TURKEY.MID",
+    "title": "Turkey In The Straw",
+    "bpm": 120,
+    "durationSeconds": 581,
+    "chordMarkers": 50,
+    "melodyNotes": 537,
+    "bytes": 20962,
+    "playable": true
+  },
+  {
+    "file": "Tuxedo Junction  [j&s]_1.MID",
+    "title": "Tuxedo Junction  [J&S]",
+    "bpm": 135,
+    "durationSeconds": 599,
+    "chordMarkers": 184,
+    "melodyNotes": 131,
+    "bytes": 44211,
     "playable": true
   },
   {
@@ -17524,6 +25554,16 @@
     "chordMarkers": 92,
     "melodyNotes": 758,
     "bytes": 111069,
+    "playable": true
+  },
+  {
+    "file": "TWELVE TONE TUNE TOB.MID",
+    "title": "Twelve Tone Tune TOB",
+    "bpm": 120,
+    "durationSeconds": 634,
+    "chordMarkers": 115,
+    "melodyNotes": 305,
+    "bytes": 12169,
     "playable": true
   },
   {
@@ -17587,6 +25627,36 @@
     "playable": true
   },
   {
+    "file": "tzenatze_1.MID",
+    "title": "Tzena Tzena",
+    "bpm": 140,
+    "durationSeconds": 442,
+    "chordMarkers": 16,
+    "melodyNotes": 85,
+    "bytes": 6833,
+    "playable": true
+  },
+  {
+    "file": "TZENATZE.MID",
+    "title": "Tzena Tzena",
+    "bpm": 140,
+    "durationSeconds": 497,
+    "chordMarkers": 44,
+    "melodyNotes": 255,
+    "bytes": 18929,
+    "playable": true
+  },
+  {
+    "file": "U_CANT.MID",
+    "title": "You Can't Turn Back        Tom Cochrane/Red Rider",
+    "bpm": 160,
+    "durationSeconds": 413,
+    "chordMarkers": 51,
+    "melodyNotes": 393,
+    "bytes": 28304,
+    "playable": true
+  },
+  {
     "file": "U-SENDME.MID",
     "title": "YOU SEND ME",
     "bpm": 100,
@@ -17594,6 +25664,16 @@
     "chordMarkers": 199,
     "melodyNotes": 399,
     "bytes": 16934,
+    "playable": true
+  },
+  {
+    "file": "U-TOOKAD_1.MID",
+    "title": "YOU TOOK ADVANTAGE OF ME",
+    "bpm": 140,
+    "durationSeconds": 171,
+    "chordMarkers": 178,
+    "melodyNotes": 405,
+    "bytes": 19317,
     "playable": true
   },
   {
@@ -17607,6 +25687,16 @@
     "playable": true
   },
   {
+    "file": "UBELONG2.MID",
+    "title": "You Belong to my Heart",
+    "bpm": 120,
+    "durationSeconds": 642,
+    "chordMarkers": 145,
+    "melodyNotes": 93,
+    "bytes": 33516,
+    "playable": true
+  },
+  {
     "file": "uglychil2.MID",
     "title": "Ugly Chile",
     "bpm": 150,
@@ -17614,6 +25704,16 @@
     "chordMarkers": 169,
     "melodyNotes": 426,
     "bytes": 20323,
+    "playable": true
+  },
+  {
+    "file": "UN POCO LOCO.MID",
+    "title": "Un Poco Loco",
+    "bpm": 136,
+    "durationSeconds": 674,
+    "chordMarkers": 144,
+    "melodyNotes": 843,
+    "bytes": 301881,
     "playable": true
   },
   {
@@ -17647,6 +25747,36 @@
     "playable": false
   },
   {
+    "file": "Undecided_1.MID",
+    "title": "Undecided",
+    "bpm": 175,
+    "durationSeconds": 137,
+    "chordMarkers": 67,
+    "melodyNotes": 245,
+    "bytes": 77944,
+    "playable": true
+  },
+  {
+    "file": "UNDER THE BOARDWALK  [J&S].MID",
+    "title": "UNDER THE BOARDWALK  [J&S]",
+    "bpm": 135,
+    "durationSeconds": 546,
+    "chordMarkers": 37,
+    "melodyNotes": 12,
+    "bytes": 56431,
+    "playable": true
+  },
+  {
+    "file": "UNDER THE DOUBLE EAGLE  [FD].MID",
+    "title": "Under the Double Eagle  [FD]",
+    "bpm": 230,
+    "durationSeconds": 136,
+    "chordMarkers": 38,
+    "melodyNotes": 270,
+    "bytes": 19724,
+    "playable": true
+  },
+  {
     "file": "Under Your Spell Again.MID",
     "title": "Under Your Spell Again [RI]",
     "bpm": 151,
@@ -17665,6 +25795,16 @@
     "melodyNotes": 4754,
     "bytes": 47517,
     "playable": false
+  },
+  {
+    "file": "UNDERNTH_1.MID",
+    "title": "Underneath the Arches",
+    "bpm": 100,
+    "durationSeconds": 620,
+    "chordMarkers": 24,
+    "melodyNotes": 94,
+    "bytes": 9459,
+    "playable": true
   },
   {
     "file": "UNDERNTH.MID",
@@ -17714,6 +25854,16 @@
     "chordMarkers": 123,
     "melodyNotes": 343,
     "bytes": 24007,
+    "playable": true
+  },
+  {
+    "file": "Une Chansonette.MID",
+    "title": "Une Chansonette",
+    "bpm": 180,
+    "durationSeconds": 595,
+    "chordMarkers": 105,
+    "melodyNotes": 1044,
+    "bytes": 30384,
     "playable": true
   },
   {
@@ -17794,6 +25944,36 @@
     "chordMarkers": 31,
     "melodyNotes": 116,
     "bytes": 9978,
+    "playable": true
+  },
+  {
+    "file": "UNIVERSE.MID",
+    "title": "ACROSS THE UNIVERSE",
+    "bpm": 96,
+    "durationSeconds": 965,
+    "chordMarkers": 140,
+    "melodyNotes": 225,
+    "bytes": 56306,
+    "playable": true
+  },
+  {
+    "file": "UNLESS IT_S YOU (A.K.A. ORB.MID",
+    "title": "Unless It's You (a.k.a. Orbit)",
+    "bpm": 148,
+    "durationSeconds": 572,
+    "chordMarkers": 314,
+    "melodyNotes": 589,
+    "bytes": 27020,
+    "playable": true
+  },
+  {
+    "file": "Unless You Care.MID",
+    "title": "Unless You Care - Terry Black",
+    "bpm": 133,
+    "durationSeconds": 464,
+    "chordMarkers": 59,
+    "melodyNotes": 44,
+    "bytes": 13107,
     "playable": true
   },
   {
@@ -17887,6 +26067,16 @@
     "playable": false
   },
   {
+    "file": "UVGTFREN.MID",
+    "title": "You've Got A  Friend",
+    "bpm": 100,
+    "durationSeconds": 684,
+    "chordMarkers": 121,
+    "melodyNotes": 417,
+    "bytes": 32472,
+    "playable": true
+  },
+  {
     "file": "UWONTCME.MID",
     "title": "YOU WON'T SEE ME",
     "bpm": 120,
@@ -17894,6 +26084,36 @@
     "chordMarkers": 182,
     "melodyNotes": 1406,
     "bytes": 65011,
+    "playable": true
+  },
+  {
+    "file": "Varsity Drag.MID",
+    "title": "Varsity Drag - DeSylva, Brown & Ray Henderson",
+    "bpm": 180,
+    "durationSeconds": 133,
+    "chordMarkers": 133,
+    "melodyNotes": 324,
+    "bytes": 17376,
+    "playable": true
+  },
+  {
+    "file": "VENNE.MID",
+    "title": "venne sangen (friends song) DK",
+    "bpm": 120,
+    "durationSeconds": 599,
+    "chordMarkers": 89,
+    "melodyNotes": 283,
+    "bytes": 11247,
+    "playable": true
+  },
+  {
+    "file": "VERY THOUGHT OF YOU, THE.MID",
+    "title": "The Very Thought Of You",
+    "bpm": 89,
+    "durationSeconds": 866,
+    "chordMarkers": 166,
+    "melodyNotes": 357,
+    "bytes": 16410,
     "playable": true
   },
   {
@@ -18017,6 +26237,16 @@
     "playable": true
   },
   {
+    "file": "Walking After Midnight  [s Cd].MID",
+    "title": "WALKING AFTER MIDNIGHT  [S cd]",
+    "bpm": 88,
+    "durationSeconds": 202,
+    "chordMarkers": 99,
+    "melodyNotes": 245,
+    "bytes": 11103,
+    "playable": true
+  },
+  {
     "file": "WALKNAFT.MID",
     "title": "Walkin' After Midnight",
     "bpm": 95,
@@ -18057,6 +26287,16 @@
     "playable": true
   },
   {
+    "file": "WARM.MID",
+    "title": "Warm",
+    "bpm": 160,
+    "durationSeconds": 198,
+    "chordMarkers": 179,
+    "melodyNotes": 376,
+    "bytes": 22959,
+    "playable": true
+  },
+  {
     "file": "wash_26l.MID",
     "title": "Washington and Lee Swing",
     "bpm": 200,
@@ -18064,6 +26304,16 @@
     "chordMarkers": 20,
     "melodyNotes": 81,
     "bytes": 6107,
+    "playable": true
+  },
+  {
+    "file": "Washington Twist - Irving Berlin.MID",
+    "title": "Washington Twist - Irving Berlin",
+    "bpm": 130,
+    "durationSeconds": 546,
+    "chordMarkers": 26,
+    "melodyNotes": 208,
+    "bytes": 15991,
     "playable": true
   },
   {
@@ -18077,6 +26327,16 @@
     "playable": true
   },
   {
+    "file": "WATERMELOM MAN.MID",
+    "title": "Watermelon Man",
+    "bpm": 114,
+    "durationSeconds": 684,
+    "chordMarkers": 56,
+    "melodyNotes": 714,
+    "bytes": 31138,
+    "playable": true
+  },
+  {
     "file": "Watermelon Man - Herbie Hancock.MID",
     "title": "Watermelon Man - Herbie Hancock",
     "bpm": 105,
@@ -18087,6 +26347,26 @@
     "playable": true
   },
   {
+    "file": "WAY DOWN YONDER IN NEW ORLEANS [FB].MID",
+    "title": "Way Down Yonder in New Orleans [FB]",
+    "bpm": 199,
+    "durationSeconds": 147,
+    "chordMarkers": 190,
+    "melodyNotes": 409,
+    "bytes": 22028,
+    "playable": true
+  },
+  {
+    "file": "Way Down Yonder In New Orleans_1.MID",
+    "title": "Way Down Yonder In New Orleans",
+    "bpm": 155,
+    "durationSeconds": 482,
+    "chordMarkers": 133,
+    "melodyNotes": 181,
+    "bytes": 69386,
+    "playable": true
+  },
+  {
     "file": "Way You Look Tonight.MID",
     "title": "Way You Look Tonight",
     "bpm": 170,
@@ -18094,6 +26374,16 @@
     "chordMarkers": 182,
     "melodyNotes": 236,
     "bytes": 156041,
+    "playable": true
+  },
+  {
+    "file": "WAY-U-R.MID",
+    "title": "Just The Way You Are   w/intro",
+    "bpm": 115,
+    "durationSeconds": 313,
+    "chordMarkers": 197,
+    "melodyNotes": 462,
+    "bytes": 64529,
     "playable": true
   },
   {
@@ -18117,6 +26407,16 @@
     "playable": true
   },
   {
+    "file": "WAYOULOK.MID",
+    "title": "The Way You Look Tonite",
+    "bpm": 74,
+    "durationSeconds": 836,
+    "chordMarkers": 121,
+    "melodyNotes": 34,
+    "bytes": 20124,
+    "playable": true
+  },
+  {
     "file": "waywewer.MID",
     "title": "The Way We Were",
     "bpm": 90,
@@ -18137,6 +26437,16 @@
     "playable": true
   },
   {
+    "file": "We Wish You A Merry Christmas.MID",
+    "title": "We Wish You a Merry Christmas",
+    "bpm": 120,
+    "durationSeconds": 435,
+    "chordMarkers": 53,
+    "melodyNotes": 154,
+    "bytes": 11348,
+    "playable": true
+  },
+  {
     "file": "WE_LBETO.MID",
     "title": "We'll Be Together Again",
     "bpm": 80,
@@ -18154,6 +26464,16 @@
     "chordMarkers": 212,
     "melodyNotes": 401,
     "bytes": 17561,
+    "playable": true
+  },
+  {
+    "file": "We_ll Never Know - Irving Berlin.MID",
+    "title": "We'll Never Know - Irving Berlin",
+    "bpm": 150,
+    "durationSeconds": 121,
+    "chordMarkers": 97,
+    "melodyNotes": 188,
+    "bytes": 23338,
     "playable": true
   },
   {
@@ -18187,6 +26507,36 @@
     "playable": true
   },
   {
+    "file": "WED0.MID",
+    "title": "Wedding March 0",
+    "bpm": 140,
+    "durationSeconds": 500,
+    "chordMarkers": 32,
+    "melodyNotes": 108,
+    "bytes": 8103,
+    "playable": true
+  },
+  {
+    "file": "WEDDING.MID",
+    "title": "Wedding Song (Kenny G)",
+    "bpm": 84,
+    "durationSeconds": 800,
+    "chordMarkers": 61,
+    "melodyNotes": 133,
+    "bytes": 9042,
+    "playable": true
+  },
+  {
+    "file": "WEL_U_ND.MID",
+    "title": "Well You Needn't",
+    "bpm": 220,
+    "durationSeconds": 351,
+    "chordMarkers": 89,
+    "melodyNotes": 415,
+    "bytes": 15194,
+    "playable": true
+  },
+  {
     "file": "WELL YOU NEEDN_T.MID",
     "title": "Well You Needn't",
     "bpm": 220,
@@ -18204,6 +26554,16 @@
     "chordMarkers": 147,
     "melodyNotes": 439,
     "bytes": 27031,
+    "playable": true
+  },
+  {
+    "file": "WENIFALL.MID",
+    "title": "WHEN I FALL IN LOVE",
+    "bpm": 90,
+    "durationSeconds": 267,
+    "chordMarkers": 179,
+    "melodyNotes": 293,
+    "bytes": 18281,
     "playable": true
   },
   {
@@ -18227,6 +26587,16 @@
     "playable": true
   },
   {
+    "file": "WEWISHYU.MID",
+    "title": "WE WISH YOU A MERRY CHRISTMAS  [BOB O]",
+    "bpm": 131,
+    "durationSeconds": 145,
+    "chordMarkers": 77,
+    "melodyNotes": 220,
+    "bytes": 11066,
+    "playable": true
+  },
+  {
     "file": "WH_SAINT.MID",
     "title": "When the Saints Go Marching In",
     "bpm": 220,
@@ -18244,6 +26614,16 @@
     "chordMarkers": 40,
     "melodyNotes": 77,
     "bytes": 11011,
+    "playable": true
+  },
+  {
+    "file": "WHALENS.MID",
+    "title": "Whalen's Breakdown",
+    "bpm": 150,
+    "durationSeconds": 515,
+    "chordMarkers": 62,
+    "melodyNotes": 480,
+    "bytes": 15990,
     "playable": true
   },
   {
@@ -18267,6 +26647,46 @@
     "playable": true
   },
   {
+    "file": "What A Diff_renze A Day Made.MID",
+    "title": "What a Diff'renze a Day Made",
+    "bpm": 120,
+    "durationSeconds": 142,
+    "chordMarkers": 95,
+    "melodyNotes": 220,
+    "bytes": 25164,
+    "playable": true
+  },
+  {
+    "file": "WHAT A DIFFRNCE A DAY MADE.MID",
+    "title": "What a Difference a Day Made",
+    "bpm": 120,
+    "durationSeconds": 640,
+    "chordMarkers": 131,
+    "melodyNotes": 343,
+    "bytes": 15382,
+    "playable": true
+  },
+  {
+    "file": "WHAT A LITTLE MNLGHT CAN DO.MID",
+    "title": "What a Little Moonlight Can Do",
+    "bpm": 176,
+    "durationSeconds": 525,
+    "chordMarkers": 158,
+    "melodyNotes": 642,
+    "bytes": 27792,
+    "playable": true
+  },
+  {
+    "file": "What A Wonderful World - Louis Armstrong [Authentic Piano On Soloist].MID",
+    "title": "What A Wonderful World - Louis Armstrong",
+    "bpm": 69,
+    "durationSeconds": 896,
+    "chordMarkers": 58,
+    "melodyNotes": 150,
+    "bytes": 10840,
+    "playable": true
+  },
+  {
     "file": "What Are You Doing New Year_s Eve - Frank Loesser.MID",
     "title": "What Are You Doing New Year's Eve? - Frank Loesser",
     "bpm": 79,
@@ -18287,6 +26707,16 @@
     "playable": true
   },
   {
+    "file": "What Are You Doing The Rest Of Your Life_1.MID",
+    "title": "What are you doing the rest of your life",
+    "bpm": 80,
+    "durationSeconds": 1011,
+    "chordMarkers": 157,
+    "melodyNotes": 205,
+    "bytes": 29875,
+    "playable": true
+  },
+  {
     "file": "What Can I Say After I Say I_m Sorry.MID",
     "title": "What Can I Say After I Say I'm Sorry",
     "bpm": 150,
@@ -18294,6 +26724,26 @@
     "chordMarkers": 121,
     "melodyNotes": 206,
     "bytes": 64765,
+    "playable": true
+  },
+  {
+    "file": "What Can I Say-  - Robbie.sty Demo - -.MID",
+    "title": "What Can I Say?  - Robbie.sty demo - -",
+    "bpm": 90,
+    "durationSeconds": 213,
+    "chordMarkers": 77,
+    "melodyNotes": 510,
+    "bytes": 47997,
+    "playable": true
+  },
+  {
+    "file": "What Have They Done To The Rain.MID",
+    "title": "What Have They Done To The Rain",
+    "bpm": 125,
+    "durationSeconds": 639,
+    "chordMarkers": 67,
+    "melodyNotes": 276,
+    "bytes": 50494,
     "playable": true
   },
   {
@@ -18307,6 +26757,16 @@
     "playable": true
   },
   {
+    "file": "What Is This Thing Called Love - Cole Porter.MID",
+    "title": "What Is This Thing Called Love - Cole Porter",
+    "bpm": 85,
+    "durationSeconds": 904,
+    "chordMarkers": 85,
+    "melodyNotes": 63,
+    "bytes": 30667,
+    "playable": true
+  },
+  {
     "file": "What Kind Of Fool Am I_1.MID",
     "title": "What Kind Of Fool Am I",
     "bpm": 90,
@@ -18314,6 +26774,16 @@
     "chordMarkers": 118,
     "melodyNotes": 199,
     "bytes": 44500,
+    "playable": true
+  },
+  {
+    "file": "What Now My Love.MID",
+    "title": "What Now My Love",
+    "bpm": 120,
+    "durationSeconds": 280,
+    "chordMarkers": 153,
+    "melodyNotes": 280,
+    "bytes": 38105,
     "playable": true
   },
   {
@@ -18367,6 +26837,36 @@
     "playable": true
   },
   {
+    "file": "WHATAWAY.MID",
+    "title": "WHAT A WAY TO LIVE [DALE]",
+    "bpm": 134,
+    "durationSeconds": 176,
+    "chordMarkers": 56,
+    "melodyNotes": 337,
+    "bytes": 13799,
+    "playable": true
+  },
+  {
+    "file": "WHATAWON_1.MID",
+    "title": "What a wonderful world",
+    "bpm": 85,
+    "durationSeconds": 824,
+    "chordMarkers": 133,
+    "melodyNotes": 143,
+    "bytes": 25215,
+    "playable": true
+  },
+  {
+    "file": "WHATNOW_1.MID",
+    "title": "What Now My Love",
+    "bpm": 120,
+    "durationSeconds": 280,
+    "chordMarkers": 153,
+    "melodyNotes": 280,
+    "bytes": 38468,
+    "playable": true
+  },
+  {
     "file": "Whats Going On In Your World_1.MID",
     "title": "WHATS GOING ON IN YOUR WORLD",
     "bpm": 90,
@@ -18414,6 +26914,16 @@
     "chordMarkers": 76,
     "melodyNotes": 122,
     "bytes": 23377,
+    "playable": true
+  },
+  {
+    "file": "When I_m Cleaning Windows.MID",
+    "title": "When I'm Cleaning Windows - George Formby",
+    "bpm": 210,
+    "durationSeconds": 368,
+    "chordMarkers": 93,
+    "melodyNotes": 344,
+    "bytes": 55924,
     "playable": true
   },
   {
@@ -18517,6 +27027,26 @@
     "playable": true
   },
   {
+    "file": "WHEN THE TINGLE BECOMES A CHIL(CHUCK).MID",
+    "title": "When The Tingle Becomes A Chil(chuck)",
+    "bpm": 85,
+    "durationSeconds": 906,
+    "chordMarkers": 72,
+    "melodyNotes": 375,
+    "bytes": 14160,
+    "playable": true
+  },
+  {
+    "file": "When Two Worlds Collide.MID",
+    "title": "WHEN TWO WORLDS COLLIDE",
+    "bpm": 100,
+    "durationSeconds": 581,
+    "chordMarkers": 56,
+    "melodyNotes": 570,
+    "bytes": 22552,
+    "playable": true
+  },
+  {
     "file": "When You & I Were Young Maggie.MID",
     "title": "When You & I Were Young Maggie",
     "bpm": 175,
@@ -18537,6 +27067,16 @@
     "playable": true
   },
   {
+    "file": "When You Wore A Tulip.MID",
+    "title": "When You Wore A Tulip",
+    "bpm": 170,
+    "durationSeconds": 184,
+    "chordMarkers": 89,
+    "melodyNotes": 151,
+    "bytes": 20340,
+    "playable": true
+  },
+  {
     "file": "When You_re Smilin_.MID",
     "title": "When You're Smilin'",
     "bpm": 160,
@@ -18544,6 +27084,16 @@
     "chordMarkers": 63,
     "melodyNotes": 128,
     "bytes": 79346,
+    "playable": true
+  },
+  {
+    "file": "WHEN_1.MID",
+    "title": "When   (-pno)     ****",
+    "bpm": 116,
+    "durationSeconds": 132,
+    "chordMarkers": 105,
+    "melodyNotes": 955,
+    "bytes": 25996,
     "playable": true
   },
   {
@@ -18627,6 +27177,36 @@
     "playable": true
   },
   {
+    "file": "Where Are You_1.MID",
+    "title": "Where Are You",
+    "bpm": 90,
+    "durationSeconds": 856,
+    "chordMarkers": 187,
+    "melodyNotes": 166,
+    "bytes": 40213,
+    "playable": true
+  },
+  {
+    "file": "Where Can I Go Without You.MID",
+    "title": "Where Can I Go Without You?",
+    "bpm": 75,
+    "durationSeconds": 963,
+    "chordMarkers": 252,
+    "melodyNotes": 198,
+    "bytes": 27917,
+    "playable": true
+  },
+  {
+    "file": "WHILE.MID",
+    "title": "While We're Young *",
+    "bpm": 140,
+    "durationSeconds": 390,
+    "chordMarkers": 78,
+    "melodyNotes": 57,
+    "bytes": 20769,
+    "playable": true
+  },
+  {
     "file": "Whimsical.MID",
     "title": "Whimsical - Ron Stebbins",
     "bpm": 120,
@@ -18657,6 +27237,16 @@
     "playable": true
   },
   {
+    "file": "Whisper Not - Benny Golson.MID",
+    "title": "Whisper Not - Benny Golson",
+    "bpm": 112,
+    "durationSeconds": 551,
+    "chordMarkers": 242,
+    "melodyNotes": 430,
+    "bytes": 27172,
+    "playable": true
+  },
+  {
     "file": "WHISPERI.MID",
     "title": "WHISPERING   [CHRIS]",
     "bpm": 135,
@@ -18667,6 +27257,16 @@
     "playable": true
   },
   {
+    "file": "WHISPERING {BARON}.MID",
+    "title": "Whispering {Baron}",
+    "bpm": 165,
+    "durationSeconds": 467,
+    "chordMarkers": 64,
+    "melodyNotes": 350,
+    "bytes": 14705,
+    "playable": true
+  },
+  {
     "file": "Whispering Grass.MID",
     "title": "Whispering Grass",
     "bpm": 79,
@@ -18674,6 +27274,16 @@
     "chordMarkers": 48,
     "melodyNotes": 121,
     "bytes": 15875,
+    "playable": true
+  },
+  {
+    "file": "Whispering_1.MID",
+    "title": "WHISPERING",
+    "bpm": 120,
+    "durationSeconds": 646,
+    "chordMarkers": 65,
+    "melodyNotes": 349,
+    "bytes": 14369,
     "playable": true
   },
   {
@@ -18717,6 +27327,36 @@
     "playable": true
   },
   {
+    "file": "WHITEXMS.MID",
+    "title": "White Christmas   w/intro  nice arr./chords",
+    "bpm": 108,
+    "durationSeconds": 635,
+    "chordMarkers": 139,
+    "melodyNotes": 244,
+    "bytes": 12521,
+    "playable": true
+  },
+  {
+    "file": "WHITPALE.MID",
+    "title": "Whiter shade of Pale",
+    "bpm": 80,
+    "durationSeconds": 843,
+    "chordMarkers": 65,
+    "melodyNotes": 55,
+    "bytes": 10950,
+    "playable": true
+  },
+  {
+    "file": "WHO_S IN STRAWBERRY PATCH WEVELYN [FD].MID",
+    "title": "Who's in Strawberry Patch wEvelyn [FD]",
+    "bpm": 243,
+    "durationSeconds": 136,
+    "chordMarkers": 54,
+    "melodyNotes": 333,
+    "bytes": 21079,
+    "playable": true
+  },
+  {
     "file": "Who_s Sorry Now [cset2]_1.MID",
     "title": "WHO'S SORRY NOW [Cset2]",
     "bpm": 110,
@@ -18724,6 +27364,16 @@
     "chordMarkers": 61,
     "melodyNotes": 271,
     "bytes": 13154,
+    "playable": true
+  },
+  {
+    "file": "WHO-CANI_1.MID",
+    "title": "Who Can I Turn To",
+    "bpm": 120,
+    "durationSeconds": 576,
+    "chordMarkers": 129,
+    "melodyNotes": 226,
+    "bytes": 21554,
     "playable": true
   },
   {
@@ -18757,6 +27407,16 @@
     "playable": true
   },
   {
+    "file": "Why Don_t You Believe Me.MID",
+    "title": "Why Don't You Believe Me? - Douglas, Laney & Rodde",
+    "bpm": 85,
+    "durationSeconds": 728,
+    "chordMarkers": 110,
+    "melodyNotes": 190,
+    "bytes": 27678,
+    "playable": true
+  },
+  {
     "file": "Why Don_t You Do Right - Mccoy & Mellrose.MID",
     "title": "Why Don't You Do Right - McCoy & Mellrose",
     "bpm": 96,
@@ -18774,6 +27434,16 @@
     "chordMarkers": 184,
     "melodyNotes": 132,
     "bytes": 22070,
+    "playable": true
+  },
+  {
+    "file": "WHYDFOOL_1.MID",
+    "title": "WHY DO FOOLS FALL IN LOVE",
+    "bpm": 175,
+    "durationSeconds": 441,
+    "chordMarkers": 155,
+    "melodyNotes": 270,
+    "bytes": 29194,
     "playable": true
   },
   {
@@ -18817,6 +27487,46 @@
     "playable": true
   },
   {
+    "file": "WILLOWWP_1.MID",
+    "title": "Willow Weep For Me",
+    "bpm": 88,
+    "durationSeconds": 98,
+    "chordMarkers": 75,
+    "melodyNotes": 242,
+    "bytes": 7883,
+    "playable": true
+  },
+  {
+    "file": "WIMOWEH_1.MID",
+    "title": "Wimoweh",
+    "bpm": 135,
+    "durationSeconds": 459,
+    "chordMarkers": 38,
+    "melodyNotes": 369,
+    "bytes": 13792,
+    "playable": true
+  },
+  {
+    "file": "WIMOWEH_2.MID",
+    "title": "Wimoweh",
+    "bpm": 105,
+    "durationSeconds": 754,
+    "chordMarkers": 110,
+    "melodyNotes": 550,
+    "bytes": 35636,
+    "playable": true
+  },
+  {
+    "file": "WINCHEST.MID",
+    "title": "WINCHESTER CATHEDRAL",
+    "bpm": 124,
+    "durationSeconds": 645,
+    "chordMarkers": 46,
+    "melodyNotes": 339,
+    "bytes": 14710,
+    "playable": true
+  },
+  {
     "file": "WindCriesMary-download.MID",
     "title": "Wind Cries Mary",
     "bpm": 75,
@@ -18837,6 +27547,16 @@
     "playable": true
   },
   {
+    "file": "Windows.MID",
+    "title": "Windows",
+    "bpm": 185,
+    "durationSeconds": 47,
+    "chordMarkers": 27,
+    "melodyNotes": 96,
+    "bytes": 5922,
+    "playable": true
+  },
+  {
     "file": "Wine Light - Grover Washington.MID",
     "title": "Wine Light - Grover Washington",
     "bpm": 100,
@@ -18844,6 +27564,16 @@
     "chordMarkers": 148,
     "melodyNotes": 1227,
     "bytes": 46137,
+    "playable": true
+  },
+  {
+    "file": "Wine&ros.MID",
+    "title": "Days of Wine And Roses",
+    "bpm": 140,
+    "durationSeconds": 444,
+    "chordMarkers": 63,
+    "melodyNotes": 209,
+    "bytes": 26369,
     "playable": true
   },
   {
@@ -18867,6 +27597,36 @@
     "playable": true
   },
   {
+    "file": "Winter Ducks.MID",
+    "title": "Winter Ducks",
+    "bpm": 120,
+    "durationSeconds": 515,
+    "chordMarkers": 58,
+    "melodyNotes": 186,
+    "bytes": 9220,
+    "playable": true
+  },
+  {
+    "file": "WINTER WONDERLAND.MID",
+    "title": "WINTER WONDERLAND",
+    "bpm": 135,
+    "durationSeconds": 190,
+    "chordMarkers": 71,
+    "melodyNotes": 2,
+    "bytes": 30861,
+    "playable": true
+  },
+  {
+    "file": "WINTERNT_1.MID",
+    "title": "SONG FOR A WINTER'S NIGHT  -  GORDON LIGHTFOOT",
+    "bpm": 120,
+    "durationSeconds": 682,
+    "chordMarkers": 110,
+    "melodyNotes": 225,
+    "bytes": 18850,
+    "playable": true
+  },
+  {
     "file": "WINTERNT.MID",
     "title": "SONG FOR A WINTER'S NIGHT  -  GORDON LIGHTFOOT",
     "bpm": 120,
@@ -18874,6 +27634,26 @@
     "chordMarkers": 110,
     "melodyNotes": 225,
     "bytes": 18974,
+    "playable": true
+  },
+  {
+    "file": "WINTRWON.MID",
+    "title": "Winter Wonderland\\Sleigh Ride",
+    "bpm": 125,
+    "durationSeconds": 660,
+    "chordMarkers": 371,
+    "melodyNotes": 256,
+    "bytes": 54017,
+    "playable": true
+  },
+  {
+    "file": "Wipe Out.MID",
+    "title": "Wipe Out",
+    "bpm": 120,
+    "durationSeconds": 522,
+    "chordMarkers": 21,
+    "melodyNotes": 271,
+    "bytes": 14414,
     "playable": true
   },
   {
@@ -18897,6 +27677,26 @@
     "playable": true
   },
   {
+    "file": "WITHOUTA.MID",
+    "title": "Without A Song",
+    "bpm": 80,
+    "durationSeconds": 210,
+    "chordMarkers": 105,
+    "melodyNotes": 268,
+    "bytes": 13139,
+    "playable": true
+  },
+  {
+    "file": "WITHOUTU.MID",
+    "title": "Without You",
+    "bpm": 65,
+    "durationSeconds": 977,
+    "chordMarkers": 61,
+    "melodyNotes": 79,
+    "bytes": 21718,
+    "playable": true
+  },
+  {
     "file": "WNT2KNOW.MID",
     "title": "I Want To Know",
     "bpm": 120,
@@ -18904,6 +27704,16 @@
     "chordMarkers": 115,
     "melodyNotes": 101,
     "bytes": 27315,
+    "playable": true
+  },
+  {
+    "file": "wolverin_1.MID",
+    "title": "Wolverine Blues",
+    "bpm": 170,
+    "durationSeconds": 459,
+    "chordMarkers": 175,
+    "melodyNotes": 424,
+    "bytes": 23764,
     "playable": true
   },
   {
@@ -18947,6 +27757,16 @@
     "playable": true
   },
   {
+    "file": "WONTLAST.MID",
+    "title": "Won't Last a Day",
+    "bpm": 90,
+    "durationSeconds": 936,
+    "chordMarkers": 295,
+    "melodyNotes": 200,
+    "bytes": 48359,
+    "playable": true
+  },
+  {
     "file": "WONWORLD_1.MID",
     "title": "Wonderful World",
     "bpm": 100,
@@ -18977,6 +27797,16 @@
     "playable": true
   },
   {
+    "file": "WORKIN_M.MID",
+    "title": "WORKING MAN BLUES",
+    "bpm": 206,
+    "durationSeconds": 720,
+    "chordMarkers": 26,
+    "melodyNotes": 353,
+    "bytes": 24709,
+    "playable": true
+  },
+  {
     "file": "World Is Waiting For The Sunrise.MID",
     "title": "World Is Waiting For The Sunrise",
     "bpm": 175,
@@ -18994,6 +27824,16 @@
     "chordMarkers": 62,
     "melodyNotes": 1328,
     "bytes": 83450,
+    "playable": true
+  },
+  {
+    "file": "Wouldn_t It Be Loverly_1.MID",
+    "title": "Wouldn't It Be Loverly",
+    "bpm": 130,
+    "durationSeconds": 546,
+    "chordMarkers": 140,
+    "melodyNotes": 260,
+    "bytes": 30851,
     "playable": true
   },
   {
@@ -19047,6 +27887,16 @@
     "playable": true
   },
   {
+    "file": "Y_CHEATR.MID",
+    "title": "YOUR CHEATING HEART [REECE]",
+    "bpm": 115,
+    "durationSeconds": 670,
+    "chordMarkers": 54,
+    "melodyNotes": 323,
+    "bytes": 13141,
+    "playable": true
+  },
+  {
     "file": "YARDBIRD.MID",
     "title": "Yardbird Suite",
     "bpm": 220,
@@ -19054,6 +27904,16 @@
     "chordMarkers": 93,
     "melodyNotes": 110,
     "bytes": 16739,
+    "playable": true
+  },
+  {
+    "file": "Yearning.MID",
+    "title": "Yearning",
+    "bpm": 180,
+    "durationSeconds": 144,
+    "chordMarkers": 112,
+    "melodyNotes": 364,
+    "bytes": 18130,
     "playable": true
   },
   {
@@ -19107,6 +27967,16 @@
     "playable": true
   },
   {
+    "file": "Yes, I_m Ready.MID",
+    "title": "Yes, I'm Ready",
+    "bpm": 70,
+    "durationSeconds": 881,
+    "chordMarkers": 89,
+    "melodyNotes": 235,
+    "bytes": 21746,
+    "playable": true
+  },
+  {
     "file": "YEST_WHN.MID",
     "title": "YESTERDAY WHEN I WAS YOUNG",
     "bpm": 90,
@@ -19124,6 +27994,26 @@
     "chordMarkers": 84,
     "melodyNotes": 354,
     "bytes": 9334,
+    "playable": true
+  },
+  {
+    "file": "YESTDAYS_1.MID",
+    "title": "YESTERDAYS",
+    "bpm": 120,
+    "durationSeconds": 652,
+    "chordMarkers": 128,
+    "melodyNotes": 221,
+    "bytes": 17735,
+    "playable": true
+  },
+  {
+    "file": "YESTDAYS.MID",
+    "title": "YESTERDAYS",
+    "bpm": 120,
+    "durationSeconds": 652,
+    "chordMarkers": 128,
+    "melodyNotes": 367,
+    "bytes": 16405,
     "playable": true
   },
   {
@@ -19184,6 +28074,16 @@
     "chordMarkers": 221,
     "melodyNotes": 113,
     "bytes": 30078,
+    "playable": true
+  },
+  {
+    "file": "YORNOBOD.MID",
+    "title": "You're Nobody Till Somebody Loves You",
+    "bpm": 115,
+    "durationSeconds": 538,
+    "chordMarkers": 30,
+    "melodyNotes": 85,
+    "bytes": 9318,
     "playable": true
   },
   {
@@ -19297,6 +28197,16 @@
     "playable": true
   },
   {
+    "file": "You Make Me Feel Like Dancin_.MID",
+    "title": "You Make Me Feel Like Dancin'",
+    "bpm": 108,
+    "durationSeconds": 191,
+    "chordMarkers": 146,
+    "melodyNotes": 316,
+    "bytes": 46577,
+    "playable": true
+  },
+  {
     "file": "You Meet The Nicest People In Your Dreams.MID",
     "title": "You Meet The Nicest People In Your Dreams",
     "bpm": 195,
@@ -19367,6 +28277,16 @@
     "playable": true
   },
   {
+    "file": "You Win Again(different Chords).MID",
+    "title": "You Win Again(different chords)",
+    "bpm": 120,
+    "durationSeconds": 579,
+    "chordMarkers": 62,
+    "melodyNotes": 137,
+    "bytes": 33390,
+    "playable": true
+  },
+  {
     "file": "You Win Again2.MID",
     "title": "You Win Again",
     "bpm": 120,
@@ -19427,6 +28347,26 @@
     "playable": true
   },
   {
+    "file": "You_re Breaking My Heart.MID",
+    "title": "You're Breaking My Heart",
+    "bpm": 105,
+    "durationSeconds": 338,
+    "chordMarkers": 112,
+    "melodyNotes": 331,
+    "bytes": 22416,
+    "playable": true
+  },
+  {
+    "file": "YOU_RE EVERYTHING.MID",
+    "title": "You're Everything",
+    "bpm": 120,
+    "durationSeconds": 662,
+    "chordMarkers": 159,
+    "melodyNotes": 524,
+    "bytes": 22452,
+    "playable": true
+  },
+  {
     "file": "You_re Getting To Be A Habit With Me.MID",
     "title": "You're Getting To Be A Habit With Me",
     "bpm": 116,
@@ -19444,6 +28384,16 @@
     "chordMarkers": 107,
     "melodyNotes": 181,
     "bytes": 40290,
+    "playable": true
+  },
+  {
+    "file": "You_re Nobody _til Somebody Loves You.MID",
+    "title": "You're Nobody 'til Somebody Loves You",
+    "bpm": 120,
+    "durationSeconds": 580,
+    "chordMarkers": 68,
+    "melodyNotes": 199,
+    "bytes": 16905,
     "playable": true
   },
   {
@@ -19477,6 +28427,16 @@
     "playable": true
   },
   {
+    "file": "YOUBLONG.MID",
+    "title": "YOU BELONG TO ME  [Bob Connell]",
+    "bpm": 71,
+    "durationSeconds": 240,
+    "chordMarkers": 86,
+    "melodyNotes": 64,
+    "bytes": 18438,
+    "playable": true
+  },
+  {
     "file": "YOUCANT.MID",
     "title": "You can't kill us (I kan ikke slÂr os ihjel)    DK/LH",
     "bpm": 135,
@@ -19484,6 +28444,16 @@
     "chordMarkers": 49,
     "melodyNotes": 585,
     "bytes": 32841,
+    "playable": true
+  },
+  {
+    "file": "YOUDONT.MID",
+    "title": "You Don't Know What Love Is - by Fenton Robinson",
+    "bpm": 85,
+    "durationSeconds": 827,
+    "chordMarkers": 29,
+    "melodyNotes": 457,
+    "bytes": 12373,
     "playable": true
   },
   {
@@ -19545,6 +28515,16 @@
     "melodyNotes": 239,
     "bytes": 24116,
     "playable": false
+  },
+  {
+    "file": "YOUNGER THAN SPRING TIME.MID",
+    "title": "Younger Than Spring Time",
+    "bpm": 121,
+    "durationSeconds": 645,
+    "chordMarkers": 166,
+    "melodyNotes": 368,
+    "bytes": 17060,
+    "playable": true
   },
   {
     "file": "YOUNGIRL.MID",
@@ -19667,6 +28647,16 @@
     "playable": false
   },
   {
+    "file": "YOUWINAG_1.MID",
+    "title": "You Win Again",
+    "bpm": 140,
+    "durationSeconds": 499,
+    "chordMarkers": 34,
+    "melodyNotes": 134,
+    "bytes": 9619,
+    "playable": true
+  },
+  {
     "file": "YRSIMHAL.MID",
     "title": "YOURS IS MY HEART ALONE",
     "bpm": 65,
@@ -19684,6 +28674,16 @@
     "chordMarkers": 195,
     "melodyNotes": 181,
     "bytes": 34314,
+    "playable": true
+  },
+  {
+    "file": "YURSUN.MID",
+    "title": "You Are the Sunshine of My Life  w/intro",
+    "bpm": 130,
+    "durationSeconds": 474,
+    "chordMarkers": 52,
+    "melodyNotes": 147,
+    "bytes": 13766,
     "playable": true
   }
 ];
