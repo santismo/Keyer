@@ -11,6 +11,7 @@ const js = fs.readFileSync(path.join(root, 'standards.js'), 'utf8');
 const desktopHtml = fs.readFileSync(path.join(root, 'standards-desktop.html'), 'utf8');
 const desktopCss = fs.readFileSync(path.join(root, 'standards-desktop.css'), 'utf8');
 const soloCatalog = require(path.join(root, 'jazz-solo-catalog.js'));
+const azMidiCatalog = require(path.join(root, 'a-z-midi-catalog.js'));
 
 assert.doesNotMatch(html, /id="(?:voicingNotes|scaleNotes|playVoicing)"/);
 assert.match(html, /id="toggleNoteNames"/);
@@ -20,6 +21,7 @@ assert.match(html, /class="library-actions"[\s\S]*id="randomSong"[\s\S]*id="play
 assert.match(html, /id="songAvailabilityFilter"/);
 assert.match(html, /option value="solos">Jazz solos<\/option>/);
 assert.match(html, /option value="parker">Charlie Parker solos<\/option>/);
+assert.match(html, /option value="az-midi">A–Z MIDI songs<\/option>/);
 assert.match(html, /option value="favorites">Favorites<\/option>/);
 assert.match(html, /id="favoriteSong"/);
 assert.doesNotMatch(html, /id="loadMidi"/);
@@ -53,6 +55,7 @@ assert.match(html, /id="melodyKeyboardPane"/);
 assert.match(html, /id="fretboard"/);
 assert.match(html, /src="miditar-midi\.js"/);
 assert.match(html, /src="jazz-solo-catalog\.js"/);
+assert.match(html, /src="a-z-midi-catalog\.js"/);
 assert.match(html, /src="standards-reharm\.js"/);
 assert.match(html, /id="midiAttribution"/);
 assert.match(html, /id="midiStudy"/);
@@ -170,6 +173,10 @@ assert.match(js, /function midiChorusesForNotes\(/);
 assert.match(js, /function selectMidiStudy\(/);
 assert.match(js, /function selectMidiChorus\(/);
 assert.match(js, /function soloStudyActive\(/);
+assert.match(js, /function hydrateAzMidiSong\(/);
+assert.match(js, /state\.azMidiSongs/);
+assert.match(js, /song\.azMidiEntry/);
+assert.match(js, /type: 'az-midi'/);
 assert.match(js, /SoloCatalog\?\.findParkerSolo/);
 assert.match(js, /showing only the solo line, \$\{positionDescription\}/);
 assert.match(js, /visual octave down is on while MIDI playback remains at the written octave/);
@@ -199,6 +206,7 @@ assert.match(desktopHtml, /id="keyboardRangeMode"/);
 assert.match(desktopHtml, /id="songAvailabilityFilter"/);
 assert.match(desktopHtml, /option value="solos">Jazz solos<\/option>/);
 assert.match(desktopHtml, /option value="parker">Charlie Parker solos<\/option>/);
+assert.match(desktopHtml, /option value="az-midi">A–Z MIDI songs<\/option>/);
 assert.match(desktopHtml, /option value="favorites">Favorites<\/option>/);
 assert.match(desktopHtml, /id="favoriteSong"/);
 assert.doesNotMatch(desktopHtml, /id="loadMidi"/);
@@ -212,6 +220,7 @@ assert.match(desktopHtml, /class="library-actions"[\s\S]*id="randomSong"[\s\S]*i
 assert.match(desktopHtml, /id="reharmLevel"/);
 assert.match(desktopHtml, /src="standards-reharm\.js"/);
 assert.match(desktopHtml, /src="jazz-solo-catalog\.js"/);
+assert.match(desktopHtml, /src="a-z-midi-catalog\.js"/);
 assert.match(desktopHtml, /id="midiAttribution"/);
 assert.match(desktopHtml, /id="midiStudy"/);
 assert.match(desktopHtml, /id="midiChorus"/);
@@ -231,5 +240,14 @@ assert.equal(new Set(soloCatalog.parkerSolos.map(entry => entry.id)).size, 50);
 assert.equal(soloCatalog.parkerSupplementalSongs().length, 24);
 assert.equal(soloCatalog.isMiditarMultiChorus('Autumn Leaves'), true);
 assert.ok(soloCatalog.multiChorusCount >= 300);
+
+assert.equal(azMidiCatalog.fileCount, 1968);
+assert.equal(azMidiCatalog.playableCount, 1944);
+assert.equal(azMidiCatalog.entries.length, 1968);
+assert.equal(azMidiCatalog.playableEntries.every(entry => entry.playable && entry.chordMarkers > 0 && entry.melodyNotes > 0), true);
+assert.equal(new Set(azMidiCatalog.entries.map(entry => entry.file)).size, 1968);
+azMidiCatalog.entries.forEach(entry => {
+  assert.equal(fs.existsSync(path.join(root, 'a-z-midi', entry.file)), true, `Missing A–Z MIDI file: ${entry.file}`);
+});
 
 console.log('Jazz standards UI contract tests passed.');

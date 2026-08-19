@@ -5,6 +5,7 @@
   const IReal = window.KeyerIReal;
   const MiditarMidi = window.KeyerMiditarMidi;
   const SoloCatalog = window.KeyerJazzSoloCatalog;
+  const AzMidiCatalog = window.KeyerAzMidiCatalog;
   const Reharm = window.KeyerStandardsReharm;
   const CATALOG_URLS = [
     'https://raw.githubusercontent.com/santismo/fakebot/main/real%20playlist.txt',
@@ -134,6 +135,7 @@
 
   const state = {
     songs: [],
+    azMidiSongs: [],
     song: null,
     bars: [],
     events: [],
@@ -3168,7 +3170,7 @@
     return parseParkerMusicXmlSong(xml, song);
   }
 
-  function applyLoadedSong(song, { transport = false } = {}) {
+  function applyLoadedSong(song, { transport = false, preloadedMidi = null } = {}) {
     const bars = normalizeBars(song);
     if (!bars.length) return false;
     if (transport) {
@@ -3208,14 +3210,53 @@
     // "Show melody" is a learner preference, not a property of one chart.
     // Keep it on through Random/song selection and quietly load the next
     // compatible melody when the catalog has a match.
-    if ((state.showMelody || state.preferSoloChorus) && state.midiEntry) void requestMidiSource({ showAfterLoad: true });
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: song.title, composer: song.composer, key: song.key })); } catch (_) {}
+    if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi) void requestMidiSource({ showAfterLoad: true });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        title: song.title,
+        composer: song.composer,
+        key: song.key,
+        azMidiFile: song.azMidiEntry?.file || ''
+      }));
+    } catch (_) {}
     return true;
+  }
+
+  async function hydrateAzMidiSong(song) {
+    const entry = song?.azMidiEntry;
+    if (!entry || !MiditarMidi) throw new Error('This A–Z MIDI entry could not be opened.');
+    const buffer = await fetchFirst(entry.urls, 'arrayBuffer');
+    const midi = MiditarMidi.parseMidi(buffer, entry.file);
+    const melodyTrack = MiditarMidi.chooseMelodyTrack(midi);
+    const melodyNotes = buildMelodyNotes(midi, melodyTrack);
+    const chart = buildMidiChart(midi, melodyNotes);
+    if (!chart?.bars?.length || !chart.playbackOrder?.length) {
+      throw new Error(`${entry.title} has no readable chord-marker chart.`);
+    }
+    return {
+      midi,
+      song: {
+        ...song,
+        title: entry.title || midi.title || song.title,
+        bpm: Number(chart.tempoBpm) || entry.bpm || song.bpm,
+        bars: chart.bars,
+        playbackOrder: chart.playbackOrder,
+        key: chart.sourceKey || song.key || ''
+      }
+    };
   }
 
   async function loadSong(song, options = {}) {
     const request = ++songLoadSequence;
     try {
+      let preloadedMidi = null;
+      if (song?.azMidiEntry && (!Array.isArray(song.bars) || !song.bars.length)) {
+        elements.libraryStatus.textContent = `Loading ${song.title}'s A–Z MIDI chart…`;
+        const hydrated = await hydrateAzMidiSong(song);
+        if (request !== songLoadSequence) return false;
+        Object.assign(song, hydrated.song);
+        preloadedMidi = hydrated.midi;
+      }
       if (song?.parkerXmlUrl && (!Array.isArray(song.bars) || !song.bars.length)) {
         elements.libraryStatus.textContent = `Loading ${song.title}'s Parker chord chart…`;
         const hydrated = await hydrateParkerSong(song);
@@ -3224,11 +3265,13 @@
       }
       if (request !== songLoadSequence
         || options.transportSession != null && !transportSessionActive(options.transportSession)) return false;
-      return applyLoadedSong(song, options);
+      const loaded = applyLoadedSong(song, { ...options, preloadedMidi });
+      if (loaded && preloadedMidi) installMidiSource(preloadedMidi, song.azMidiEntry);
+      return loaded;
     } catch (error) {
       if (request === songLoadSequence) {
         console.error(error);
-        elements.libraryStatus.textContent = `Could not load ${song?.title || 'this Parker'} chord chart.`;
+        elements.libraryStatus.textContent = `Could not load ${song?.title || 'this chart'}.`;
       }
       return false;
     }
@@ -3269,10 +3312,18 @@
 
   function matchingSongs(query) {
     const q = safeText(query).toLowerCase();
-    const source = q ? state.songs.filter(song => `${song.title} ${song.composer} ${song.style}`.toLowerCase().includes(q)) : state.songs;
+    const bank = state.songAvailabilityFilter === 'az-midi'
+      ? state.azMidiSongs
+      : state.songAvailabilityFilter === 'favorites'
+        ? [...state.songs, ...state.azMidiSongs]
+        : state.songs;
+    const source = q
+      ? bank.filter(song => `${song.title} ${song.composer} ${song.style} ${song.azMidiEntry?.file || ''}`.toLowerCase().includes(q))
+      : bank;
     if (state.songAvailabilityFilter === 'all') return source;
     if (state.songAvailabilityFilter === 'solos') return source.filter(isJazzSoloSong);
     if (state.songAvailabilityFilter === 'parker') return source.filter(isParkerSoloSong);
+    if (state.songAvailabilityFilter === 'az-midi') return source;
     if (state.songAvailabilityFilter === 'favorites') return source.filter(isFavoriteSong);
     if (!state.midiCatalogReady) return [];
     return source.filter(song => {
@@ -3305,7 +3356,9 @@
       title.textContent = song.title || 'Untitled';
       const sub = document.createElement('span');
       sub.className = 'result-sub';
-      const sourceLabel = state.songAvailabilityFilter === 'parker'
+      const sourceLabel = state.songAvailabilityFilter === 'az-midi'
+        ? `A–Z MIDI · ${song.azMidiEntry?.file || ''}`
+        : state.songAvailabilityFilter === 'parker'
         ? 'Parker solo'
         : state.songAvailabilityFilter === 'solos'
           ? isParkerSoloSong(song) ? 'Parker solo' : 'Multi-chorus study'
@@ -3331,8 +3384,10 @@
         : state.songAvailabilityFilter === 'chords' ? 'chord charts only'
         : state.songAvailabilityFilter === 'solos' ? 'jazz solo studies'
         : state.songAvailabilityFilter === 'parker' ? 'Charlie Parker solo studies'
+        : state.songAvailabilityFilter === 'az-midi' ? 'in the A–Z MIDI bank'
         : '';
-      elements.libraryStatus.textContent = `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'}${label ? ` ${label}` : ''} · ${state.songs.length.toLocaleString()} charts available`;
+      const available = state.songAvailabilityFilter === 'az-midi' ? state.azMidiSongs.length : state.songs.length;
+      elements.libraryStatus.textContent = `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'}${label ? ` ${label}` : ''} · ${available.toLocaleString()} charts available`;
     }
   }
 
@@ -3344,7 +3399,8 @@
     if (state.songs.length) {
       const multiChorusCount = SoloCatalog?.multiChorusCount || 0;
       const parkerCount = SoloCatalog?.parkerSolos?.length || 0;
-      elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz-standard charts · ${multiChorusCount} multi-chorus studies · ${parkerCount} Parker solos`;
+      const azCount = AzMidiCatalog?.playableCount || 0;
+      elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz-standard charts · ${multiChorusCount} multi-chorus studies · ${parkerCount} Parker solos · ${azCount.toLocaleString()} A–Z MIDI songs`;
     }
   }
 
@@ -3352,7 +3408,13 @@
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (!saved) return null;
-      return state.songs.find(song => song.title === saved.title && song.composer === saved.composer && song.key === saved.key) || null;
+      const candidates = [...state.songs, ...state.azMidiSongs];
+      return candidates.find(song => (
+        song.title === saved.title
+        && song.composer === saved.composer
+        && song.key === saved.key
+        && (!saved.azMidiFile || song.azMidiEntry?.file === saved.azMidiFile)
+      )) || null;
     } catch (_) { return null; }
   }
 
@@ -3395,6 +3457,7 @@
   }
 
   function midiEntriesForSong(song) {
+    if (song?.azMidiEntry) return [song.azMidiEntry];
     // Give purpose-built Parker transcriptions precedence, while preserving
     // the Miditar alternative as another selectable study source.
     const parker = parkerSolosForSong(song);
@@ -3597,6 +3660,26 @@
         : [];
       const knownTitles = new Set(catalogSongs.map(song => safeText(song?.title).toLocaleLowerCase()));
       state.songs = [...catalogSongs, ...supplementalParkerSongs.filter(song => !knownTitles.has(safeText(song?.title).toLocaleLowerCase()))];
+      state.azMidiSongs = (AzMidiCatalog?.playableEntries || []).map(entry => {
+        const midiEntry = {
+          ...entry,
+          name: entry.file,
+          type: 'az-midi',
+          sourceLabel: 'A–Z MIDI bank',
+          sourceUrl: 'https://github.com/santismo/Keyer/tree/main/a-z-midi',
+          urls: [`a-z-midi/${encodeURIComponent(entry.file)}`]
+        };
+        return {
+          title: entry.title,
+          composer: 'A–Z MIDI bank',
+          style: `MIDI chart · ${entry.chordMarkers} chord markers`,
+          key: '',
+          bpm: entry.bpm,
+          bars: [],
+          playbackOrder: [],
+          azMidiEntry: midiEntry
+        };
+      });
       if (!state.songs.length) throw new Error('No readable standards were found in the catalog.');
       state.songs.sort((a, b) => safeText(a.title).localeCompare(safeText(b.title), undefined, { sensitivity: 'base' }));
       elements.randomSong.disabled = false;
@@ -4128,7 +4211,7 @@
   });
   elements.search.addEventListener('input', () => { state.searchIndex = -1; renderSearchResults(); });
   elements.songAvailabilityFilter?.addEventListener('change', () => {
-    state.songAvailabilityFilter = ['favorites', 'melody', 'chords', 'solos', 'parker'].includes(elements.songAvailabilityFilter.value)
+    state.songAvailabilityFilter = ['favorites', 'melody', 'chords', 'solos', 'parker', 'az-midi'].includes(elements.songAvailabilityFilter.value)
       ? elements.songAvailabilityFilter.value
       : 'all';
     state.searchIndex = -1;
