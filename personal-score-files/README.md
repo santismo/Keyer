@@ -1,9 +1,9 @@
-# Keyer tab library
+# Keyer personal score library
 
-Put your personal tab files in `tab-library/inbox/`, then run:
+Put your personal tab files in `personal-score-files/inbox/`, then run:
 
 ```sh
-node scripts/build-tab-library-catalog.js
+node scripts/build-personal-score-catalog.js
 ```
 
 Keyer’s **Tab files** bank will then let you search and open them.

@@ -7,7 +7,7 @@
  */
 (function attachKeyerTabImport(root, factory) {
   var alphaTab = root && root.alphaTab;
-  if (!alphaTab && typeof module === 'object' && module.exports) alphaTab = require('./vendor/alphatab/alphaTab.min.js');
+  if (!alphaTab && typeof module === 'object' && module.exports) alphaTab = require('./vendor/score-reader/alphaTab.min.js');
   var api = factory(alphaTab);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.KeyerTabImport = api;

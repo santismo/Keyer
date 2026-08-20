@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const TabImport = require('../tab-import.js');
+const TabImport = require('../score-import.js');
 
 test('recognizes Guitar Pro direct-import formats and routes Power Tab files to conversion', () => {
   ['study.gp', 'study.gpx', 'study.gp3', 'study.gp4', 'study.gp5', 'study.musicxml', 'study.xml'].forEach(file => {
