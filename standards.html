@@ -34,6 +34,8 @@
         </div>
         <div class="library-actions">
           <button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button>
+          <button class="random-standard-button" id="openTabFile" type="button" aria-label="Open a personal Guitar Pro or MusicXML tab" title="Open Guitar Pro or MusicXML tab">Open tab</button>
+          <input id="tabFileInput" type="file" accept=".gp,.gpx,.gp3,.gp4,.gp5,.musicxml,.xml,.ptb,.pt2" hidden>
           <button class="random-standard-button performance-button primary library-play-button" id="playChart" type="button" aria-label="Play the current chart" aria-pressed="false" disabled>Play chart</button>
         </div>
       </div>
@@ -42,6 +44,7 @@
           <option value="all">All standards</option>
           <option value="solos">Jazz solos</option>
           <option value="parker">Charlie Parker solos</option>
+          <option value="tab-files">Tab files</option>
           <option value="legends">Jazz legend solos</option>
           <option value="az-midi">A–Z MIDI songs</option>
           <option value="parkerize">Parkerize</option>
@@ -197,6 +200,7 @@
             <label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label>
           </div>
           <label class="midi-chorus-control" id="midiStudyControl" for="midiStudy" hidden><span>Solo source</span><select id="midiStudy" aria-label="Choose a solo transcription"></select></label>
+          <label class="midi-chorus-control" id="tabTrackControl" for="tabTrack" hidden><span>Tab track</span><select id="tabTrack" aria-label="Choose a Guitar Pro track"></select></label>
           <label class="midi-chorus-control" id="midiChorusControl" for="midiChorus" hidden><span>Study chorus</span><select id="midiChorus" aria-label="Choose a MIDI chorus"></select></label>
           <div class="color-legend" aria-label="Instrument colors">
             <span><i class="root-swatch"></i>Root / bass</span>
@@ -218,6 +222,9 @@
   <script src="jazz-theory.js"></script>
   <script src="ireal.js"></script>
   <script src="miditar-midi.js"></script>
+  <script src="vendor/alphatab/alphaTab.min.js"></script>
+  <script src="tab-import.js"></script>
+  <script src="tab-library-catalog.js"></script>
   <script src="jazz-solo-catalog.js"></script>
   <script src="wjazzd-solo-catalog.js"></script>
   <script src="a-z-midi-catalog.js"></script>

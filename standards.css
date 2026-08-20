@@ -227,7 +227,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .fretboard { --fretboard-column-count: 13; --fretboard-min-width: 351px; position: relative; width: 100%; min-width: 0; max-width: 100%; height: clamp(138px, 39vw, 170px); min-height: 138px; overflow: hidden; color: #dce3ef; background: linear-gradient(180deg, #2b211b 0%, #15100e 100%); border-bottom: 1px solid #765f50; isolation: isolate; touch-action: manipulation; }
 .fretboard[data-extended="true"] { width: var(--fretboard-min-width); min-width: 100%; max-width: none; }
 .fretboard::before { content: ""; position: absolute; z-index: 0; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 15px, #ffffff05 16px 17px); opacity: .45; pointer-events: none; }
-.fretboard-grid { position: relative; z-index: 1; width: 100%; min-width: 0; height: 100%; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); padding: 32px 3px 4px; }
+.fretboard-grid { position: relative; z-index: 1; width: 100%; min-width: 0; height: 100%; display: grid; grid-template-rows: repeat(var(--fretboard-string-count, 6), minmax(0, 1fr)); padding: 32px 3px 4px; }
 .fret-position-selector { position: absolute; z-index: 7; top: 2px; right: 3px; left: 3px; height: 28px; display: grid; grid-template-columns: repeat(var(--fretboard-column-count, 13), minmax(0, 1fr)); align-items: stretch; touch-action: manipulation; }
 .fret-position-button { min-width: 0; min-height: 28px; margin: 0; padding: 0; appearance: none; color: #c7d0dc; background: #111722e8; border: 0; border-right: 1px solid #4b586a; border-radius: 0; font: 850 clamp(.44rem, 1.65vw, .59rem)/1 ui-monospace, SFMono-Regular, Menlo, monospace; touch-action: manipulation; }
 .fret-position-button:first-child { border-radius: 5px 0 0 5px; }
@@ -260,6 +260,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .fretboard-cell.released-for-melody .fretboard-note { box-shadow: none; }
 .fretboard-cell.released-for-melody .fretboard-role { border-style: dashed; }
 .fretboard-cell.melody-tone { z-index: 4; background: linear-gradient(180deg, #8a44e8d9, #5520a9d9); box-shadow: inset 0 0 0 1px #eadbff, 0 0 9px #a566ff80; }
+.fretboard-cell.tab-authored-position { outline: 2px solid #f4eaff; outline-offset: -3px; }
 .fretboard-cell.melody-tone .fretboard-note { color: var(--melody-ink); background: var(--melody-tone); border-color: #f3eaff; box-shadow: 0 0 0 1px #55209f; }
 .fretboard-cell.playing .fretboard-note { box-shadow: 0 0 0 2px #fff, 0 0 10px #fff8; filter: brightness(1.18); }
 .fretboard-role { position: absolute; z-index: 5; right: 1px; bottom: 1px; min-width: 11px; height: 11px; display: grid; place-items: center; padding: 0 1px; color: #fff; background: #111722; border: 1px solid #fff; border-radius: 999px; font: 950 .37rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; }
