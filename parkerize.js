@@ -3,8 +3,9 @@
  *
  * The generator uses aggregate harmonic/rhythmic tendencies instead of
  * replaying source phrases.  Its baked-in priors were distilled from the
- * Charlie Parker study corpus, then the Standards UI augments them with
- * transition counts learned from the loaded jazz-chart library.
+ * Charlie Parker study corpus, selectively enriched by aggregate Jazzomat
+ * solo statistics. The Standards UI then augments harmony with transition
+ * counts learned from its loaded chart libraries.
  */
 (function attachKeyerParkerize(root, factory) {
   var theory = root && root.KeyerJazzTheory;
@@ -592,9 +593,20 @@
     return selected ? selected.key : fallback;
   }
 
-  function soloRhythmStep(previousStep, complexity, random) {
-    var transition = previousStep != null && SoloCorpus && SoloCorpus.stepTransitions && SoloCorpus.stepTransitions[String(previousStep)];
-    var histogram = transition || SoloCorpus && SoloCorpus.steps;
+  function performanceCorpusForPhrase(complexity, phraseIndex, random) {
+    var support = SoloCorpus && SoloCorpus.jazzLegendSupport;
+    if (!support || !support.noteCount || phraseIndex < 1) return SoloCorpus;
+    // Parker remains the default voice. A little of the broader study corpus
+    // refreshes a later phrase's rhythmic and contour vocabulary without
+    // turning a Parkerize solo into a collage of copied material.
+    var probability = [0, 0.1, 0.13, 0.17, 0.21, 0.26][complexity] || 0.17;
+    return random() < probability ? support : SoloCorpus;
+  }
+
+  function soloRhythmStep(previousStep, complexity, random, corpus) {
+    var source = corpus || SoloCorpus;
+    var transition = previousStep != null && source && source.stepTransitions && source.stepTransitions[String(previousStep)];
+    var histogram = transition || source && source.steps;
     var entries = histogramEntries(histogram).filter(function useful(entry) {
       if (entry.value > 1.5) return false;
       if (complexity === 1) return entry.value >= 0.5;
@@ -614,10 +626,11 @@
     return weightedNumber(RHYTHM_STEPS[complexity], random);
   }
 
-  function soloInterval(previousInterval, phase, complexity, random) {
-    var transition = previousInterval != null && SoloCorpus && SoloCorpus.intervalTransitions && SoloCorpus.intervalTransitions[String(previousInterval)];
-    var phaseHistogram = SoloCorpus && SoloCorpus.intervalsByPhase && SoloCorpus.intervalsByPhase[phase];
-    var histogram = transition || phaseHistogram || SoloCorpus && SoloCorpus.intervals;
+  function soloInterval(previousInterval, phase, complexity, random, corpus) {
+    var source = corpus || SoloCorpus;
+    var transition = previousInterval != null && source && source.intervalTransitions && source.intervalTransitions[String(previousInterval)];
+    var phaseHistogram = source && source.intervalsByPhase && source.intervalsByPhase[phase];
+    var histogram = transition || phaseHistogram || source && source.intervals;
     var maximum = [0, 5, 7, 9, 11, 12][complexity];
     var entries = histogramEntries(histogram).filter(function practical(entry) { return Math.abs(entry.value) <= maximum; });
     entries.forEach(function melodicWeight(entry) {
@@ -631,16 +644,16 @@
     return selected ? selected.value : weightedNumber(INTERVAL_PRIORS[complexity], random);
   }
 
-  function phraseLengthForComplexity(complexity, random) {
+  function phraseLengthForComplexity(complexity, random, corpus) {
     var maximum = [0, 4, 6, 8, 12, 16][complexity];
     var minimum = complexity >= 4 ? 4 : complexity === 3 ? 3 : 1.5;
-    return corpusNumber(SoloCorpus && SoloCorpus.phraseLengths, random, complexity >= 4 ? 8 : 4, function within(value) {
+    return corpusNumber(corpus && corpus.phraseLengths, random, complexity >= 4 ? 8 : 4, function within(value) {
       return value >= minimum && value <= maximum;
     });
   }
 
-  function restLengthForComplexity(complexity, random) {
-    var sampled = corpusNumber(SoloCorpus && SoloCorpus.rests, random, 1, function useful(value) { return value <= 4; });
+  function restLengthForComplexity(complexity, random, corpus) {
+    var sampled = corpusNumber(corpus && corpus.rests, random, 1, function useful(value) { return value <= 4; });
     var scale = [0, 0.9, 0.7, 0.48, 0.3, 0.2][complexity];
     return Math.max(complexity >= 4 ? 0.25 : 0.5, Math.round(sampled * scale * 4) / 4);
   }
@@ -677,14 +690,30 @@
     return startMidi + net * progress + arc + motion + (random() - 0.5) * 0.7;
   }
 
-  function articulationForStep(step, phraseFinal, random) {
+  function articulationForStep(step, phraseFinal, random, corpus) {
     var key = String(Number(step.toFixed(6)));
-    var source = SoloCorpus && SoloCorpus.gatesByStep && SoloCorpus.gatesByStep[key];
+    var source = corpus && corpus.gatesByStep && corpus.gatesByStep[key];
     var gate = corpusNumber(source, random, step <= 0.5 ? 0.97 : 0.9);
     if (phraseFinal) gate *= 0.72 + random() * 0.12;
     else if (random() < 0.09) gate *= 0.72 + random() * 0.12;
     else gate *= 0.94 + random() * 0.06;
     return Math.max(0.52, Math.min(0.995, gate));
+  }
+
+  function choosePitchClass(pitchClasses, desired, previousMidi, random, emphasis) {
+    var candidates = (pitchClasses || []).filter(function unique(pc, index, all) {
+      return all.indexOf(pc) === index;
+    }).map(function candidate(pc) {
+      var midi = nearestMidi(pc, desired, 55, 88);
+      if (midi == null) return null;
+      var distance = Math.abs(midi - desired);
+      var leap = Math.abs(midi - previousMidi);
+      var weight = 1 / (1 + distance * 0.62 + Math.max(0, leap - 5) * 0.24);
+      if (emphasis && mod(midi) === mod(emphasis)) weight *= 1.45;
+      return { pc: pc, midi: midi, weight: weight };
+    }).filter(Boolean);
+    var selected = weightedPick(candidates, random, function weight(entry) { return entry.weight; });
+    return selected ? selected.pc : pick(pitchClasses || [], random);
   }
 
   function midiObject(title, notes, bpm, durationBeats, ppq) {
@@ -742,10 +771,11 @@
     var phraseIndex = 0;
 
     while (cursor < chartEnd - 0.25) {
-      var phraseLength = Math.min(phraseLengthForComplexity(complexity, random), chartEnd - cursor);
+      var phraseCorpus = performanceCorpusForPhrase(complexity, phraseIndex, random);
+      var phraseLength = Math.min(phraseLengthForComplexity(complexity, random, phraseCorpus), chartEnd - cursor);
       if (phraseLength < 0.45) break;
       var phraseEnd = Math.min(chartEnd, cursor + phraseLength);
-      var contour = corpusKey(SoloCorpus && SoloCorpus.contours, random, '0:7:2:1:2');
+      var contour = corpusKey(phraseCorpus && phraseCorpus.contours, random, '0:7:2:1:2');
       var useMotif = motif && phraseIndex > 0 && random() < 0.34;
       var motifInvert = useMotif && random() < 0.3;
       var nominalOnsets = [];
@@ -754,7 +784,7 @@
       while (nominal < phraseEnd - 0.08 && nominalOnsets.length < 96) {
         nominalOnsets.push(nominal);
         var motifStep = useMotif && motif.steps[nominalOnsets.length - 1];
-        var step = motifStep || soloRhythmStep(previousStep, complexity, random);
+        var step = motifStep || soloRhythmStep(previousStep, complexity, random, phraseCorpus);
         step = Math.max(1 / 6, Math.min(1.5, step));
         previousStep = Number(step.toFixed(6));
         nominal += step;
@@ -775,7 +805,7 @@
         var offbeat = Math.abs(phaseValue - 0.5) < 0.09;
         var phase = strong ? 'strong' : offbeat ? 'offbeat' : 'triplet';
         var motifInterval = useMotif && motif.intervals[noteIndex - 1];
-        var interval = motifInterval != null ? motifInterval * (motifInvert ? -1 : 1) : soloInterval(previousInterval, phase, complexity, random);
+        var interval = motifInterval != null ? motifInterval * (motifInvert ? -1 : 1) : soloInterval(previousInterval, phase, complexity, random, phraseCorpus);
         var progress = nominalOnsets.length <= 1 ? 1 : noteIndex / (nominalOnsets.length - 1);
         var contourMidi = contourTarget(contour, progress, phraseStartMidi, random);
         var desired = previousMidi * 0.48 + (previousMidi + interval) * 0.28 + contourMidi * 0.24;
@@ -797,7 +827,7 @@
         } else {
           var pool = strong ? (random() < 0.68 ? pools.guides : pools.chord)
             : random() < 0.18 + complexity * 0.045 ? pools.chord : pools.scale;
-          pc = pick(pool, random);
+          pc = choosePitchClass(pool, desired, previousMidi, random, strong ? pools.guides[0] : null);
         }
         var midi = nearestMidi(pc, desired, 55, 88);
         if (midi == null) midi = previousMidi;
@@ -835,7 +865,7 @@
         var available = Math.max(0.08, (next ? next.startBeat : phraseEnd) - note.startBeat);
         var nominalNext = nominalOnsets[Math.min(noteIndex + 1, nominalOnsets.length - 1)];
         var nominalStep = noteIndex + 1 < nominalOnsets.length ? nominalNext - note.nominalBeat : available;
-        var gate = articulationForStep(Math.max(1 / 6, nominalStep), noteIndex === phraseNotes.length - 1, random);
+        var gate = articulationForStep(Math.max(1 / 6, nominalStep), noteIndex === phraseNotes.length - 1, random, phraseCorpus);
         var duration = Math.max(0.075, available * gate);
         notes.push({
           midi: note.midi,
@@ -854,7 +884,7 @@
       }
       phraseIndex += 1;
       if (phraseEnd >= chartEnd - 0.25) break;
-      cursor = phraseEnd + restLengthForComplexity(complexity, random);
+      cursor = phraseEnd + restLengthForComplexity(complexity, random, phraseCorpus);
       if (cursor < chartEnd) cursor = Math.round(cursor * 4) / 4;
     }
 
@@ -893,6 +923,7 @@
       notes: notes,
       durationBeats: chartEnd,
       corpusSoloCount: Number(SoloCorpus && SoloCorpus.soloCount) || 0,
+      jazzLegendSupportSoloCount: Number(SoloCorpus && SoloCorpus.jazzLegendSupport && SoloCorpus.jazzLegendSupport.soloCount) || 0,
       midi: midiObject(title, notes, bpm, chartEnd, ppq)
     };
   }
@@ -987,10 +1018,12 @@
   return Object.freeze({
     PPQ: PPQ,
     corpusModel: Object.freeze({
-      parkerSoloCount: Number(SoloCorpus && SoloCorpus.soloCount) || 0,
+      parkerSoloCount: Number(SoloCorpus && (SoloCorpus.parkerSoloCount || SoloCorpus.soloCount)) || 0,
       parkerNoteCount: Number(SoloCorpus && SoloCorpus.noteCount) || 0,
       parkerPhraseCount: Number(SoloCorpus && SoloCorpus.phraseCount) || 0,
-      approach: 'aggregate-phrase-rhythm-contour-articulation-and-harmony-models'
+      jazzLegendSupportSoloCount: Number(SoloCorpus && SoloCorpus.jazzLegendSupport && SoloCorpus.jazzLegendSupport.soloCount) || 0,
+      jazzLegendSupportNoteCount: Number(SoloCorpus && SoloCorpus.jazzLegendSupport && SoloCorpus.jazzLegendSupport.noteCount) || 0,
+      approach: 'Parker-foundation phrase, rhythm, contour, articulation, and harmony models with selective aggregate jazz-solo support'
     }),
     learnHarmonyCorpus: learnHarmonyCorpus,
     generateChart: generateChart,

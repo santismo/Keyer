@@ -65,10 +65,14 @@ test('ships an aggregate performance model built from every Parker transcription
   assert.equal(ParkerCorpus.soloCount, 50);
   assert.ok(ParkerCorpus.noteCount > 20000);
   assert.ok(ParkerCorpus.phraseCount > 1500);
+  assert.equal(ParkerCorpus.jazzLegendSupport.soloCount, 441);
+  assert.ok(ParkerCorpus.jazzLegendSupport.noteCount > 190000);
+  assert.ok(ParkerCorpus.jazzLegendSupport.phraseCount > 15000);
   assert.ok(Object.keys(ParkerCorpus.stepTransitions).length >= 6);
   assert.ok(Object.keys(ParkerCorpus.intervalTransitions).length >= 20);
   assert.equal(Parkerize.corpusModel.parkerSoloCount, 50);
   assert.equal(Parkerize.corpusModel.parkerNoteCount, ParkerCorpus.noteCount);
+  assert.equal(Parkerize.corpusModel.jazzLegendSupportSoloCount, 441);
 });
 
 test('creates deterministic original forms with independent chart complexity', () => {
@@ -122,6 +126,7 @@ test('uses Parker-derived phrasing, swing placement, contour, and human articula
   const velocities = new Set(solo.notes.map(note => note.velocity));
 
   assert.equal(solo.corpusSoloCount, 50);
+  assert.equal(solo.jazzLegendSupportSoloCount, 441);
   assert.ok(rests.length >= 5, 'phrases should breathe instead of filling every subdivision');
   assert.ok(swung.length >= 10, 'straight eighths should receive Parker-style swing placement');
   assert.ok(offQuarterGrid.length > solo.notes.length * 0.2, 'timing should not remain locked to a robotic sixteenth grid');

@@ -5,6 +5,7 @@
   const IReal = window.KeyerIReal;
   const MiditarMidi = window.KeyerMiditarMidi;
   const SoloCatalog = window.KeyerJazzSoloCatalog;
+  const WJazzDSoloCatalog = window.KeyerWJazzDSoloCatalog;
   const AzMidiCatalog = window.KeyerAzMidiCatalog;
   const Reharm = window.KeyerStandardsReharm;
   const Parkerize = window.KeyerParkerize;
@@ -158,6 +159,7 @@
   const state = {
     songs: [],
     azMidiSongs: [],
+    legendSoloSongs: [],
     song: null,
     bars: [],
     events: [],
@@ -1027,6 +1029,7 @@
   function soloStudyLabel(entry) {
     if (entry?.type === 'parkerize') return `Parkerize · ${entry.soloTitle || entry.title}`;
     if (entry?.type === 'parker-solo') return `Charlie Parker · ${entry.soloTitle || entry.title}`;
+    if (entry?.type === 'wjazzd-solo') return `WJazzD · ${entry.performer || entry.title || 'Jazz legend'}`;
     return entry?.sourceLabel || entry?.title || 'MIDI study';
   }
 
@@ -3109,18 +3112,22 @@
     if (state.midi) {
       const chordEventCount = state.midiChart?.events.filter(event => event.kind !== 'pickup').length || 0;
       const pickupSuffix = state.midiChart?.events.some(event => event.kind === 'pickup') ? ' · pickup' : '';
-      const markerText = state.melodyOverlayChartId === 'ireal'
+      const markerText = state.midiEntry?.type === 'wjazzd-solo'
+        ? 'source-harmony timing'
+        : state.melodyOverlayChartId === 'ireal'
         ? `${soloStudyActive() ? 'solo' : 'melody'} over iReal timing`
         : state.midiChart
         ? `${chordEventCount} chord markers${pickupSuffix}`
         : 'melody over iReal timing';
       const tempo = Number(state.midi.tempos?.[0]?.bpm);
-      const caution = !state.midiChart && state.midiEntry?.type !== 'parkerize' ? ' · check the form matches' : '';
+      const caution = !state.midiChart && !['parkerize', 'wjazzd-solo'].includes(state.midiEntry?.type) ? ' · check the form matches' : '';
       const chorusText = state.midiChoruses.length > 1
         ? ` · chorus ${state.midiChorusIndex + 1} of ${state.midiChoruses.length}`
         : '';
       const studyText = state.midiEntry?.type === 'parkerize'
         ? `Parkerize solo ${state.parkerize.soloComplexity}`
+        : state.midiEntry?.type === 'wjazzd-solo'
+        ? 'WJazzD solo study'
         : soloStudyActive() ? 'solo study' : state.midiEntry?.type === 'parker-solo' ? 'Parker transcription' : 'MIDI';
       elements.midiStatus.textContent = `${studyText} · ${markerText}${chorusText}${Number.isFinite(tempo) ? ` · ${Math.round(tempo)} BPM` : ''}${caution}`;
       return;
@@ -3358,12 +3365,12 @@
     state.irealChart = createChartData('ireal', bars, song.playbackOrder, {
       sourceKey: song.key,
       tempoBpm: song.bpm,
-      explicitTiming: Boolean(song.parkerXmlTiming)
+      explicitTiming: Boolean(song.parkerXmlTiming || song.wjazzdChartTiming)
     });
     if (!state.irealChart.events.length) return false;
     clearMidiSource();
     const generatedPractice = parkerizeActive();
-    state.preferSoloChorus = generatedPractice || ['solos', 'parker'].includes(state.songAvailabilityFilter);
+    state.preferSoloChorus = generatedPractice || ['solos', 'parker', 'legends'].includes(state.songAvailabilityFilter);
     state.midiEntries = generatedPractice ? [] : midiEntriesForSong(song);
     state.midiEntry = state.midiEntries[0] || null;
 
@@ -3374,6 +3381,8 @@
       ? 'Parkerize · original generated composition'
       : state.midiEntry?.type === 'parker-solo'
       ? `${song.composer || 'Charlie Parker'} · Parker solo study`
+      : state.midiEntry?.type === 'wjazzd-solo'
+      ? `${state.midiEntry.performer || song.composer || 'Jazz legend'} · WJazzD solo study`
       : song.composer || 'Unknown composer';
     elements.songMeta.textContent = [song.style, song.key ? `Key ${song.key}` : '', `${bars.length} bars`].filter(Boolean).join(' · ');
     elements.search.value = '';
@@ -3395,7 +3404,8 @@
           title: song.title,
           composer: song.composer,
           key: song.key,
-          azMidiFile: song.azMidiEntry?.file || ''
+          azMidiFile: song.azMidiEntry?.file || '',
+          wjazzdMidiFile: song.wjazzdSoloEntry?.file || ''
         }));
       } catch (_) {}
     }
@@ -3427,6 +3437,56 @@
     };
   }
 
+  function inflateWJazzdBars(entry) {
+    const encodedBars = Array.isArray(entry?.chart) ? entry.chart : [];
+    let cursor = 0;
+    let currentSection = 'Solo';
+    return encodedBars.map((encoded, index) => {
+      const beats = Math.max(1, Number(encoded?.[0]) || 4);
+      const beatUnit = Math.max(1, Number(encoded?.[1]) || 4);
+      const marker = safeText(encoded?.[2]);
+      const duration = beats * 4 / beatUnit;
+      if (marker) currentSection = marker;
+      const chords = (Array.isArray(encoded?.[3]) ? encoded[3] : []).map(cell => ({
+        raw: safeText(cell?.[0]),
+        startBeat: cursor + Math.max(0, Math.min(duration, Number(cell?.[1]) || 0)),
+        endBeat: cursor + Math.max(0.01, Math.min(duration, Number(cell?.[2]) || duration))
+      })).filter(chord => chord.raw && chord.endBeat > chord.startBeat);
+      const bar = {
+        index,
+        chords,
+        overflowChords: [],
+        section: currentSection,
+        sectionMarker: marker || null,
+        timeSignature: { beats, beatUnit },
+        timeSignatureChange: index === 0 ? { beats, beatUnit } : null,
+        annotations: [],
+        comments: [],
+        repeatStart: false,
+        repeatEnd: false,
+        noChord: !chords.length,
+        pause: false
+      };
+      cursor += duration;
+      return bar;
+    });
+  }
+
+  function hydrateWJazzdSoloSong(song) {
+    const entry = song?.wjazzdSoloEntry;
+    if (!entry || Array.isArray(song.bars) && song.bars.length) return song;
+    const bars = inflateWJazzdBars(entry);
+    if (!bars.length || !bars.some(bar => bar.chords.length)) throw new Error(`${entry.name || song.title} has no readable source harmony.`);
+    return {
+      ...song,
+      bars,
+      playbackOrder: bars.map((_, index) => index),
+      key: song.key || entry.key || '',
+      bpm: Number(song.bpm) || Number(entry.bpm) || DEFAULT_TEMPO,
+      wjazzdChartTiming: true
+    };
+  }
+
   async function loadSong(song, options = {}) {
     const request = ++songLoadSequence;
     try {
@@ -3437,6 +3497,12 @@
         if (request !== songLoadSequence) return false;
         Object.assign(song, hydrated.song);
         preloadedMidi = hydrated.midi;
+      }
+      if (song?.wjazzdSoloEntry && (!Array.isArray(song.bars) || !song.bars.length)) {
+        elements.libraryStatus.textContent = `Reading ${song.wjazzdSoloEntry.performer || song.composer || 'jazz legend'}'s solo chart…`;
+        const hydrated = hydrateWJazzdSoloSong(song);
+        if (request !== songLoadSequence) return false;
+        Object.assign(song, hydrated);
       }
       if (song?.parkerXmlUrl && (!Array.isArray(song.bars) || !song.bars.length)) {
         elements.libraryStatus.textContent = `Loading ${song.title}'s Parker chord chart…`;
@@ -3495,15 +3561,22 @@
     const q = safeText(query).toLowerCase();
     const bank = state.songAvailabilityFilter === 'az-midi'
       ? state.azMidiSongs
+      : state.songAvailabilityFilter === 'legends'
+        ? state.legendSoloSongs.filter(song => !isParkerSoloSong(song))
+      : state.songAvailabilityFilter === 'solos'
+        ? [...state.legendSoloSongs, ...state.songs.filter(song => parkerSolosForSong(song).length > 0 || SoloCatalog?.isMiditarMultiChorus?.(song.title))]
+      : state.songAvailabilityFilter === 'parker'
+        ? [...state.legendSoloSongs.filter(isParkerSoloSong), ...state.songs.filter(song => parkerSolosForSong(song).length > 0)]
       : state.songAvailabilityFilter === 'favorites'
-        ? [...state.songs, ...state.azMidiSongs]
+        ? [...state.songs, ...state.azMidiSongs, ...state.legendSoloSongs]
         : state.songs;
     const source = q
-      ? bank.filter(song => `${song.title} ${song.composer} ${song.style} ${song.azMidiEntry?.file || ''}`.toLowerCase().includes(q))
+      ? bank.filter(song => `${song.title} ${song.composer} ${song.style} ${song.azMidiEntry?.file || ''} ${song.wjazzdSoloEntry?.file || ''}`.toLowerCase().includes(q))
       : bank;
     if (state.songAvailabilityFilter === 'all') return source;
     if (state.songAvailabilityFilter === 'solos') return source.filter(isJazzSoloSong);
     if (state.songAvailabilityFilter === 'parker') return source.filter(isParkerSoloSong);
+    if (state.songAvailabilityFilter === 'legends') return source;
     if (state.songAvailabilityFilter === 'az-midi') return source;
     if (state.songAvailabilityFilter === 'parkerize') return source;
     if (state.songAvailabilityFilter === 'favorites') return source.filter(isFavoriteSong);
@@ -3540,10 +3613,12 @@
       sub.className = 'result-sub';
       const sourceLabel = state.songAvailabilityFilter === 'az-midi'
         ? `A–Z MIDI · ${song.azMidiEntry?.file || ''}`
+        : state.songAvailabilityFilter === 'legends'
+        ? `WJazzD · ${song.wjazzdSoloEntry?.instrument || 'solo'}`
         : state.songAvailabilityFilter === 'parker'
         ? 'Parker solo'
         : state.songAvailabilityFilter === 'solos'
-          ? isParkerSoloSong(song) ? 'Parker solo' : 'Multi-chorus study'
+          ? isParkerSoloSong(song) ? 'Parker solo' : song.wjazzdSoloEntry ? 'Jazz legend solo' : 'Multi-chorus study'
           : state.songAvailabilityFilter === 'parkerize'
             ? 'Generate a new solo'
           : '';
@@ -3568,10 +3643,13 @@
         : state.songAvailabilityFilter === 'chords' ? 'chord charts only'
         : state.songAvailabilityFilter === 'solos' ? 'jazz solo studies'
         : state.songAvailabilityFilter === 'parker' ? 'Charlie Parker solo studies'
+        : state.songAvailabilityFilter === 'legends' ? 'jazz legend solo studies'
         : state.songAvailabilityFilter === 'az-midi' ? 'in the A–Z MIDI bank'
         : state.songAvailabilityFilter === 'parkerize' ? 'available to Parkerize'
         : '';
-      const available = state.songAvailabilityFilter === 'az-midi' ? state.azMidiSongs.length : state.songs.length;
+      const available = state.songAvailabilityFilter === 'az-midi' ? state.azMidiSongs.length
+        : ['solos', 'parker', 'legends'].includes(state.songAvailabilityFilter) ? bank.length
+        : state.songs.length;
       elements.libraryStatus.textContent = `${songs.length.toLocaleString()} match${songs.length === 1 ? '' : 'es'}${label ? ` ${label}` : ''} · ${available.toLocaleString()} charts available`;
     }
   }
@@ -3584,8 +3662,9 @@
     if (state.songs.length) {
       const multiChorusCount = SoloCatalog?.multiChorusCount || 0;
       const parkerCount = SoloCatalog?.parkerSolos?.length || 0;
+      const wjazzdCount = WJazzDSoloCatalog?.entryCount || 0;
       const azCount = AzMidiCatalog?.playableCount || 0;
-      elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz-standard charts · ${multiChorusCount} multi-chorus studies · ${parkerCount} Parker solos · ${azCount.toLocaleString()} A–Z MIDI songs`;
+      elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz-standard charts · ${wjazzdCount} Jazzomat legend solos · ${parkerCount} Parker Omnibook solos · ${multiChorusCount} multi-chorus studies · ${azCount.toLocaleString()} A–Z MIDI songs`;
     }
   }
 
@@ -3593,12 +3672,13 @@
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (!saved) return null;
-      const candidates = [...state.songs, ...state.azMidiSongs];
+      const candidates = [...state.songs, ...state.azMidiSongs, ...state.legendSoloSongs];
       return candidates.find(song => (
         song.title === saved.title
         && song.composer === saved.composer
         && song.key === saved.key
         && (!saved.azMidiFile || song.azMidiEntry?.file === saved.azMidiFile)
+        && (!saved.wjazzdMidiFile || song.wjazzdSoloEntry?.file === saved.wjazzdMidiFile)
       )) || null;
     } catch (_) { return null; }
   }
@@ -3630,6 +3710,35 @@
     return parkerSolosForSong(song)[0] || null;
   }
 
+  function normalizedSoloTitle(value) {
+    const source = safeText(value);
+    const normalized = typeof source.normalize === 'function' ? source.normalize('NFKD') : source;
+    return normalized
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[’‘`]/g, "'")
+      .replace(/&/g, ' and ')
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .toLowerCase()
+      .trim()
+      .replace(/^(?:the|an|a)\s+/, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  function wjazzdSolosForSong(song) {
+    if (!song) return [];
+    if (song.wjazzdSoloEntry) return [song.wjazzdSoloEntry];
+    const key = normalizedSoloTitle(song.title);
+    if (!key) return [];
+    return (WJazzDSoloCatalog?.entries || []).filter(entry => normalizedSoloTitle(entry.title) === key).map(entry => ({
+      ...entry,
+      name: entry.name || `${entry.performer || 'Jazz legend'} — ${entry.title}.mid`,
+      type: 'wjazzd-solo',
+      sourceLabel: `WJazzD · ${entry.performer || 'Jazz legend'}`,
+      sourceUrl: WJazzDSoloCatalog?.sourceUrl || 'https://jazzomat.hfm-weimar.de/download/download.html',
+      urls: [`jazz-solo-midi/wjazzd/${encodeURIComponent(entry.file)}`]
+    }));
+  }
+
   function miditarEntryForSong(song) {
     if (!song || !MiditarMidi || !state.midiCatalog.length) return null;
     const entry = MiditarMidi.findCatalogMatch(song.title, state.midiCatalog);
@@ -3642,12 +3751,13 @@
   }
 
   function midiEntriesForSong(song) {
-    if (song?.azMidiEntry) return [song.azMidiEntry];
+    if (song?.azMidiEntry || song?.wjazzdSoloEntry) return [song.azMidiEntry || song.wjazzdSoloEntry];
     // Give purpose-built Parker transcriptions precedence, while preserving
-    // the Miditar alternative as another selectable study source.
+    // the Jazzomat and Miditar alternatives as selectable study sources.
     const parker = parkerSolosForSong(song);
+    const wjazzd = wjazzdSolosForSong(song);
     const miditar = miditarEntryForSong(song);
-    return miditar ? [...parker, miditar] : parker;
+    return [...parker, ...wjazzd, ...(miditar ? [miditar] : [])];
   }
 
   function midiEntryForSong(song) {
@@ -3659,15 +3769,20 @@
   }
 
   function isParkerSoloSong(song) {
+    // A WJazzD study is categorized by the actual soloist, not merely by the
+    // tune title (for example, Art Pepper's Anthropology belongs with the
+    // legend studies even though Parker also recorded Anthropology).
+    if (song?.wjazzdSoloEntry) return song.wjazzdSoloEntry.performer === 'Charlie Parker';
     return parkerSolosForSong(song).length > 0;
   }
 
   function isJazzSoloSong(song) {
-    return isParkerSoloSong(song) || Boolean(SoloCatalog?.isMiditarMultiChorus?.(song?.title));
+    return Boolean(song?.wjazzdSoloEntry) || isParkerSoloSong(song) || Boolean(SoloCatalog?.isMiditarMultiChorus?.(song?.title));
   }
 
   function isSoloStudyEntry(entry = state.midiEntry) {
     return entry?.type === 'parker-solo'
+      || entry?.type === 'wjazzd-solo'
       || entry?.type === 'parkerize'
       || Boolean(state.preferSoloChorus && SoloCatalog?.isMiditarMultiChorus?.(state.song?.title));
   }
@@ -3675,6 +3790,7 @@
   function soloStudyActive() {
     return Boolean(state.midi && state.showMelody && (
       state.midiEntry?.type === 'parker-solo'
+      || state.midiEntry?.type === 'wjazzd-solo'
       || state.midiEntry?.type === 'parkerize'
       || (state.midiChoruses.length > 1 && state.midiChorusIndex > 0)
     ));
@@ -3738,6 +3854,8 @@
       ? 'Parkerize solo'
       : state.midiEntry?.type === 'parker-solo'
       ? 'Parker solo'
+      : state.midiEntry?.type === 'wjazzd-solo'
+      ? 'Jazz legend solo'
       : soloStudyActive() ? 'Solo study' : '';
     return [state.song.style, key, `${chart?.bars?.length || 0} bars`, solo, source].filter(Boolean).join(' · ');
   }
@@ -3783,7 +3901,10 @@
     if (!MiditarMidi) throw new Error('The MIDI melody reader did not load.');
     if (!entry) throw new Error('No matching melody MIDI was found.');
     elements.toggleMelody.disabled = true;
-    elements.midiStatus.textContent = `Loading ${entry.type === 'parker-solo' ? 'Parker solo' : 'melody'} MIDI for ${entry.title}…`;
+    const studyName = entry.type === 'parker-solo' ? 'Parker solo'
+      : entry.type === 'wjazzd-solo' ? `${entry.performer || 'jazz legend'} solo`
+      : 'melody';
+    elements.midiStatus.textContent = `Loading ${studyName} MIDI for ${entry.title}…`;
     try {
       const buffer = await fetchFirst(midiUrlsForEntry(entry), 'arrayBuffer');
       // Random can be pressed while another melody download is in flight.
@@ -3869,9 +3990,35 @@
           azMidiEntry: midiEntry
         };
       });
+      state.legendSoloSongs = (WJazzDSoloCatalog?.entries || []).map(entry => {
+        const midiEntry = {
+          ...entry,
+          name: entry.name || `${entry.performer || 'Jazz legend'} — ${entry.title}.mid`,
+          type: 'wjazzd-solo',
+          sourceLabel: `WJazzD · ${entry.performer || 'Jazz legend'}`,
+          sourceUrl: WJazzDSoloCatalog?.sourceUrl || 'https://jazzomat.hfm-weimar.de/download/download.html',
+          urls: [`jazz-solo-midi/wjazzd/${encodeURIComponent(entry.file)}`]
+        };
+        return {
+          title: entry.title,
+          composer: entry.performer || 'Jazz legend',
+          style: [entry.style, 'WJazzD solo transcription'].filter(Boolean).join(' · '),
+          key: entry.key || '',
+          bpm: Number(entry.bpm) || DEFAULT_TEMPO,
+          bars: [],
+          playbackOrder: [],
+          wjazzdSoloEntry: midiEntry,
+          wjazzdChartTiming: true
+        };
+      });
       if (!state.songs.length) throw new Error('No readable standards were found in the catalog.');
       state.songs.sort((a, b) => safeText(a.title).localeCompare(safeText(b.title), undefined, { sensitivity: 'base' }));
-      state.parkerize.corpus = Parkerize.learnHarmonyCorpus(state.songs);
+      const legendHarmonySongs = state.legendSoloSongs.map(song => ({
+        ...song,
+        bars: inflateWJazzdBars(song.wjazzdSoloEntry),
+        playbackOrder: song.wjazzdSoloEntry.playbackOrder || song.wjazzdSoloEntry.chart.map((_, index) => index)
+      }));
+      state.parkerize.corpus = Parkerize.learnHarmonyCorpus([...state.songs, ...legendHarmonySongs]);
       elements.randomSong.disabled = false;
       const first = restoredSong()
         || state.songs.find(song => safeText(song.title).toLowerCase() === 'autumn leaves')
@@ -4464,7 +4611,7 @@
   });
   elements.search.addEventListener('input', () => { state.searchIndex = -1; renderSearchResults(); });
   elements.songAvailabilityFilter?.addEventListener('change', () => {
-    state.songAvailabilityFilter = ['favorites', 'melody', 'chords', 'solos', 'parker', 'az-midi', 'parkerize'].includes(elements.songAvailabilityFilter.value)
+    state.songAvailabilityFilter = ['favorites', 'melody', 'chords', 'solos', 'parker', 'legends', 'az-midi', 'parkerize'].includes(elements.songAvailabilityFilter.value)
       ? elements.songAvailabilityFilter.value
       : 'all';
     state.parkerize.active = state.songAvailabilityFilter === 'parkerize';
