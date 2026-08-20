@@ -48,6 +48,12 @@
   const ACCOMPANIMENT_LOW = 24;
   const ACCOMPANIMENT_HIGH = 72;
   const DEFAULT_TEMPO = 120;
+  // Bluetooth and CarPlay add a much deeper hardware buffer than the phone
+  // speaker.  The default Web Audio "interactive" hint optimizes for tiny
+  // touch-instrument latency and can underrun on those routes, so the chart
+  // player deliberately asks for stable playback instead.
+  const AUDIO_LATENCY_HINT = 'playback';
+  const AUDIO_START_LEAD_SECONDS = .03;
   const PIANO_VOICING_STYLES = new Set([
     'root-shell', 'shell', 'rootless', 'closed', 'spread',
     'upper-structure', 'modern', 'cluster', 'avant-garde'
@@ -239,6 +245,8 @@
 
   let audioContext = null;
   let audioInput = null;
+  let audioKeepAlive = null;
+  let audioResumePromise = null;
   const voices = new Map();
   const pressedCounts = {
     chord: new Map(),
@@ -3881,15 +3889,40 @@
     }
   }
 
-  function ensureAudio() {
+  function resumeAudioContext(context = audioContext) {
+    if (!context || context.state === 'closed' || context.state === 'running') return Promise.resolve(context);
+    if (audioResumePromise) return audioResumePromise;
+    // Keep one resume in flight. iOS can fire several route/focus events while
+    // it hands audio over to a car or Bluetooth receiver.
+    audioResumePromise = context.resume()
+      .catch(() => null)
+      .finally(() => { audioResumePromise = null; });
+    return audioResumePromise;
+  }
+
+  function recoverAudioOutput() {
+    if (document.visibilityState === 'hidden' || !audioContext || audioContext.state === 'running') return;
+    void resumeAudioContext(audioContext);
+  }
+
+  function ensureAudio({ resume = true } = {}) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return null;
     if (audioContext?.state === 'closed') {
       audioContext = null;
       audioInput = null;
+      audioKeepAlive = null;
     }
     if (!audioContext) {
-      audioContext = new AudioContextClass();
+      // "playback" trades a few milliseconds of touch latency for a larger,
+      // steadier render buffer. That is the useful tradeoff for long MIDI
+      // charts sent through higher-latency car and Bluetooth routes.
+      try {
+        audioContext = new AudioContextClass({ latencyHint: AUDIO_LATENCY_HINT });
+      } catch (_) {
+        // Older WebKit versions accept only the no-argument constructor.
+        audioContext = new AudioContextClass();
+      }
       const compressor = audioContext.createDynamicsCompressor();
       compressor.threshold.value = -18;
       compressor.knee.value = 15;
@@ -3901,8 +3934,24 @@
       master.connect(compressor);
       compressor.connect(audioContext.destination);
       audioInput = master;
+      // Keep a virtually silent source connected between chart events. Some
+      // iOS external-output routes aggressively idle a graph made entirely of
+      // short oscillators, which can make sustained MIDI playback drop in and
+      // out. This is below audibility but keeps the audio route alive.
+      const keepAliveSource = audioContext.createConstantSource();
+      const keepAliveGain = audioContext.createGain();
+      keepAliveGain.gain.value = .00001;
+      keepAliveSource.connect(keepAliveGain);
+      keepAliveGain.connect(master);
+      keepAliveSource.start();
+      audioKeepAlive = { source: keepAliveSource, gain: keepAliveGain };
+      const context = audioContext;
+      context.addEventListener('statechange', () => {
+        if (context !== audioContext || context.state === 'running' || !state.transport.playing) return;
+        recoverAudioOutput();
+      });
     }
-    if (audioContext.state !== 'running') audioContext.resume().catch(() => {});
+    if (resume && audioContext.state !== 'running') void resumeAudioContext(audioContext);
     return audioContext;
   }
 
@@ -3951,47 +4000,64 @@
     });
   }
 
+  function armVoiceTimer(id, voice, duration, lead = 0) {
+    if (!duration) return;
+    voice.timerId = window.setTimeout(() => {
+      if (voices.get(id) === voice) stopVoice(id);
+    }, (duration + lead) * 1000);
+  }
+
   function startVoice(id, midi, duration = null, displayMidi = midi, visual = 'all') {
     stopVoice(id, true);
-    const context = ensureAudio();
+    const context = ensureAudio({ resume: false });
     markPressed(displayMidi, 1, visual);
     if (!context || !audioInput) {
       const voice = { midi, displayMidi, visual, silent: true, timerId: null };
       voices.set(id, voice);
-      if (duration) {
-        voice.timerId = window.setTimeout(() => {
-          if (voices.get(id) === voice) stopVoice(id);
-        }, duration * 1000);
-      }
+      armVoiceTimer(id, voice, duration);
       return;
     }
-    const now = context.currentTime;
-    const oscillator = context.createOscillator();
-    const color = context.createOscillator();
-    const colorGain = context.createGain();
-    const envelope = context.createGain();
-    const frequency = 440 * (2 ** ((midi - 69) / 12));
-    oscillator.type = 'triangle';
-    oscillator.frequency.value = frequency;
-    color.type = 'sine';
-    color.frequency.value = frequency * 2;
-    colorGain.gain.value = .1;
-    envelope.gain.setValueAtTime(.0001, now);
-    envelope.gain.exponentialRampToValueAtTime(.13, now + .014);
-    envelope.gain.exponentialRampToValueAtTime(.07, now + .55);
-    oscillator.connect(envelope);
-    color.connect(colorGain);
-    colorGain.connect(envelope);
-    envelope.connect(audioInput);
-    oscillator.start(now);
-    color.start(now);
-    const voice = { midi, displayMidi, visual, envelope, oscillators: [oscillator, color], startedAt: now, timerId: null };
+    const voice = { midi, displayMidi, visual, pending: true, timerId: null };
     voices.set(id, voice);
-    if (duration) {
-      voice.timerId = window.setTimeout(() => {
-        if (voices.get(id) === voice) stopVoice(id);
-      }, duration * 1000);
-    }
+    const begin = () => {
+      if (voices.get(id) !== voice) return;
+      // Do not start a source against a paused route: its JavaScript timeout
+      // would expire while Web Audio time is frozen, producing the exact
+      // chopped/stuttering behavior reported on CarPlay and Bluetooth.
+      if (context.state !== 'running') {
+        voice.pending = false;
+        voice.silent = true;
+        armVoiceTimer(id, voice, duration);
+        return;
+      }
+      const now = context.currentTime + AUDIO_START_LEAD_SECONDS;
+      const oscillator = context.createOscillator();
+      const color = context.createOscillator();
+      const colorGain = context.createGain();
+      const envelope = context.createGain();
+      const frequency = 440 * (2 ** ((midi - 69) / 12));
+      oscillator.type = 'triangle';
+      oscillator.frequency.value = frequency;
+      color.type = 'sine';
+      color.frequency.value = frequency * 2;
+      colorGain.gain.value = .1;
+      envelope.gain.setValueAtTime(.0001, now);
+      envelope.gain.exponentialRampToValueAtTime(.13, now + .014);
+      envelope.gain.exponentialRampToValueAtTime(.07, now + .55);
+      oscillator.connect(envelope);
+      color.connect(colorGain);
+      colorGain.connect(envelope);
+      envelope.connect(audioInput);
+      oscillator.start(now);
+      color.start(now);
+      voice.pending = false;
+      voice.envelope = envelope;
+      voice.oscillators = [oscillator, color];
+      voice.startedAt = now;
+      armVoiceTimer(id, voice, duration, AUDIO_START_LEAD_SECONDS);
+    };
+    if (context.state === 'running') begin();
+    else void resumeAudioContext(context).then(begin);
   }
 
   function stopVoice(id, immediate = false) {
@@ -4000,7 +4066,7 @@
     voices.delete(id);
     if (voice.timerId != null) window.clearTimeout(voice.timerId);
     markPressed(voice.displayMidi ?? voice.midi, -1, voice.visual);
-    if (voice.silent || !audioContext) return;
+    if (voice.pending || voice.silent || !audioContext || !voice.envelope) return;
     const now = audioContext.currentTime;
     const release = immediate ? .025 : .2;
     voice.envelope.gain.cancelScheduledValues(now);
@@ -4360,9 +4426,9 @@
     // Start from the click gesture, then wait for a suspended browser audio
     // context before scheduling the MIDI timeline. This prevents a first
     // timer tick from being silently lost while an audio context wakes up.
-    const context = ensureAudio();
-    if (context?.state === 'suspended') {
-      context.resume().then(begin, begin);
+    const context = ensureAudio({ resume: false });
+    if (context && context.state !== 'running') {
+      resumeAudioContext(context).then(begin, begin);
     } else {
       begin();
     }
@@ -4660,6 +4726,14 @@
     if (event.target.closest('input, textarea, select, [contenteditable]')) return;
     event.preventDefault();
   }, { passive: false });
+  // CarPlay and Bluetooth can briefly suspend Web Audio while iOS swaps the
+  // output route. Do not restart the chart or reset its position; simply
+  // resume the existing graph when the page becomes active again.
+  window.addEventListener('pageshow', recoverAudioOutput);
+  window.addEventListener('focus', recoverAudioOutput);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') recoverAudioOutput();
+  });
   window.addEventListener('pagehide', () => {
     stopChartPlayback({ render: false });
     [...voices.keys()].forEach(id => stopVoice(id, true));
