@@ -133,6 +133,8 @@
     midiStudy: document.querySelector('#midiStudy'),
     tabTrackControl: document.querySelector('#tabTrackControl'),
     tabTrack: document.querySelector('#tabTrack'),
+    tabMixControl: document.querySelector('#tabMixControl'),
+    tabPlayAllTracks: document.querySelector('#tabPlayAllTracks'),
     midiChorusControl: document.querySelector('#midiChorusControl'),
     midiChorus: document.querySelector('#midiChorus'),
     chartSourceLabel: document.querySelector('#chartSourceLabel'),
@@ -418,23 +420,32 @@
     });
   }
 
-  function exactTabPositionsForNote(note) {
+  function tabPositionsForNote(note) {
     if (!state.tabSource?.exactPositions || !Array.isArray(note?.tabPositions)) return [];
-    const strings = activeFretboardStrings();
     return note.tabPositions.map(position => ({
       stringIndex: Number(position?.stringIndex),
       fret: Number(position?.fret),
       midi: Number(position?.midi),
-      exact: Boolean(position?.exact)
+      exact: Boolean(position?.exact),
+      trackIndex: Number.isInteger(Number(position?.trackIndex)) ? Number(position.trackIndex) : null
     })).filter(position => (
       position.exact
       && Number.isInteger(position.stringIndex)
       && position.stringIndex >= 0
-      && position.stringIndex < strings.length
       && Number.isInteger(position.fret)
       && position.fret >= 0
       && Number.isFinite(position.midi)
     ));
+  }
+
+  function exactTabPositionsForNote(note) {
+    const displayTrackIndex = Number(state.tabSource?.displayTrackIndex ?? state.tabSource?.trackIndex);
+    const stringCount = activeFretboardStrings().length;
+    return tabPositionsForNote(note).filter(position => (
+      position.trackIndex == null
+      || !Number.isInteger(displayTrackIndex)
+      || position.trackIndex === displayTrackIndex
+    )).filter(position => position.stringIndex < stringCount);
   }
 
   function fretboardMaxFret() {
@@ -1421,7 +1432,12 @@
           const button = document.createElement('button');
           button.type = 'button';
           const cellId = `${bar.barIndex}:${item.chordIndex}`;
-          const display = item.parsed?.display || item.raw;
+          const tabBarMarker = Boolean(item.source?.tabPlaceholder);
+          // Guitar Pro does not reliably carry harmony symbols.  Its internal
+          // timing cells are intentionally still real chords so the transport
+          // can use the shared chart engine, but the learner should see a
+          // useful location marker rather than the synthetic C5 placeholder.
+          const display = tabBarMarker ? `Bar ${bar.barIndex + 1}` : item.parsed?.display || item.raw;
           if (item.holdOnly) {
             button.className = 'chart-hold';
             button.dataset.holdFor = item.holdForCellId || '';
@@ -1438,10 +1454,13 @@
           button.className = 'chart-chord';
           button.dataset.cellId = cellId;
           button.textContent = item.optionalOnly ? `(${display})` : display;
-          button.setAttribute('aria-label', `${display}${item.reharm ? `, reharmonized from ${item.reharm.originalDisplay} using ${item.reharm.ruleLabel}` : ''}, bar ${bar.barIndex + 1}`);
+          button.setAttribute('aria-label', tabBarMarker
+            ? `Bar ${bar.barIndex + 1} timing marker`
+            : `${display}${item.reharm ? `, reharmonized from ${item.reharm.originalDisplay} using ${item.reharm.ruleLabel}` : ''}, bar ${bar.barIndex + 1}`);
           button.title = item.reharm
             ? `${item.reharm.originalDisplay} → ${display} · ${item.reharm.ruleLabel}`
             : display;
+          if (tabBarMarker) button.classList.add('chart-bar-marker');
           if (item.reharm) {
             button.classList.add('reharmonized');
             button.dataset.originalChord = item.reharm.originalDisplay;
@@ -2733,18 +2752,24 @@
       .map(note => Number(note.displayMidi ?? note.midi))
       .filter(Number.isFinite);
     stopReleasedFretboardChordVoices(releasedChordMidis);
-    // Frets must sound the exact physical grip that is drawn. Keep melody out
-    // of this accompaniment list because it is auditioned/scheduled as its
-    // own purple voice. A later melody note can temporarily replace a held
-    // chord finger on that string; omit that released tone from replay too.
+    // Keep the physical fretboard shape and the chart's sounding register as
+    // separate values.  A shape may use an octave-equivalent guitar position,
+    // but visual octave controls must never transpose the backing chord MIDI.
+    // Melody is auditioned/scheduled as its own purple voice; a later melody
+    // can temporarily replace a held chord finger on that string, so omit
+    // that released tone from replay too.
     state.fretboardVoicing = [...voicingByPosition.entries()]
       .filter(([key, note]) => !releasedVoicingKeys.has(key) && !note.melody && note.kind !== 'melody')
       .map(([, note]) => note)
-      .map(note => ({
-        ...note,
-        midi: Number(note.displayMidi ?? note.midi),
-        displayMidi: Number(note.displayMidi ?? note.midi)
-      }))
+      .map(note => {
+        const displayMidi = Number(note.displayMidi ?? note.midi);
+        const soundingMidi = Number(note.sourceMidi ?? note.midi);
+        return {
+          ...note,
+          midi: Number.isFinite(soundingMidi) ? soundingMidi : displayMidi,
+          displayMidi
+        };
+      })
       .filter(note => Number.isFinite(note.midi))
       .sort((left, right) => left.midi - right.midi);
     const strings = activeFretboardStrings();
@@ -3023,12 +3048,14 @@
     const event = activeChartEvent();
     if (!event) return;
     const pickup = event.kind === 'pickup';
+    const tabBarMarker = Boolean(event.item?.source?.tabPlaceholder);
+    const displayChord = tabBarMarker ? null : event.chord;
     const nextEvent = state.events[state.activeIndex + 1] || null;
     const section = pickup ? null : state.sections.get(event.sectionId);
-    const scale = pickup ? null : scaleForEvent(event, nextEvent);
+    const scale = pickup || tabBarMarker ? null : scaleForEvent(event, nextEvent);
     const melodyNotes = melodyNotesForEvent(event);
     const melodyNotesOnCard = melodyNotesDuringEvent(event);
-    const voicing = pickup ? [] : pianoVoicingForChord(event.chord, scale, melodyNotesOnCard);
+    const voicing = pickup || tabBarMarker ? [] : pianoVoicingForChord(displayChord, scale, melodyNotesOnCard);
     if (state.activeMelodyNote && !melodyNotesOnCard.some(note => note.id === state.activeMelodyNote.id)) state.activeMelodyNote = null;
     const melodyNote = activeMelodyForEvent(event);
     state.scale = scale;
@@ -3038,10 +3065,12 @@
     const chordPosition = state.events.slice(0, state.activeIndex + 1).filter(candidate => candidate.kind !== 'pickup').length;
     elements.selectedChord.textContent = pickup
       ? 'Pickup'
+      : tabBarMarker
+      ? `Bar ${event.barIndex + 1}`
       : `${event.optionalAlternate ? '(' : ''}${event.chord.display}${event.optionalAlternate ? ')' : ''}`;
     elements.selectedChord.title = event.item?.reharm
       ? `${event.item.reharm.originalDisplay} → ${event.chord.display} · ${event.item.reharm.ruleLabel}`
-      : pickup ? 'Melody pickup' : event.chord.display;
+      : pickup ? 'Melody pickup' : tabBarMarker ? `Timing marker for bar ${event.barIndex + 1}` : event.chord.display;
     elements.selectedChord.dataset.originalChord = event.item?.reharm?.originalDisplay || '';
     elements.selectedChord.dataset.reharmLevel = String(state.reharmLevel);
     elements.chordProgress.textContent = pickup ? `0 / ${chordTotal}` : `${chordPosition} / ${chordTotal}`;
@@ -3050,6 +3079,18 @@
       elements.scaleName.textContent = 'Melody pickup';
       elements.chartStatus.textContent = `Pickup · before bar ${event.barIndex + 2}`;
     } else {
+      if (tabBarMarker) {
+        elements.scaleName.textContent = 'Tab timing';
+        elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · tab score`;
+        renderPiano(null, null, [], melodyNote, melodyNotesOnCard);
+        renderFretboard(event, null, melodyNote);
+        syncInstrumentControls();
+        syncMelodyControls(event, melodyNotes, melodyNote);
+        syncTransportControls();
+        setChartButtonState(event);
+        if (keepVisible) keepMeasureVisible(event);
+        return;
+      }
       const parentSuffix = scale.sectionBased ? ` · ${Theory.contextName(section, state.preferFlats)} section` : '';
       const scaleRoot = scale.rootText ? Theory.displayNoteSpelling(scale.rootText) : Theory.noteName(scale.root, state.preferFlats);
       elements.scaleName.textContent = `${scaleRoot} ${scale.name}${parentSuffix}`;
@@ -3058,7 +3099,7 @@
         : '';
       elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}${reharmStatus}`;
     }
-    renderPiano(event.chord, scale, voicing, melodyNote, melodyNotesOnCard);
+    renderPiano(displayChord, scale, voicing, melodyNote, melodyNotesOnCard);
     renderFretboard(event, scale, melodyNote);
     syncInstrumentControls();
     syncMelodyControls(event, melodyNotes, melodyNote);
@@ -3599,25 +3640,43 @@
     return (parsed?.tracks || []).filter(track => track?.fretted).map(track => track.index);
   }
 
+  function guitarTabTrackIndexes(parsed) {
+    const fretted = frettedTabTrackIndexes(parsed);
+    const namedGuitars = fretted.filter(index => /guitar|lead|rhythm|electric|acoustic|nylon/i.test(parsed?.tracks?.[index]?.name || ''));
+    if (namedGuitars.length) return namedGuitars;
+    const nonBass = fretted.filter(index => !/bass/i.test(parsed?.tracks?.[index]?.name || ''));
+    return nonBass.length ? nonBass : fretted;
+  }
+
   function syncTabTrackControl() {
     const session = state.tabSession;
     const available = frettedTabTrackIndexes(session?.parsed);
-    if (!elements.tabTrackControl || !elements.tabTrack) return;
-    elements.tabTrackControl.hidden = !session || available.length < 2;
-    if (!session || available.length < 2) {
-      elements.tabTrack.replaceChildren();
-      return;
+    const guitarTracks = session?.guitarTrackIndexes || guitarTabTrackIndexes(session?.parsed);
+    if (elements.tabTrackControl && elements.tabTrack) {
+      elements.tabTrackControl.hidden = !session || available.length < 2;
+      if (!session || available.length < 2) {
+        elements.tabTrack.replaceChildren();
+      } else {
+        const fragment = document.createDocumentFragment();
+        available.forEach(index => {
+          const track = session.parsed.tracks[index];
+          const option = document.createElement('option');
+          option.value = String(index);
+          option.textContent = `${track.name} · ${track.stringCount} strings`;
+          fragment.appendChild(option);
+        });
+        elements.tabTrack.replaceChildren(fragment);
+        elements.tabTrack.value = String(session.trackIndex);
+      }
     }
-    const fragment = document.createDocumentFragment();
-    available.forEach(index => {
-      const track = session.parsed.tracks[index];
-      const option = document.createElement('option');
-      option.value = String(index);
-      option.textContent = `${track.name} · ${track.stringCount} strings`;
-      fragment.appendChild(option);
-    });
-    elements.tabTrack.replaceChildren(fragment);
-    elements.tabTrack.value = String(session.trackIndex);
+    if (!elements.tabMixControl || !elements.tabPlayAllTracks) return;
+    const canMix = Boolean(session && guitarTracks.length > 1);
+    elements.tabMixControl.hidden = !canMix;
+    elements.tabPlayAllTracks.disabled = !canMix;
+    elements.tabPlayAllTracks.checked = Boolean(session?.playAllTracks && canMix);
+    elements.tabPlayAllTracks.title = canMix
+      ? `Hear ${guitarTracks.length} guitar tracks together; the fretboard stays on the selected Tab track.`
+      : '';
   }
 
   function installParsedTab(parsed, entry, requestedTrackIndex = parsed?.preferredTrackIndex, options = {}) {
@@ -3625,14 +3684,31 @@
     const fretted = frettedTabTrackIndexes(parsed);
     if (!fretted.length) throw new Error('This tab has no fretted guitar or bass track.');
     const preferred = fretted.includes(Number(requestedTrackIndex)) ? Number(requestedTrackIndex) : fretted[0];
-    const midi = TabImport.midiForTrack(parsed, preferred);
+    const guitarTracks = guitarTabTrackIndexes(parsed);
+    const sameScore = state.tabSession?.parsed === parsed;
+    const playAllTracks = typeof options.playAllTracks === 'boolean'
+      ? options.playAllTracks
+      : sameScore && typeof state.tabSession?.playAllTracks === 'boolean'
+      ? state.tabSession.playAllTracks
+      : guitarTracks.length > 1;
+    // The selected track always remains audible.  When the mix is on, add
+    // every identified guitar part (rhythm/lead/etc.) at its authored time.
+    const playbackTracks = playAllTracks
+      ? [...new Set([preferred, ...guitarTracks])]
+      : [preferred];
+    const midi = typeof TabImport.midiForTracks === 'function'
+      ? TabImport.midiForTracks(parsed, playbackTracks, preferred)
+      : TabImport.midiForTrack(parsed, preferred);
     const song = TabImport.songForParsedTab(parsed, entry, preferred);
     const loaded = applyLoadedSong(song, { ...options, preloadedMidi: midi });
     if (!loaded) return false;
-    state.tabSession = { parsed, entry, trackIndex: preferred };
+    state.tabSession = { parsed, entry, trackIndex: preferred, guitarTrackIndexes: guitarTracks, playAllTracks };
     installMidiSource(midi, entry);
     syncTabTrackControl();
-    elements.libraryStatus.textContent = `${song.title} · ${parsed.tracks[preferred].name} · original tab positions`;
+    const mixStatus = playAllTracks && playbackTracks.length > 1
+      ? ` · playing ${playbackTracks.length} guitar tracks together`
+      : '';
+    elements.libraryStatus.textContent = `${song.title} · ${parsed.tracks[preferred].name} on fretboard${mixStatus} · original tab positions`;
     return true;
   }
 
@@ -3668,7 +3744,14 @@
     if (!session) return false;
     const nextIndex = Number(value);
     if (!frettedTabTrackIndexes(session.parsed).includes(nextIndex) || nextIndex === session.trackIndex) return false;
-    return installParsedTab(session.parsed, session.entry, nextIndex);
+    return installParsedTab(session.parsed, session.entry, nextIndex, { playAllTracks: session.playAllTracks });
+  }
+
+  function setTabPlayAllTracks(value) {
+    const session = state.tabSession;
+    if (!session || guitarTabTrackIndexes(session.parsed).length < 2) return false;
+    if (Boolean(value) === Boolean(session.playAllTracks)) return false;
+    return installParsedTab(session.parsed, session.entry, session.trackIndex, { playAllTracks: Boolean(value) });
   }
 
   async function loadSong(song, options = {}) {
@@ -4312,6 +4395,7 @@
   }
 
   function visualTargets(visual = 'all') {
+    if (visual === 'none') return [];
     if (visual === 'chord') return ['chord', 'fretboard'];
     if (visual === 'melody') return ['melody', 'fretboard'];
     if (visual === 'fretboard') return ['fretboard'];
@@ -4451,7 +4535,7 @@
   function playVoicing(voicing, duration = 1.35, prefix = 'preview', visual = 'chord') {
     if (!voicing.length) return;
     [...voices.keys()].filter(id => String(id).startsWith(`${prefix}-`)).forEach(id => stopVoice(id, true));
-    voicing.forEach((note, index) => startVoice(`${prefix}-${index}`, note.midi, duration, note.midi, visual));
+    voicing.forEach((note, index) => startVoice(`${prefix}-${index}`, note.midi, duration, note.displayMidi ?? note.midi, visual));
   }
 
   function currentChordPlayback() {
@@ -4683,10 +4767,17 @@
 
   function previewMelodyNote(note, id = 'melody-scrub', duration = .78) {
     if (!note) return;
-    const authoredPositions = exactTabPositionsForNote(note);
+    const authoredPositions = tabPositionsForNote(note);
     if (authoredPositions.length) {
+      const visiblePositions = exactTabPositionsForNote(note);
+      const positionKey = position => `${position.trackIndex ?? 'unknown'}:${position.stringIndex}:${position.fret}:${position.midi}`;
+      const visibleKeys = new Set(visiblePositions.map(positionKey));
       authoredPositions.forEach((position, index) => {
-        startVoice(`${id}-tab-${index}`, position.midi, duration, position.midi, 'melody', position);
+        // A Guitar Pro score can contain lead and rhythm guitars at the same
+        // beat.  Sound every selected part, but only light the selected Tab
+        // track's authored frets so the diagram remains a readable fingering.
+        const visible = visibleKeys.has(positionKey(position));
+        startVoice(`${id}-tab-${index}`, position.midi, duration, position.midi, visible ? 'melody' : 'none', visible ? position : null);
       });
       return;
     }
@@ -4893,6 +4984,7 @@
     });
   });
   elements.tabTrack?.addEventListener('change', () => { selectTabTrack(elements.tabTrack.value); });
+  elements.tabPlayAllTracks?.addEventListener('change', () => { setTabPlayAllTracks(elements.tabPlayAllTracks.checked); });
   elements.parkerizeHarmonyMode?.addEventListener('change', () => {
     state.parkerize.harmonyMode = elements.parkerizeHarmonyMode.value === 'generated' ? 'generated' : 'standard';
     try { localStorage.setItem(PARKERIZE_HARMONY_STORAGE_KEY, state.parkerize.harmonyMode); } catch (_) {}

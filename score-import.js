@@ -234,6 +234,12 @@
           (beat && beat.notes || []).forEach(function inspectNote(sourceNote, noteIndex) {
             var position = tabPosition(sourceNote, tuning);
             if (!position) return;
+            // The combined-guitar reader below needs to know which authored
+            // track owns a physical position.  Keep that metadata on the
+            // position itself because Keyer groups simultaneous notes into a
+            // single playback event before drawing the fretboard.
+            position.trackIndex = trackIndex;
+            position.trackName = readableTrackName(track, trackIndex);
             var velocity = number(sourceNote && sourceNote.velocity, 95);
             if (velocity > 1) velocity /= 127;
             notes.push({
@@ -282,17 +288,35 @@
     });
   }
 
-  function midiForTrack(parsed, trackIndex) {
+  function midiForTracks(parsed, trackIndexes, displayTrackIndex) {
     if (!parsed || !parsed.score) throw new Error('No Guitar Pro score is loaded.');
-    var index = Math.max(0, Math.min(parsed.tracks.length - 1, Math.round(number(trackIndex, parsed.preferredTrackIndex))));
+    var requested = Array.isArray(trackIndexes) ? trackIndexes : [trackIndexes];
+    var indexes = requested
+      .map(function normalizeIndex(value) {
+        return Math.max(0, Math.min(parsed.tracks.length - 1, Math.round(number(value, parsed.preferredTrackIndex))));
+      })
+      .filter(function onlyFretted(index, position, all) {
+        return Boolean(parsed.tracks[index] && parsed.tracks[index].fretted) && all.indexOf(index) === position;
+      });
+    if (!indexes.length) throw new Error('Choose a guitar or bass track with tab positions.');
+    var requestedDisplayIndex = Math.max(0, Math.min(parsed.tracks.length - 1, Math.round(number(displayTrackIndex, indexes[0]))));
+    var index = indexes.indexOf(requestedDisplayIndex) >= 0 ? requestedDisplayIndex : indexes[0];
     var definition = parsed.tracks[index];
-    if (!definition || !definition.fretted) throw new Error('Choose a guitar or bass track with tab positions.');
     var track = parsed.score.tracks[index];
     var bpm = parsed.bpm;
-    var notes = notesForTrack(track, index, definition.tuning, bpm);
-    if (!notes.length) throw new Error(definition.name + ' has no readable fretted notes.');
+    var notes = indexes.flatMap(function collectTrackNotes(trackIndex) {
+      var trackDefinition = parsed.tracks[trackIndex];
+      return notesForTrack(parsed.score.tracks[trackIndex], trackIndex, trackDefinition.tuning, bpm);
+    }).sort(function chronological(left, right) {
+      return left.tick - right.tick || left.trackIndex - right.trackIndex || left.tabPosition.stringIndex - right.tabPosition.stringIndex || left.midi - right.midi;
+    });
+    if (!notes.length) throw new Error(indexes.length === 1
+      ? definition.name + ' has no readable fretted notes.'
+      : 'The selected guitar tracks have no readable fretted notes.');
+    var trackNames = indexes.map(function trackName(trackIndex) { return parsed.tracks[trackIndex].name; });
+    var mixed = indexes.length > 1;
     return {
-      fileName: parsed.title + ' · ' + definition.name + '.mid',
+      fileName: parsed.title + ' · ' + (mixed ? 'guitar mix' : definition.name) + '.mid',
       title: parsed.title,
       format: 1,
       ppq: PPQ,
@@ -304,7 +328,7 @@
       markers: [],
       tracks: [{
         index: index,
-        name: definition.name,
+        name: mixed ? 'Guitar mix · ' + trackNames.join(' + ') : definition.name,
         channels: [1],
         programs: { 1: number(track && track.playbackInfo && track.playbackInfo.program, 29) },
         notes: notes
@@ -316,11 +340,19 @@
         title: parsed.title,
         artist: parsed.artist,
         trackIndex: index,
+        displayTrackIndex: index,
         trackName: definition.name,
+        playbackTrackIndexes: indexes.slice(),
+        playbackTrackNames: trackNames,
+        mixedPlayback: mixed,
         tuning: definition.tuning.slice(),
         exactPositions: true
       }
     };
+  }
+
+  function midiForTrack(parsed, trackIndex) {
+    return midiForTracks(parsed, [trackIndex], trackIndex);
   }
 
   function songForParsedTab(parsed, entry, trackIndex) {
@@ -352,6 +384,7 @@
     supportedFileMessage: supportedFileMessage,
     parseScore: parseScore,
     midiForTrack: midiForTrack,
+    midiForTracks: midiForTracks,
     songForParsedTab: songForParsedTab,
     trackDefinitions: trackDefinitions,
     preferredTrackIndex: preferredTrackIndex
