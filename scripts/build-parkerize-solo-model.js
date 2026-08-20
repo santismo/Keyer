@@ -2,8 +2,9 @@
 'use strict';
 
 /*
- * Build a compact statistical performance model from the 50 MIDI
- * transcriptions in the MIT-licensed Charlie Parker Aligned Omnibook.
+ * Build compact statistical performance models from the MIT-licensed
+ * Charlie Parker Aligned Omnibook and the accompaniment-annotated Weimar
+ * Jazz Database studies bundled with Keyer.
  *
  * The generated file contains aggregate histograms and first-order
  * transitions only. It deliberately stores no source melody or long phrase.
@@ -14,10 +15,12 @@ const os = require('node:os');
 const path = require('node:path');
 const Midi = require('../miditar-midi.js');
 const catalog = require('../jazz-solo-catalog.js');
+const wjazzdCatalog = require('../wjazzd-solo-catalog.js');
 
 const root = path.resolve(__dirname, '..');
 const outputPath = path.resolve(process.argv[2] || path.join(root, 'parkerize-corpus.js'));
 const cacheDirectory = path.resolve(process.argv[3] || path.join(os.tmpdir(), 'keyer-parkerize-corpus-cache'));
+const wjazzdMidiDirectory = path.join(root, 'jazz-solo-midi', 'wjazzd');
 const STEP_BUCKETS = [1 / 6, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1, 4 / 3, 1.5, 2, 3, 4];
 const REST_BUCKETS = [1 / 4, 1 / 2, 3 / 4, 1, 1.5, 2, 3, 4, 6, 8];
 const GATE_BUCKETS = [0.42, 0.55, 0.68, 0.8, 0.9, 0.98];
@@ -73,6 +76,12 @@ async function fetchCached(entry) {
   return payload;
 }
 
+function localWJazzdMidi(entry) {
+  const target = path.join(wjazzdMidiDirectory, entry.file);
+  if (!fs.existsSync(target)) throw new Error(`Missing bundled WJazzD MIDI: ${entry.file}`);
+  return fs.readFileSync(target);
+}
+
 function phraseBreak(previous, note, phrase) {
   if (!previous) return false;
   const onsetGap = note.startBeat - previous.startBeat;
@@ -125,7 +134,7 @@ function inspectMidi(entry, payload, model) {
   const track = midi.tracks.reduce((best, candidate) => (
     !best || candidate.notes.length > best.notes.length ? candidate : best
   ), null);
-  if (!track || track.notes.length < 8) throw new Error(`${entry.soloTitle} has no readable solo track.`);
+  if (!track || track.notes.length < 8) throw new Error(`${entry.soloTitle || entry.name || entry.file || 'Study'} has no readable solo track.`);
   const notes = track.notes.slice().sort((left, right) => left.tick - right.tick).map(note => ({
     midi: note.midi,
     velocity: note.velocity,
@@ -177,8 +186,8 @@ function inspectMidi(entry, payload, model) {
   });
 }
 
-async function main() {
-  const model = {
+function emptyModel() {
+  return {
     noteCount: 0,
     phraseCount: 0,
     pitchLow: 127,
@@ -195,25 +204,10 @@ async function main() {
     rests: {},
     contours: {}
   };
-  const failures = [];
-  for (const entry of catalog.parkerSolos) {
-    try {
-      const payload = await fetchCached(entry);
-      inspectMidi(entry, payload, model);
-      process.stdout.write('.');
-    } catch (error) {
-      failures.push(`${entry.soloTitle}: ${error.message}`);
-      process.stdout.write('x');
-    }
-  }
-  process.stdout.write('\n');
-  if (failures.length) throw new Error(`Could not build the complete corpus:\n${failures.join('\n')}`);
+}
 
-  const generated = {
-    version: 2,
-    source: 'Charlie Parker Aligned Omnibook · aggregate performance statistics',
-    license: 'MIT',
-    soloCount: catalog.parkerSolos.length,
+function compactModel(model) {
+  return {
     noteCount: model.noteCount,
     phraseCount: model.phraseCount,
     pitchRange: [model.pitchLow, model.pitchHigh],
@@ -229,9 +223,50 @@ async function main() {
     rests: sortHistogram(model.rests),
     contours: Object.fromEntries(Object.entries(model.contours).sort((left, right) => right[1] - left[1]).slice(0, 80))
   };
+}
+
+async function main() {
+  const model = emptyModel();
+  const jazzLegendModel = emptyModel();
+  const failures = [];
+  for (const entry of catalog.parkerSolos) {
+    try {
+      const payload = await fetchCached(entry);
+      inspectMidi(entry, payload, model);
+      process.stdout.write('.');
+    } catch (error) {
+      failures.push(`${entry.soloTitle}: ${error.message}`);
+      process.stdout.write('x');
+    }
+  }
+  for (const entry of wjazzdCatalog.entries || []) {
+    try {
+      inspectMidi(entry, localWJazzdMidi(entry), jazzLegendModel);
+      process.stdout.write('+');
+    } catch (error) {
+      failures.push(`${entry.name || entry.file}: ${error.message}`);
+      process.stdout.write('x');
+    }
+  }
+  process.stdout.write('\n');
+  if (failures.length) throw new Error(`Could not build the complete corpus:\n${failures.join('\n')}`);
+
+  const generated = {
+    version: 3,
+    source: 'Charlie Parker Aligned Omnibook · Parker foundation with aggregate Jazzomat support statistics',
+    license: 'MIT (Parker corpus) · ODbL/DbCL (WJazzD support corpus)',
+    soloCount: catalog.parkerSolos.length,
+    parkerSoloCount: catalog.parkerSolos.length,
+    ...compactModel(model),
+    jazzLegendSupport: {
+      soloCount: (wjazzdCatalog.entries || []).length,
+      performerCount: Number(wjazzdCatalog.performerCount) || 0,
+      ...compactModel(jazzLegendModel)
+    }
+  };
   const source = `/* Generated by scripts/build-parkerize-solo-model.js. Aggregate statistics only. */\n(function attachKeyerParkerizeCorpus(root, factory) {\n  var api = factory();\n  if (typeof module === 'object' && module.exports) module.exports = api;\n  if (root) root.KeyerParkerizeCorpus = api;\n})(typeof globalThis !== 'undefined' ? globalThis : this, function buildKeyerParkerizeCorpus() {\n  'use strict';\n  return Object.freeze(${JSON.stringify(generated, null, 2)});\n});\n`;
   fs.writeFileSync(outputPath, source);
-  console.log(`Wrote ${generated.soloCount} solos, ${generated.noteCount} notes, and ${generated.phraseCount} phrases to ${path.relative(root, outputPath)}.`);
+  console.log(`Wrote Parker foundation (${generated.soloCount} solos) plus ${generated.jazzLegendSupport.soloCount} Jazzomat support studies to ${path.relative(root, outputPath)}.`);
 }
 
 main().catch(error => {
