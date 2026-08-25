@@ -178,8 +178,9 @@ input[type="search"]::placeholder { color: #7f8999; }
 .performance-button:disabled { opacity: .55; cursor: progress; }
 .performance-options { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5px 10px; align-items: center; padding: 7px 11px; color: var(--muted); border-bottom: 1px solid var(--line); font: 750 .57rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .performance-options label { min-width: 0; }
-.tempo-mode, .melody-play-toggle, .auto-advance-toggle { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.tempo-mode, .melody-play-toggle, .auto-advance-toggle, .stream-mode-toggle { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .auto-advance-toggle { color: #d7bcff; }
+.stream-mode-toggle { color: #8ffff6; }
 .tempo-control { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px; align-items: center; color: var(--blue); }
 .tempo-control input { width: 100%; accent-color: var(--gold); }
 .tempo-control input:disabled { opacity: .58; }

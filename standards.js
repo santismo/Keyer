@@ -38,6 +38,7 @@
   const GUITAR_VOICING_STORAGE_KEY = 'keyer-jazz-guitar-voicing-style';
   const MELODY_VISIBILITY_STORAGE_KEY = 'keyer-jazz-show-melody';
   const AUTO_ADVANCE_RANDOM_STORAGE_KEY = 'keyer-jazz-auto-advance-random';
+  const STREAM_MODE_STORAGE_KEY = 'keyer-jazz-stream-mode';
   const PARKERIZE_HARMONY_STORAGE_KEY = 'keyer-jazz-parkerize-harmony';
   const PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY = 'keyer-jazz-parkerize-chart-complexity';
   const PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY = 'keyer-jazz-parkerize-solo-complexity';
@@ -57,6 +58,19 @@
   // player deliberately asks for stable playback instead.
   const AUDIO_LATENCY_HINT = 'playback';
   const AUDIO_START_LEAD_SECONDS = .03;
+  // Stream mode deliberately renders the selected chart ahead of time, then
+  // hands one ordinary media file to iOS. That avoids the live Web Audio
+  // scheduler and short-lived oscillator churn that can break up over a car
+  // or Bluetooth route. Mono 32 kHz is ample for Keyer's synthesized study
+  // tone and keeps the temporary iPhone memory footprint reasonable.
+  const STREAM_SAMPLE_RATE = 32000;
+  const STREAM_CHANNELS = 1;
+  const STREAM_MAX_SECONDS = 6 * 60;
+  // Do not leave a hidden release tail after the last written beat. A native
+  // media loop is gapless at the file boundary, but any extra tail becomes a
+  // perceptible dead spot before beat one on every repeat.
+  const STREAM_RENDER_TAIL_SECONDS = 0;
+  const STREAM_RENDER_VERSION = 'stream-v1';
   const PIANO_VOICING_STYLES = new Set([
     'root-shell', 'shell', 'rootless', 'closed', 'spread',
     'upper-structure', 'modern', 'cluster', 'avant-garde'
@@ -146,6 +160,7 @@
     playMelody: document.querySelector('#playMelody'),
     autoAdvanceRandom: document.querySelector('#autoAdvanceRandom'),
     autoAdvanceRandomLabel: document.querySelector('#autoAdvanceRandomLabel'),
+    streamMode: document.querySelector('#streamMode'),
     piano: document.querySelector('#piano'),
     melodyPiano: document.querySelector('#melodyPiano'),
     keyboardStack: document.querySelector('#keyboardStack'),
@@ -251,7 +266,8 @@
       useChartTempo: true,
       customBpm: DEFAULT_TEMPO,
       playMelody: true,
-      autoAdvanceRandom: false
+      autoAdvanceRandom: false,
+      streamMode: false
     },
     loading: false
   };
@@ -260,6 +276,26 @@
   let audioInput = null;
   let audioKeepAlive = null;
   let audioResumePromise = null;
+  // Keep one persistent HTML media element for every stream-mode song. It is
+  // intentionally never connected back into Web Audio: iOS can buffer and
+  // route media-element playback more reliably than a graph of live notes.
+  const streamTransport = {
+    audio: null,
+    objectUrl: '',
+    readyKey: '',
+    preparingKey: '',
+    preparePromise: null,
+    generation: 0,
+    rendering: false,
+    session: 0,
+    secondsPerBeat: 0,
+    chartEndBeat: 0,
+    rafId: 0,
+    lastVisualBeat: -1,
+    error: '',
+    waitingForGesture: false,
+    transitioning: false
+  };
   const voices = new Map();
   const pressedCounts = {
     chord: new Map(),
@@ -340,7 +376,7 @@
       state.midiEntry = entry;
       state.preferSoloChorus = true;
       state.parkerize.lastTake = { ...result, events: events.slice(), song: state.song };
-      installMidiSource(result.midi, entry);
+      installMidiSource(result.midi, entry, { transport });
       if (elements.parkerizeStatus) {
         const harmony = state.song.parkerizeGenerated
           ? `original chart ${state.parkerize.chartComplexity}`
@@ -3018,8 +3054,21 @@
   }
 
   function syncTransportControls() {
-    elements.playChart.textContent = state.transport.playing ? 'Stop chart' : 'Play chart';
+    const preparingStream = state.transport.playing && state.transport.streamMode && streamTransport.rendering;
+    elements.playChart.textContent = preparingStream ? 'Preparing…' : state.transport.playing ? 'Stop chart' : 'Play chart';
     elements.playChart.setAttribute('aria-pressed', String(state.transport.playing));
+    elements.playChart.setAttribute('aria-label', preparingStream
+      ? 'Preparing the stable audio stream; tap to cancel'
+      : state.transport.playing
+        ? 'Stop the current chart'
+        : state.transport.streamMode
+          ? 'Play the current chart in Stream mode'
+          : 'Play the current chart');
+    elements.playChart.title = preparingStream
+      ? 'Preparing stream · tap to cancel'
+      : state.transport.streamMode
+        ? 'Play chart as one stable media stream'
+        : 'Play chart';
     elements.playChart.disabled = !state.transport.playing && !state.timeline.length;
     if (elements.autoAdvanceRandom) {
       const generatedParkerize = parkerizeActive() && state.parkerize.harmonyMode === 'generated';
@@ -3041,6 +3090,7 @@
         : 'Random next chart is off: this chart loops from the beginning.';
       if (elements.autoAdvanceRandomLabel) elements.autoAdvanceRandomLabel.textContent = generatedParkerize ? 'Generate next tune' : standardParkerize ? 'Parkerize next chart' : 'Random next chart';
     }
+    syncStreamModeControl();
     syncTempoControls();
   }
 
@@ -3482,6 +3532,10 @@
     } else {
       stopChartPlayback({ render: false });
     }
+    // A rendered media file belongs to the exact chart, source, tempo, and
+    // MIDI selection it was built from. Never let an old stream keep playing
+    // underneath a newly loaded song.
+    invalidateStreamAsset();
     invalidateDerivedHarmony();
     state.song = song;
     if (!song?.tabSource) state.tabSession = null;
@@ -3522,7 +3576,7 @@
     // Keep it on through Random/song selection and quietly load the next
     // compatible melody when the catalog has a match.
     if (generatedPractice) installParkerizedSolo({ transport });
-    else if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi) void requestMidiSource({ showAfterLoad: true });
+    else if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi) void requestMidiSource({ showAfterLoad: true, transport });
     if (!song.parkerizeGenerated && !song.tabSource) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -3536,6 +3590,10 @@
     }
     syncParkerizePanel();
     syncTabTrackControl();
+    // When Stream mode was previously latched on, prepare the selected song
+    // before the user presses Play. That keeps the eventual media play call
+    // inside a direct tap on iOS instead of waiting for an offline render.
+    if (state.transport.streamMode) void prepareStreamAsset();
     return true;
   }
 
@@ -3703,7 +3761,7 @@
     const loaded = applyLoadedSong(song, { ...options, preloadedMidi: midi });
     if (!loaded) return false;
     state.tabSession = { parsed, entry, trackIndex: preferred, guitarTrackIndexes: guitarTracks, playAllTracks };
-    installMidiSource(midi, entry);
+    installMidiSource(midi, entry, { transport: Boolean(options.transport) });
     syncTabTrackControl();
     const mixStatus = playAllTracks && playbackTracks.length > 1
       ? ` · playing ${playbackTracks.length} guitar tracks together`
@@ -3785,7 +3843,7 @@
       if (request !== songLoadSequence
         || options.transportSession != null && !transportSessionActive(options.transportSession)) return false;
       const loaded = applyLoadedSong(song, { ...options, preloadedMidi });
-      if (loaded && preloadedMidi) installMidiSource(preloadedMidi, song.azMidiEntry);
+      if (loaded && preloadedMidi) installMidiSource(preloadedMidi, song.azMidiEntry, { transport: Boolean(options.transport) });
       return loaded;
     } catch (error) {
       if (request === songLoadSequence) {
@@ -4156,7 +4214,14 @@
     return MIDITAR_MIDI_BASE_URLS.map(base => `${base}${encodedName}`);
   }
 
-  function installMidiSource(midi, entry = null) {
+  function installMidiSource(midi, entry = null, { transport = false } = {}) {
+    // A matched MIDI can arrive after Stream mode has already begun. Stop and
+    // rebuild in that case so the rendered WAV, chord highlighting, and new
+    // source timing always stay in sync. Transport-driven random-next loads
+    // are between tracks, so their caller starts the new stream afterward.
+    const restartStream = state.transport.playing && state.transport.streamMode
+      && (!transport || !streamTransport.transitioning);
+    if (restartStream) stopChartPlayback({ render: false });
     const melodyTrack = MiditarMidi?.chooseMelodyTrack?.(midi);
     const melodyNotes = buildMelodyNotes(midi, melodyTrack);
     if (!melodyNotes.length) throw new Error('This MIDI has no readable melody track.');
@@ -4186,9 +4251,13 @@
     elements.songMeta.textContent = songMetaText();
     syncMidiChorusControl();
     syncMidiSourceStatus();
+    // A MIDI file may finish loading after the chart itself. Pre-render its
+    // final voicings while stopped so the next Play tap has a ready asset.
+    if (state.transport.streamMode && !state.transport.playing) void prepareStreamAsset();
+    if (restartStream) startChartPlayback();
   }
 
-  async function loadMatchedMiditarMidi(entry = state.midiEntry, expectedSong = state.song) {
+  async function loadMatchedMiditarMidi(entry = state.midiEntry, expectedSong = state.song, { transport = false } = {}) {
     if (!MiditarMidi) throw new Error('The MIDI melody reader did not load.');
     if (!entry) throw new Error('No matching melody MIDI was found.');
     elements.toggleMelody.disabled = true;
@@ -4201,7 +4270,7 @@
       // Random can be pressed while another melody download is in flight.
       // Never install the earlier song's MIDI on the new chart.
       if (state.song !== expectedSong || state.midiEntry !== entry) return false;
-      installMidiSource(MiditarMidi.parseMidi(buffer, entry.name), entry);
+      installMidiSource(MiditarMidi.parseMidi(buffer, entry.name), entry, { transport });
       return true;
     } finally {
       elements.toggleMelody.disabled = false;
@@ -4209,7 +4278,7 @@
     }
   }
 
-  async function requestMidiSource({ showAfterLoad = false } = {}) {
+  async function requestMidiSource({ showAfterLoad = false, transport = false } = {}) {
     try {
       if (!MiditarMidi) throw new Error('The MIDI melody reader did not load.');
       if (state.midi) {
@@ -4222,7 +4291,7 @@
         return;
       }
       if (state.midiEntry) {
-        await loadMatchedMiditarMidi(state.midiEntry, state.song);
+        await loadMatchedMiditarMidi(state.midiEntry, state.song, { transport });
         return;
       }
       elements.midiStatus.textContent = 'No matching melody MIDI is available for this standard.';
@@ -4233,14 +4302,18 @@
   }
 
   async function toggleMelody() {
+    const restartStream = state.transport.playing && state.transport.streamMode;
+    if (restartStream) stopChartPlayback({ render: false });
     if (state.showMelody) {
       setMelodyVisibility(false);
       resetMelodySelection();
       renderStudy({ keepVisible: false });
+      if (restartStream) startChartPlayback();
       return;
     }
     setMelodyVisibility(true);
     await requestMidiSource({ showAfterLoad: true });
+    if (restartStream) startChartPlayback();
   }
 
   async function loadCatalog() {
@@ -4340,8 +4413,124 @@
   }
 
   function recoverAudioOutput() {
-    if (document.visibilityState === 'hidden' || !audioContext || audioContext.state === 'running') return;
+    if (document.visibilityState === 'hidden') return;
+    requestPlaybackAudioSession();
+    const streamAudio = streamTransport.audio;
+    if (state.transport.playing && state.transport.streamMode && streamAudio?.paused
+      && !streamAudio.ended && !streamTransport.waitingForGesture && !streamTransport.transitioning) {
+      void streamAudio.play().catch(() => {});
+    }
+    if (!audioContext || audioContext.state === 'running') return;
     void resumeAudioContext(audioContext);
+  }
+
+  function requestPlaybackAudioSession() {
+    // Safari 17+ exposes this small part of the iOS audio-session API. It is
+    // safe to ignore elsewhere, but asking for media playback prevents a web
+    // synth from being treated like a transient interactive sound route.
+    const session = navigator?.audioSession;
+    if (!session || !('type' in session)) return;
+    try { session.type = 'playback'; } catch (_) {}
+  }
+
+  function streamModeAvailable() {
+    const OfflineAudioContextClass = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    return Boolean(OfflineAudioContextClass && window.Audio && window.Blob && window.URL?.createObjectURL);
+  }
+
+  function streamModeDescription() {
+    if (!streamModeAvailable()) return 'Stream mode is unavailable in this browser; normal playback will be used.';
+    if (!state.transport.streamMode) return 'Use a single stable rendered audio stream for car and Bluetooth playback.';
+    if (streamTransport.rendering) return 'Preparing this chart as one stable audio stream. Tap Stop chart to cancel.';
+    if (streamTransport.transitioning) return 'Loading the next chart as a stable audio stream.';
+    if (streamTransport.waitingForGesture) return 'Stream is ready. Tap Play chart once more to begin media playback.';
+    if (streamTransport.error) return `Stream mode could not prepare this chart: ${streamTransport.error}`;
+    return 'Stream mode is on. It stays on for repeats and the next chart.';
+  }
+
+  function syncStreamModeControl() {
+    if (!elements.streamMode) return;
+    const available = streamModeAvailable();
+    elements.streamMode.checked = Boolean(state.transport.streamMode && available);
+    elements.streamMode.disabled = !available;
+    elements.streamMode.setAttribute('aria-label', available
+      ? state.transport.streamMode
+        ? 'Turn off Stream mode and use normal live playback'
+        : 'Turn on Stream mode for stable car and Bluetooth playback'
+      : 'Stream mode is unavailable in this browser');
+    const label = elements.streamMode.closest('label');
+    if (label) label.title = streamModeDescription();
+  }
+
+  function updateStreamMediaSession(playing = false) {
+    if (!navigator?.mediaSession) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: state.song?.title || 'Keyer chart',
+        artist: state.song?.composer || 'Keyer',
+        album: 'Keyer Song Mode'
+      });
+      navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+    } catch (_) {}
+  }
+
+  function streamAudioElement() {
+    if (streamTransport.audio) return streamTransport.audio;
+    const audio = document.createElement('audio');
+    audio.preload = 'auto';
+    audio.playsInline = true;
+    audio.tabIndex = -1;
+    audio.style.cssText = 'position:fixed;inline-size:1px;block-size:1px;opacity:0;pointer-events:none;';
+    audio.setAttribute('playsinline', '');
+    audio.setAttribute('x-webkit-airplay', 'allow');
+    audio.setAttribute('aria-hidden', 'true');
+    audio.addEventListener('ended', handleStreamEnded);
+    document.body.appendChild(audio);
+    streamTransport.audio = audio;
+    return audio;
+  }
+
+  function stopStreamVisualLoop() {
+    if (streamTransport.rafId) window.cancelAnimationFrame(streamTransport.rafId);
+    streamTransport.rafId = 0;
+    streamTransport.lastVisualBeat = -1;
+  }
+
+  function stopStreamPlayback() {
+    stopStreamVisualLoop();
+    streamTransport.transitioning = false;
+    const audio = streamTransport.audio;
+    if (!audio) return;
+    try { audio.pause(); } catch (_) {}
+    updateStreamMediaSession(false);
+  }
+
+  function invalidateStreamAsset() {
+    const stream = streamTransport;
+    stream.generation += 1;
+    stream.readyKey = '';
+    stream.preparingKey = '';
+    stream.preparePromise = null;
+    stream.rendering = false;
+    stream.error = '';
+    stream.waitingForGesture = false;
+    stream.session = 0;
+    stream.secondsPerBeat = 0;
+    stream.chartEndBeat = 0;
+    stopStreamVisualLoop();
+    const audio = stream.audio;
+    if (audio) {
+      try {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+      } catch (_) {}
+    }
+    if (stream.objectUrl) {
+      try { URL.revokeObjectURL(stream.objectUrl); } catch (_) {}
+    }
+    stream.objectUrl = '';
+    updateStreamMediaSession(false);
   }
 
   function ensureAudio({ resume = true } = {}) {
@@ -4392,6 +4581,344 @@
     }
     if (resume && audioContext.state !== 'running') void resumeAudioContext(audioContext);
     return audioContext;
+  }
+
+  function streamRenderKey() {
+    const tempo = Math.round(currentTempo() * 1000) / 1000;
+    const timeline = state.timeline.map(entry => {
+      const event = Number.isInteger(entry.eventIndex) ? state.events[entry.eventIndex] : null;
+      // Timing IDs are intentionally stable across reharmonization. Include
+      // the sounding symbol too, so a cached WAV can never survive a harmony
+      // change that keeps the same form and bar timing.
+      const chord = event?.chord?.raw || event?.chord?.display || '';
+      return [
+        entry.type,
+        entry.id,
+        entry.eventIndex,
+        entry.startBeat,
+        entry.endBeat,
+        entry.durationBeats,
+        chord
+      ].join(':');
+    }).join('|');
+    // Melody notes also shape fitted accompaniment voicings, even when their
+    // own audio is muted. Keep them in the key so a newly loaded study cannot
+    // reuse a stream rendered against an earlier melody line.
+    const melody = melodyMatchesChart()
+      ? state.melodyNotes.map(note => {
+        const tab = tabPositionsForNote(note).map(position => `${position.trackIndex}:${position.stringIndex}:${position.fret}:${position.midi}`).join(',');
+        return [note.id, note.midi, note.startBeat, note.endBeat, note.durationBeats, tab].join(':');
+      }).join('|')
+      : '';
+    return [
+      STREAM_RENDER_VERSION,
+      state.song?.title || '',
+      state.song?.composer || '',
+      state.chartSource,
+      state.reharmLevel,
+      tempo,
+      state.instrumentView,
+      state.pianoVoicingStyle,
+      state.guitarVoicingStyle,
+      state.fretboardPositionAnchor ?? '',
+      Boolean(state.showMelody),
+      Boolean(state.transport.playMelody),
+      state.tabSource?.trackIndex ?? '',
+      state.tabSource?.displayTrackIndex ?? '',
+      state.tabSession?.playAllTracks ?? '',
+      timeline,
+      melody
+    ].join('\u0001');
+  }
+
+  function streamChordVoicingForEvent(event, eventIndex) {
+    if (!event?.chord || state.tabSource?.exactPositions) return [];
+    const nextEvent = state.events[eventIndex + 1] || null;
+    const scale = scaleForEvent(event, nextEvent);
+    const melody = melodyNotesDuringEvent(event);
+    if (state.instrumentView !== 'fretboard' || soloStudyActive()) {
+      return pianoVoicingForChord(event.chord, scale, melody);
+    }
+    // The normal live fretboard player uses a planned guitar grip instead of
+    // the piano voicing. Build the same plan without rendering a DOM frame so
+    // the rendered stream keeps the chosen guitar sound/register.
+    const priorIndex = state.activeIndex;
+    try {
+      state.activeIndex = eventIndex;
+      const plan = guitarChordMelodyPlan(event);
+      return [...(plan?.notes?.entries?.() || [])]
+        .filter(([, note]) => note && !note.melody && note.kind !== 'melody')
+        .map(([, note]) => ({
+          ...note,
+          midi: Number(note.sourceMidi ?? note.midi)
+        }))
+        .filter(note => Number.isFinite(note.midi))
+        .sort((left, right) => left.midi - right.midi);
+    } finally {
+      state.activeIndex = priorIndex;
+    }
+  }
+
+  function scheduleStreamVoice(context, destination, midi, startTime, duration) {
+    const pitch = Number(midi);
+    if (!Number.isFinite(pitch)) return;
+    const start = Math.max(0, Number(startTime) || 0);
+    const hold = Math.max(.032, Number(duration) || .032);
+    const end = start + hold;
+    const attack = Math.min(.014, Math.max(.006, hold * .3));
+    const release = Math.min(.2, Math.max(.014, hold * .23));
+    const releaseStart = Math.max(start + attack + .003, end - release);
+    const settle = Math.min(start + .55, releaseStart);
+    const oscillator = context.createOscillator();
+    const color = context.createOscillator();
+    const colorGain = context.createGain();
+    const envelope = context.createGain();
+    const frequency = 440 * (2 ** ((pitch - 69) / 12));
+    oscillator.type = 'triangle';
+    oscillator.frequency.value = frequency;
+    color.type = 'sine';
+    color.frequency.value = frequency * 2;
+    colorGain.gain.value = .1;
+    envelope.gain.setValueAtTime(.0001, start);
+    envelope.gain.exponentialRampToValueAtTime(.13, start + attack);
+    envelope.gain.exponentialRampToValueAtTime(.07, settle);
+    envelope.gain.setValueAtTime(.07, releaseStart);
+    envelope.gain.exponentialRampToValueAtTime(.0001, end);
+    oscillator.connect(envelope);
+    color.connect(colorGain);
+    colorGain.connect(envelope);
+    envelope.connect(destination);
+    oscillator.start(start);
+    color.start(start);
+    oscillator.stop(end + .01);
+    color.stop(end + .01);
+  }
+
+  function renderOfflineContext(context) {
+    return new Promise((resolve, reject) => {
+      let complete = false;
+      const finish = buffer => {
+        if (complete) return;
+        complete = true;
+        resolve(buffer);
+      };
+      context.oncomplete = event => finish(event.renderedBuffer);
+      try {
+        const rendered = context.startRendering();
+        if (rendered?.then) rendered.then(finish, reject);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function audioBufferToWavBlob(buffer) {
+    const channels = Math.max(1, buffer.numberOfChannels || 1);
+    const frames = Math.max(0, buffer.length || 0);
+    const bytesPerSample = 2;
+    const bytesPerFrame = channels * bytesPerSample;
+    const bytes = new ArrayBuffer(44 + frames * bytesPerFrame);
+    const view = new DataView(bytes);
+    const writeText = (offset, text) => {
+      for (let index = 0; index < text.length; index += 1) view.setUint8(offset + index, text.charCodeAt(index));
+    };
+    writeText(0, 'RIFF');
+    view.setUint32(4, 36 + frames * bytesPerFrame, true);
+    writeText(8, 'WAVE');
+    writeText(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, buffer.sampleRate, true);
+    view.setUint32(28, buffer.sampleRate * bytesPerFrame, true);
+    view.setUint16(32, bytesPerFrame, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+    writeText(36, 'data');
+    view.setUint32(40, frames * bytesPerFrame, true);
+    const data = Array.from({ length: channels }, (_, channel) => buffer.getChannelData(channel));
+    let offset = 44;
+    for (let frame = 0; frame < frames; frame += 1) {
+      for (let channel = 0; channel < channels; channel += 1) {
+        const sample = Math.max(-1, Math.min(1, data[channel][frame] || 0));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        offset += bytesPerSample;
+      }
+    }
+    return new Blob([bytes], { type: 'audio/wav' });
+  }
+
+  async function renderStreamAudio() {
+    const OfflineAudioContextClass = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OfflineAudioContextClass) throw new Error('This browser cannot render an offline audio stream.');
+    const finalEntry = state.timeline[state.timeline.length - 1];
+    const chartEndBeat = Math.max(0, Number(finalEntry?.endBeat) || 0);
+    const secondsPerBeat = 60 / currentTempo();
+    const durationSeconds = chartEndBeat * secondsPerBeat + STREAM_RENDER_TAIL_SECONDS;
+    if (!chartEndBeat || !Number.isFinite(durationSeconds)) throw new Error('This chart has no playable timeline.');
+    if (durationSeconds > STREAM_MAX_SECONDS) throw new Error('This chart is too long to render as one phone-friendly stream.');
+    const frameLength = Math.ceil(durationSeconds * STREAM_SAMPLE_RATE);
+    const context = new OfflineAudioContextClass(STREAM_CHANNELS, frameLength, STREAM_SAMPLE_RATE);
+    const compressor = context.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.knee.value = 15;
+    compressor.ratio.value = 5;
+    compressor.attack.value = .006;
+    compressor.release.value = .22;
+    const master = context.createGain();
+    master.gain.value = .56;
+    master.connect(compressor);
+    compressor.connect(context.destination);
+
+    state.timeline.forEach(entry => {
+      if (entry.type !== 'chord' || !Number.isInteger(entry.eventIndex)) return;
+      const event = state.events[entry.eventIndex];
+      if (!event) return;
+      const start = Math.max(0, Number(entry.startBeat) || 0) * secondsPerBeat;
+      const reachesChartEnd = Number(entry.endBeat) >= chartEndBeat - .0001;
+      const duration = Math.max(.032, (Number(entry.durationBeats) || 0) * secondsPerBeat * (reachesChartEnd ? 1 : .92));
+      streamChordVoicingForEvent(event, entry.eventIndex).forEach(note => {
+        scheduleStreamVoice(context, master, note.midi, start, duration);
+      });
+    });
+
+    if (state.transport.playMelody && melodyMatchesChart()) {
+      state.melodyNotes.forEach(note => {
+        const startBeat = Math.max(0, Number(note.startBeat) || 0);
+        if (startBeat >= chartEndBeat - .0001) return;
+        const nativeDuration = Number(note.durationBeats)
+          || Math.max(0, Number(note.endBeat) - startBeat);
+        const durationBeats = Math.max(.06, Math.min(nativeDuration || .06, chartEndBeat - startBeat));
+        const midis = tabPositionsForNote(note).map(position => position.midi);
+        (midis.length ? midis : [note.midi]).forEach(midi => {
+          scheduleStreamVoice(context, master, midi, startBeat * secondsPerBeat, durationBeats * secondsPerBeat * .94);
+        });
+      });
+    }
+
+    const buffer = await renderOfflineContext(context);
+    return { buffer, secondsPerBeat, chartEndBeat };
+  }
+
+  async function prepareStreamAsset() {
+    if (!streamModeAvailable()) {
+      streamTransport.error = 'This browser does not support offline media rendering.';
+      syncTransportControls();
+      return false;
+    }
+    const key = streamRenderKey();
+    if (streamTransport.readyKey === key && streamTransport.objectUrl) return true;
+    if (streamTransport.rendering && streamTransport.preparingKey === key && streamTransport.preparePromise) {
+      return streamTransport.preparePromise;
+    }
+    invalidateStreamAsset();
+    const generation = streamTransport.generation;
+    streamTransport.rendering = true;
+    streamTransport.preparingKey = key;
+    streamTransport.error = '';
+    streamTransport.waitingForGesture = false;
+    syncTransportControls();
+    const work = (async () => {
+      try {
+        const rendered = await renderStreamAudio();
+        if (generation !== streamTransport.generation || streamTransport.preparingKey !== key) return false;
+        const url = URL.createObjectURL(audioBufferToWavBlob(rendered.buffer));
+        const audio = streamAudioElement();
+        try {
+          audio.pause();
+          audio.removeAttribute('src');
+          audio.src = url;
+          audio.load();
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          throw error;
+        }
+        streamTransport.objectUrl = url;
+        streamTransport.readyKey = key;
+        streamTransport.secondsPerBeat = rendered.secondsPerBeat;
+        streamTransport.chartEndBeat = rendered.chartEndBeat;
+        return true;
+      } catch (error) {
+        if (generation === streamTransport.generation) {
+          streamTransport.error = safeText(error?.message) || 'Could not render this chart.';
+        }
+        return false;
+      } finally {
+        if (generation === streamTransport.generation && streamTransport.preparingKey === key) {
+          streamTransport.rendering = false;
+          streamTransport.preparingKey = '';
+          streamTransport.preparePromise = null;
+          syncTransportControls();
+        }
+      }
+    })();
+    streamTransport.preparePromise = work;
+    return work;
+  }
+
+  function streamTimelineEntryAtBeat(beat) {
+    const target = Math.max(0, Number(beat) || 0);
+    return state.timeline.find(entry => (
+      target >= Number(entry.startBeat) - .0001
+      && target < Number(entry.endBeat) - .0001
+    )) || state.timeline[state.timeline.length - 1] || null;
+  }
+
+  function streamMelodyAtBeat(beat) {
+    if (!state.transport.playMelody || !melodyMatchesChart()) return null;
+    const target = Math.max(0, Number(beat) || 0);
+    return state.melodyNotes.find(note => (
+      target >= Number(note.startBeat) - .0001
+      && target < Number(note.endBeat) - .0001
+    )) || null;
+  }
+
+  function syncStreamVisuals(session, force = false) {
+    if (!transportSessionActive(session) || streamTransport.session !== session) return;
+    // A MIDI source or synthesis setting may finish changing after this WAV
+    // was prepared. Never let the media keep running against a new chart;
+    // the setting handler will restart Stream mode with a fresh render.
+    if (streamTransport.readyKey !== streamRenderKey()) {
+      stopChartPlayback({ render: false });
+      return;
+    }
+    const audio = streamTransport.audio;
+    const secondsPerBeat = streamTransport.secondsPerBeat;
+    if (!audio || !Number.isFinite(secondsPerBeat) || secondsPerBeat <= 0) return;
+    const maxBeat = Math.max(0, streamTransport.chartEndBeat - .0001);
+    const beat = Math.min(maxBeat, Math.max(0, Number(audio.currentTime) || 0) / secondsPerBeat);
+    const entry = streamTimelineEntryAtBeat(beat);
+    let changed = force;
+    if (entry && Number.isInteger(entry.eventIndex) && state.activeIndex !== entry.eventIndex) {
+      state.activeIndex = entry.eventIndex;
+      state.activeAlternateCellId = null;
+      state.activeAlternateIndex = -1;
+      changed = true;
+    }
+    const note = streamMelodyAtBeat(beat);
+    if ((state.activeMelodyNote?.id || '') !== (note?.id || '')) {
+      state.activeMelodyNote = note;
+      const activeNotes = melodyNotesForEvent(activeChartEvent());
+      const cursor = note ? activeNotes.findIndex(candidate => candidate.id === note.id) : -1;
+      if (cursor >= 0) {
+        state.melodyCursor = cursor;
+        state.melodyCursorEventKey = melodyEventKey(activeChartEvent());
+      }
+      changed = true;
+    }
+    if (changed) renderStudy({ keepVisible: false });
+    streamTransport.lastVisualBeat = beat;
+  }
+
+  function startStreamVisualLoop(session) {
+    stopStreamVisualLoop();
+    const tick = () => {
+      if (!transportSessionActive(session) || streamTransport.session !== session) return;
+      syncStreamVisuals(session);
+      if (!transportSessionActive(session) || streamTransport.session !== session) return;
+      streamTransport.rafId = window.requestAnimationFrame(tick);
+    };
+    syncStreamVisuals(session, true);
+    streamTransport.rafId = window.requestAnimationFrame(tick);
   }
 
   function visualTargets(visual = 'all') {
@@ -4686,6 +5213,7 @@
     state.transport.session += 1;
     state.transport.playing = false;
     clearTransportTimers();
+    stopStreamPlayback();
     [...voices.keys()].filter(id => String(id).startsWith('chart-')).forEach(id => stopVoice(id, true));
     if (wasPlaying) state.activeMelodyNote = null;
     if (render && state.events.length) renderStudy({ keepVisible: false });
@@ -4702,6 +5230,10 @@
 
   function restartChartFromBeginning(session) {
     if (!transportSessionActive(session)) return;
+    if (state.transport.streamMode) {
+      void restartStreamChartFromBeginning(session);
+      return;
+    }
     const startIndex = firstTimelineIndex();
     if (startIndex < 0) {
       stopChartPlayback();
@@ -4713,6 +5245,41 @@
     resetMelodySelection();
     renderStudy({ keepVisible: false });
     playTimelineEntry(startIndex, session, 60 / currentTempo());
+  }
+
+  async function restartStreamChartFromBeginning(session) {
+    if (!transportSessionActive(session)) return false;
+    const startIndex = firstTimelineIndex();
+    if (startIndex < 0) {
+      stopChartPlayback();
+      return false;
+    }
+    if (streamTransport.readyKey !== streamRenderKey() || !streamTransport.objectUrl) {
+      return startStreamChartPlayback({ session, startIndex, continuation: true });
+    }
+    const audio = streamAudioElement();
+    streamTransport.session = session;
+    streamTransport.waitingForGesture = false;
+    audio.loop = !state.transport.autoAdvanceRandom;
+    try {
+      audio.currentTime = 0;
+      requestPlaybackAudioSession();
+      await audio.play();
+    } catch (_) {
+      if (transportSessionActive(session)) {
+        state.transport.playing = false;
+        streamTransport.waitingForGesture = true;
+        streamTransport.transitioning = false;
+        stopStreamVisualLoop();
+        updateStreamMediaSession(false);
+        syncTransportControls();
+      }
+      return false;
+    }
+    streamTransport.transitioning = false;
+    updateStreamMediaSession(true);
+    startStreamVisualLoop(session);
+    return true;
   }
 
   function randomAutoplaySong() {
@@ -4736,7 +5303,10 @@
       }
       loaded = await loadSong(nextSong, { transport: true, transportSession: session });
     }
-    if (!loaded || !transportSessionActive(session)) return;
+    if (!loaded || !transportSessionActive(session)) {
+      if (transportSessionActive(session)) stopChartPlayback({ render: false });
+      return;
+    }
     const startIndex = firstTimelineIndex();
     if (startIndex < 0) {
       restartChartFromBeginning(session);
@@ -4745,6 +5315,10 @@
     state.activeIndex = 0;
     resetMelodySelection();
     renderStudy({ keepVisible: false });
+    if (state.transport.streamMode) {
+      await startStreamChartPlayback({ session, startIndex, continuation: true });
+      return;
+    }
     playTimelineEntry(startIndex, session, 60 / currentTempo());
   }
 
@@ -4755,6 +5329,21 @@
       return;
     }
     restartChartFromBeginning(session);
+  }
+
+  function handleStreamEnded() {
+    const session = streamTransport.session;
+    if (!state.transport.streamMode || !transportSessionActive(session) || streamTransport.transitioning) return;
+    stopStreamVisualLoop();
+    state.activeMelodyNote = null;
+    if (state.transport.autoAdvanceRandom) {
+      // Prevent focus/route recovery from replaying the just-ended asset
+      // while the next song and its WAV are being prepared.
+      streamTransport.transitioning = true;
+      void continueWithRandomChart(session);
+      return;
+    }
+    void restartStreamChartFromBeginning(session);
   }
 
   function scheduleTransport(callback, milliseconds, session) {
@@ -4869,14 +5458,83 @@
     return state.timeline.findIndex(entry => entry.type === 'chord');
   }
 
-  function startChartPlayback() {
+  async function startStreamChartPlayback({ session = null, startIndex = null, continuation = false } = {}) {
     if (!state.timeline.length) return;
-    if (state.transport.playing) {
-      stopChartPlayback();
-      return;
+    if (!streamModeAvailable()) {
+      state.transport.streamMode = false;
+      try { localStorage.removeItem(STREAM_MODE_STORAGE_KEY); } catch (_) {}
+      syncTransportControls();
+      if (continuation) {
+        const fallbackStartIndex = Number.isInteger(startIndex) ? startIndex : firstTimelineIndex();
+        stopChartPlayback({ render: false });
+        startLiveChartPlayback({ startIndex: fallbackStartIndex });
+      } else {
+        startLiveChartPlayback();
+      }
+      return false;
     }
-    let startIndex = timelineIndexForSelection();
+    if (!Number.isInteger(startIndex)) startIndex = continuation ? firstTimelineIndex() : timelineIndexForSelection();
     if (startIndex < 0) return;
+    if (!continuation) {
+      if (state.transport.playMelody && melodyMatchesChart()) setMelodyVisibility(true, { persist: false });
+      state.activeMelodyNote = null;
+      state.transport.playing = true;
+      state.transport.session += 1;
+      session = state.transport.session;
+    } else if (!transportSessionActive(session)) {
+      return false;
+    }
+    if (!transportSessionActive(session)) return false;
+    renderStudy({ keepVisible: false });
+    const ready = await prepareStreamAsset();
+    if (!transportSessionActive(session)) return false;
+    if (!ready) {
+      // Rendering is optional: keep Song Mode usable on an older browser or
+      // unusually large chart instead of leaving the user with a dead Play
+      // button. The toggle stays on so a future, compatible chart can retry.
+      stopChartPlayback({ render: false });
+      startLiveChartPlayback({ startIndex });
+      return false;
+    }
+    // A MIDI download or a setting change can complete while OfflineAudioContext
+    // is rendering. Render again from the final state instead of starting an
+    // asset whose notes no longer match the displayed chart.
+    if (streamTransport.readyKey !== streamRenderKey()) {
+      return startStreamChartPlayback({ session, startIndex, continuation: true });
+    }
+    const entry = state.timeline[startIndex] || state.timeline[firstTimelineIndex()];
+    const audio = streamAudioElement();
+    streamTransport.session = session;
+    streamTransport.waitingForGesture = false;
+    streamTransport.error = '';
+    audio.loop = !state.transport.autoAdvanceRandom;
+    audio.playbackRate = 1;
+    const startSeconds = Math.max(0, Number(entry?.startBeat) || 0) * streamTransport.secondsPerBeat;
+    try {
+      audio.currentTime = startSeconds;
+      requestPlaybackAudioSession();
+      await audio.play();
+    } catch (_) {
+      if (transportSessionActive(session)) {
+        state.transport.playing = false;
+        streamTransport.waitingForGesture = true;
+        streamTransport.transitioning = false;
+        stopStreamVisualLoop();
+        updateStreamMediaSession(false);
+        syncTransportControls();
+      }
+      return false;
+    }
+    streamTransport.transitioning = false;
+    updateStreamMediaSession(true);
+    startStreamVisualLoop(session);
+    return true;
+  }
+
+  function startLiveChartPlayback({ startIndex = null } = {}) {
+    if (!state.timeline.length) return;
+    const timelineIndex = Number.isInteger(startIndex) ? startIndex : timelineIndexForSelection();
+    if (timelineIndex < 0) return;
     if (state.transport.playMelody && melodyMatchesChart()) setMelodyVisibility(true, { persist: false });
     state.activeMelodyNote = null;
     state.transport.playing = true;
@@ -4886,7 +5544,7 @@
     renderStudy({ keepVisible: false });
     const begin = () => {
       if (!state.transport.playing || state.transport.session !== session) return;
-      playTimelineEntry(startIndex, session, secondsPerBeat);
+      playTimelineEntry(timelineIndex, session, secondsPerBeat);
     };
     // Start from the click gesture, then wait for a suspended browser audio
     // context before scheduling the MIDI timeline. This prevents a first
@@ -4897,6 +5555,20 @@
     } else {
       begin();
     }
+  }
+
+  function startChartPlayback() {
+    if (!state.timeline.length) return;
+    if (state.transport.playing) {
+      stopChartPlayback();
+      return;
+    }
+    requestPlaybackAudioSession();
+    if (state.transport.streamMode) {
+      void startStreamChartPlayback();
+      return;
+    }
+    startLiveChartPlayback();
   }
 
   function syncNoteNameToggle() {
@@ -5062,9 +5734,12 @@
     renderStudy({ keepVisible: false });
   });
   elements.instrumentView?.addEventListener('change', () => {
+    const restartStream = state.transport.playing && state.transport.streamMode;
+    if (restartStream) stopChartPlayback({ render: false });
     state.instrumentView = elements.instrumentView.value === 'fretboard' ? 'fretboard' : 'piano';
     try { localStorage.setItem(INSTRUMENT_VIEW_STORAGE_KEY, state.instrumentView); } catch (_) {}
     renderStudy({ keepVisible: false });
+    if (restartStream) startChartPlayback();
   });
   elements.toggleMelody.addEventListener('click', () => { toggleMelody(); });
   elements.midiStudy?.addEventListener('change', () => { selectMidiStudy(elements.midiStudy.value); });
@@ -5090,16 +5765,36 @@
     if (resume) startChartPlayback();
   });
   elements.playMelody.addEventListener('change', () => {
+    const restartStream = state.transport.playing && state.transport.streamMode;
+    if (restartStream) stopChartPlayback({ render: false });
     state.transport.playMelody = elements.playMelody.checked;
     if (state.transport.playMelody && melodyMatchesChart()) {
       setMelodyVisibility(true);
       renderStudy({ keepVisible: false });
     }
+    if (restartStream) startChartPlayback();
   });
   elements.autoAdvanceRandom?.addEventListener('change', () => {
     state.transport.autoAdvanceRandom = Boolean(elements.autoAdvanceRandom.checked);
     try { localStorage.setItem(AUTO_ADVANCE_RANDOM_STORAGE_KEY, state.transport.autoAdvanceRandom ? 'on' : 'off'); } catch (_) {}
+    if (state.transport.playing && state.transport.streamMode && streamTransport.audio) {
+      streamTransport.audio.loop = !state.transport.autoAdvanceRandom;
+    }
     syncTransportControls();
+  });
+  elements.streamMode?.addEventListener('change', () => {
+    const resume = state.transport.playing;
+    if (resume) stopChartPlayback({ render: false });
+    state.transport.streamMode = Boolean(elements.streamMode.checked && streamModeAvailable());
+    try {
+      if (state.transport.streamMode) localStorage.setItem(STREAM_MODE_STORAGE_KEY, 'on');
+      else localStorage.removeItem(STREAM_MODE_STORAGE_KEY);
+    } catch (_) {}
+    syncTransportControls();
+    // Render when the toggle is chosen instead of waiting for the next Play
+    // tap. This keeps the actual Play action a direct media gesture on iOS.
+    if (state.transport.streamMode && state.timeline.length) void prepareStreamAsset();
+    if (resume) startChartPlayback();
   });
   elements.retryLoad.addEventListener('click', loadCatalog);
 
@@ -5154,6 +5849,8 @@
     event.stopPropagation();
     const fret = validFretboardPositionAnchor(button.dataset.fret);
     if (fret == null) return;
+    const restartStream = state.transport.playing && state.transport.streamMode;
+    if (restartStream) stopChartPlayback({ render: false });
     state.fretboardPositionAnchor = state.fretboardPositionAnchor === fret ? null : fret;
     try {
       if (state.fretboardPositionAnchor == null) localStorage.removeItem(FRETBOARD_POSITION_STORAGE_KEY);
@@ -5166,6 +5863,7 @@
       renderedButton?.focus({ preventScroll: true });
       keepFretboardCellVisible(renderedButton);
     });
+    if (restartStream) startChartPlayback();
   });
 
   elements.studyCard.addEventListener('pointerdown', event => {
@@ -5229,6 +5927,7 @@
   try { state.guitarVoicingStyle = validGuitarVoicingStyle(localStorage.getItem(GUITAR_VOICING_STORAGE_KEY)); } catch (_) {}
   try { state.showMelody = localStorage.getItem(MELODY_VISIBILITY_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.transport.autoAdvanceRandom = localStorage.getItem(AUTO_ADVANCE_RANDOM_STORAGE_KEY) === 'on'; } catch (_) {}
+  try { state.transport.streamMode = streamModeAvailable() && localStorage.getItem(STREAM_MODE_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.parkerize.harmonyMode = localStorage.getItem(PARKERIZE_HARMONY_STORAGE_KEY) === 'generated' ? 'generated' : 'standard'; } catch (_) {}
   try { state.parkerize.chartComplexity = Parkerize?.clampLevel?.(localStorage.getItem(PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY)) || 3; } catch (_) {}
   try { state.parkerize.soloComplexity = Parkerize?.clampLevel?.(localStorage.getItem(PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY)) || 3; } catch (_) {}
@@ -5267,7 +5966,11 @@
     exportParkerizedMidi,
     installMidiSource,
     startChartPlayback,
+    startStreamChartPlayback,
     stopChartPlayback,
+    prepareStreamAsset,
+    streamModeAvailable,
+    streamTransport,
     melodyNotesForEvent,
     navigateChord,
     fullSongKeyboardData,

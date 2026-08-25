@@ -101,6 +101,7 @@
             <label class="tempo-control" for="tempoRange"><span>Tempo <output id="tempoValue">120</output></span><input id="tempoRange" type="range" min="40" max="260" step="1" value="120" disabled></label>
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
             <label class="auto-advance-toggle" title="Off: loop this chart from the beginning. On: pick and play a random chart from the selected bank after each ending."><input id="autoAdvanceRandom" type="checkbox"> <span id="autoAdvanceRandomLabel">Random next chart</span></label>
+            <label class="stream-mode-toggle" title="Use a single stable rendered audio stream for car and Bluetooth playback."><input id="streamMode" type="checkbox"> Stream mode</label>
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite"><span id="midiStatus">Looking for a matching MIDI…</span><a class="midi-attribution" id="midiAttribution" href="" target="_blank" rel="noopener noreferrer" hidden></a><label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label></div>
           <label class="midi-chorus-control" id="midiStudyControl" for="midiStudy" hidden><span>Solo source</span><select id="midiStudy" aria-label="Choose a solo transcription"></select></label>
