@@ -194,6 +194,7 @@
             <label class="melody-play-toggle"><input id="playMelody" type="checkbox" checked disabled> Play melody</label>
             <label class="auto-advance-toggle" title="Off: loop this chart from the beginning. On: pick and play a random chart from the selected bank after each ending."><input id="autoAdvanceRandom" type="checkbox"> <span id="autoAdvanceRandomLabel">Random next chart</span></label>
             <label class="stream-mode-toggle" title="Use a single stable rendered audio stream for car and Bluetooth playback."><input id="streamMode" type="checkbox"> Stream mode</label>
+            <label class="stream-visual-delay" for="streamVisualDelay"><span>Visual sync <output id="streamVisualDelayValue">250 ms</output></span><input id="streamVisualDelay" type="range" min="0" max="1500" step="25" value="250" disabled></label>
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite">
             <span id="midiStatus">Looking for a matching MIDI…</span>
