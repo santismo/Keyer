@@ -39,6 +39,7 @@
   const MELODY_VISIBILITY_STORAGE_KEY = 'keyer-jazz-show-melody';
   const AUTO_ADVANCE_RANDOM_STORAGE_KEY = 'keyer-jazz-auto-advance-random';
   const STREAM_MODE_STORAGE_KEY = 'keyer-jazz-stream-mode';
+  const STREAM_VISUAL_DELAY_STORAGE_KEY = 'keyer-jazz-stream-visual-delay-ms';
   const PARKERIZE_HARMONY_STORAGE_KEY = 'keyer-jazz-parkerize-harmony';
   const PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY = 'keyer-jazz-parkerize-chart-complexity';
   const PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY = 'keyer-jazz-parkerize-solo-complexity';
@@ -71,6 +72,12 @@
   // perceptible dead spot before beat one on every repeat.
   const STREAM_RENDER_TAIL_SECONDS = 0;
   const STREAM_RENDER_VERSION = 'stream-v1';
+  const STREAM_VISUAL_DELAY_MIN_MS = 0;
+  const STREAM_VISUAL_DELAY_MAX_MS = 1500;
+  const STREAM_VISUAL_DELAY_STEP_MS = 25;
+  const DEFAULT_STREAM_VISUAL_DELAY_MS = 250;
+  const STREAM_MEDIA_READY_TIMEOUT_MS = 5000;
+  const STREAM_VISUAL_FRAME_INTERVAL_MS = 1000 / 30;
   const PIANO_VOICING_STYLES = new Set([
     'root-shell', 'shell', 'rootless', 'closed', 'spread',
     'upper-structure', 'modern', 'cluster', 'avant-garde'
@@ -161,6 +168,8 @@
     autoAdvanceRandom: document.querySelector('#autoAdvanceRandom'),
     autoAdvanceRandomLabel: document.querySelector('#autoAdvanceRandomLabel'),
     streamMode: document.querySelector('#streamMode'),
+    streamVisualDelay: document.querySelector('#streamVisualDelay'),
+    streamVisualDelayValue: document.querySelector('#streamVisualDelayValue'),
     piano: document.querySelector('#piano'),
     melodyPiano: document.querySelector('#melodyPiano'),
     keyboardStack: document.querySelector('#keyboardStack'),
@@ -267,7 +276,8 @@
       customBpm: DEFAULT_TEMPO,
       playMelody: true,
       autoAdvanceRandom: false,
-      streamMode: false
+      streamMode: false,
+      streamVisualDelayMs: DEFAULT_STREAM_VISUAL_DELAY_MS
     },
     loading: false
   };
@@ -292,6 +302,8 @@
     chartEndBeat: 0,
     rafId: 0,
     lastVisualBeat: -1,
+    lastVisualAudioTime: 0,
+    visualLoopOffsetSeconds: 0,
     error: '',
     waitingForGesture: false,
     transitioning: false
@@ -3091,6 +3103,7 @@
       if (elements.autoAdvanceRandomLabel) elements.autoAdvanceRandomLabel.textContent = generatedParkerize ? 'Generate next tune' : standardParkerize ? 'Parkerize next chart' : 'Random next chart';
     }
     syncStreamModeControl();
+    syncStreamVisualDelayControl();
     syncTempoControls();
   }
 
@@ -3526,6 +3539,13 @@
   function applyLoadedSong(song, { transport = false, preloadedMidi = null } = {}) {
     const bars = normalizeBars(song);
     if (!bars.length) return false;
+    // Random-next keeps one Stream session alive from the previous ending
+    // through final MIDI resolution and the next media play. Do not tear down
+    // its media source or kick off a provisional render here: the caller will
+    // await the selected MIDI, then render exactly once from final chart data.
+    const deferStreamPreparation = Boolean(
+      transport && state.transport.streamMode && streamTransport.transitioning
+    );
     if (transport) {
       clearTransportTimers();
       [...voices.keys()].filter(id => String(id).startsWith('chart-')).forEach(id => stopVoice(id, true));
@@ -3535,7 +3555,7 @@
     // A rendered media file belongs to the exact chart, source, tempo, and
     // MIDI selection it was built from. Never let an old stream keep playing
     // underneath a newly loaded song.
-    invalidateStreamAsset();
+    if (!deferStreamPreparation) invalidateStreamAsset();
     invalidateDerivedHarmony();
     state.song = song;
     if (!song?.tabSource) state.tabSession = null;
@@ -3576,7 +3596,9 @@
     // Keep it on through Random/song selection and quietly load the next
     // compatible melody when the catalog has a match.
     if (generatedPractice) installParkerizedSolo({ transport });
-    else if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi) void requestMidiSource({ showAfterLoad: true, transport });
+    else if ((state.showMelody || state.preferSoloChorus) && state.midiEntry && !preloadedMidi && !deferStreamPreparation) {
+      void requestMidiSource({ showAfterLoad: true, transport });
+    }
     if (!song.parkerizeGenerated && !song.tabSource) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -3593,7 +3615,7 @@
     // When Stream mode was previously latched on, prepare the selected song
     // before the user presses Play. That keeps the eventual media play call
     // inside a direct tap on iOS instead of waiting for an offline render.
-    if (state.transport.streamMode) void prepareStreamAsset();
+    if (state.transport.streamMode && !deferStreamPreparation) void prepareStreamAsset();
     return true;
   }
 
@@ -4416,9 +4438,14 @@
     if (document.visibilityState === 'hidden') return;
     requestPlaybackAudioSession();
     const streamAudio = streamTransport.audio;
-    if (state.transport.playing && state.transport.streamMode && streamAudio?.paused
-      && !streamAudio.ended && !streamTransport.waitingForGesture && !streamTransport.transitioning) {
-      void streamAudio.play().catch(() => {});
+    if (state.transport.playing && state.transport.streamMode) {
+      if (streamAudio?.paused && !streamAudio.ended
+        && !streamTransport.waitingForGesture && !streamTransport.transitioning) {
+        void streamAudio.play().catch(() => {});
+      }
+      // A Stream session is media-element playback. Do not wake the old live
+      // Web Audio graph underneath it while iOS is changing output routes.
+      return;
     }
     if (!audioContext || audioContext.state === 'running') return;
     void resumeAudioContext(audioContext);
@@ -4448,6 +4475,20 @@
     return 'Stream mode is on. It stays on for repeats and the next chart.';
   }
 
+  function normalizeStreamVisualDelayMs(value) {
+    const parsed = Number(value);
+    const safeValue = Number.isFinite(parsed) ? parsed : DEFAULT_STREAM_VISUAL_DELAY_MS;
+    const clamped = Math.max(STREAM_VISUAL_DELAY_MIN_MS, Math.min(STREAM_VISUAL_DELAY_MAX_MS, safeValue));
+    return Math.round(clamped / STREAM_VISUAL_DELAY_STEP_MS) * STREAM_VISUAL_DELAY_STEP_MS;
+  }
+
+  function streamVisualDelayLabel(value = state.transport.streamVisualDelayMs) {
+    const milliseconds = normalizeStreamVisualDelayMs(value);
+    if (!milliseconds) return 'Off';
+    if (milliseconds < 1000) return `${milliseconds} ms`;
+    return `${(milliseconds / 1000).toFixed(milliseconds % 1000 ? 2 : 0)} s`;
+  }
+
   function syncStreamModeControl() {
     if (!elements.streamMode) return;
     const available = streamModeAvailable();
@@ -4460,6 +4501,26 @@
       : 'Stream mode is unavailable in this browser');
     const label = elements.streamMode.closest('label');
     if (label) label.title = streamModeDescription();
+  }
+
+  function syncStreamVisualDelayControl() {
+    if (!elements.streamVisualDelay) return;
+    const available = streamModeAvailable();
+    const enabled = available && state.transport.streamMode;
+    const delay = normalizeStreamVisualDelayMs(state.transport.streamVisualDelayMs);
+    state.transport.streamVisualDelayMs = delay;
+    elements.streamVisualDelay.value = String(delay);
+    elements.streamVisualDelay.disabled = !enabled;
+    elements.streamVisualDelay.setAttribute('aria-label', enabled
+      ? `Delay Stream mode visuals by ${streamVisualDelayLabel(delay)} to match car or Bluetooth audio`
+      : 'Turn on Stream mode to adjust visual sync delay');
+    if (elements.streamVisualDelayValue) elements.streamVisualDelayValue.textContent = streamVisualDelayLabel(delay);
+    const label = elements.streamVisualDelay.closest('label');
+    if (label) {
+      label.title = enabled
+        ? 'Delays chord and melody highlighting only, so the display can match your car or Bluetooth audio latency.'
+        : 'Turn on Stream mode to adjust visual sync delay.';
+    }
   }
 
   function updateStreamMediaSession(playing = false) {
@@ -4490,10 +4551,42 @@
     return audio;
   }
 
+  function waitForStreamMediaReady(audio) {
+    if (!audio) return Promise.resolve(false);
+    if (Number(audio.readyState) >= 3) return Promise.resolve(true);
+    return new Promise(resolve => {
+      let settled = false;
+      let timeoutId = 0;
+      const cleanUp = () => {
+        audio.removeEventListener('canplay', ready);
+        audio.removeEventListener('loadeddata', ready);
+        audio.removeEventListener('error', failed);
+        if (timeoutId) window.clearTimeout(timeoutId);
+      };
+      const finish = readyToPlay => {
+        if (settled) return;
+        settled = true;
+        cleanUp();
+        resolve(Boolean(readyToPlay));
+      };
+      const ready = () => {
+        if (Number(audio.readyState) >= 3) finish(true);
+      };
+      const failed = () => finish(false);
+      audio.addEventListener('canplay', ready);
+      audio.addEventListener('loadeddata', ready);
+      audio.addEventListener('error', failed);
+      timeoutId = window.setTimeout(() => finish(Number(audio.readyState) >= 2), STREAM_MEDIA_READY_TIMEOUT_MS);
+      ready();
+    });
+  }
+
   function stopStreamVisualLoop() {
     if (streamTransport.rafId) window.cancelAnimationFrame(streamTransport.rafId);
     streamTransport.rafId = 0;
     streamTransport.lastVisualBeat = -1;
+    streamTransport.lastVisualAudioTime = 0;
+    streamTransport.visualLoopOffsetSeconds = 0;
   }
 
   function stopStreamPlayback() {
@@ -4818,10 +4911,11 @@
     streamTransport.waitingForGesture = false;
     syncTransportControls();
     const work = (async () => {
+      let url = '';
       try {
         const rendered = await renderStreamAudio();
         if (generation !== streamTransport.generation || streamTransport.preparingKey !== key) return false;
-        const url = URL.createObjectURL(audioBufferToWavBlob(rendered.buffer));
+        url = URL.createObjectURL(audioBufferToWavBlob(rendered.buffer));
         const audio = streamAudioElement();
         try {
           audio.pause();
@@ -4832,6 +4926,12 @@
           URL.revokeObjectURL(url);
           throw error;
         }
+        const mediaReady = await waitForStreamMediaReady(audio);
+        if (generation !== streamTransport.generation || streamTransport.preparingKey !== key) {
+          URL.revokeObjectURL(url);
+          return false;
+        }
+        if (!mediaReady) throw new Error('The rendered stream did not become ready for playback.');
         streamTransport.objectUrl = url;
         streamTransport.readyKey = key;
         streamTransport.secondsPerBeat = rendered.secondsPerBeat;
@@ -4839,6 +4939,15 @@
         return true;
       } catch (error) {
         if (generation === streamTransport.generation) {
+          const audio = streamTransport.audio;
+          try {
+            audio?.pause();
+            audio?.removeAttribute('src');
+            audio?.load();
+          } catch (_) {}
+          if (url) {
+            try { URL.revokeObjectURL(url); } catch (_) {}
+          }
           streamTransport.error = safeText(error?.message) || 'Could not render this chart.';
         }
         return false;
@@ -4885,7 +4994,20 @@
     const secondsPerBeat = streamTransport.secondsPerBeat;
     if (!audio || !Number.isFinite(secondsPerBeat) || secondsPerBeat <= 0) return;
     const maxBeat = Math.max(0, streamTransport.chartEndBeat - .0001);
-    const beat = Math.min(maxBeat, Math.max(0, Number(audio.currentTime) || 0) / secondsPerBeat);
+    const audioSeconds = Math.max(0, Number(audio.currentTime) || 0);
+    const chartSeconds = Math.max(0, streamTransport.chartEndBeat * secondsPerBeat);
+    // Native media looping resets currentTime to zero. Keep a monotonic visual
+    // clock across that boundary so a user-selected delay continues showing
+    // the tail of the previous repeat while CarPlay/Bluetooth drains it.
+    if (audio.loop && chartSeconds > 0 && audioSeconds + .05 < streamTransport.lastVisualAudioTime) {
+      streamTransport.visualLoopOffsetSeconds += chartSeconds;
+    }
+    streamTransport.lastVisualAudioTime = audioSeconds;
+    const delayedSeconds = Math.max(0,
+      audioSeconds + streamTransport.visualLoopOffsetSeconds - state.transport.streamVisualDelayMs / 1000
+    );
+    const visualSeconds = audio.loop && chartSeconds > 0 ? delayedSeconds % chartSeconds : delayedSeconds;
+    const beat = Math.min(maxBeat, visualSeconds / secondsPerBeat);
     const entry = streamTimelineEntryAtBeat(beat);
     let changed = force;
     if (entry && Number.isInteger(entry.eventIndex) && state.activeIndex !== entry.eventIndex) {
@@ -4911,9 +5033,14 @@
 
   function startStreamVisualLoop(session) {
     stopStreamVisualLoop();
-    const tick = () => {
+    streamTransport.lastVisualAudioTime = Math.max(0, Number(streamTransport.audio?.currentTime) || 0);
+    let lastSyncTime = 0;
+    const tick = timestamp => {
       if (!transportSessionActive(session) || streamTransport.session !== session) return;
-      syncStreamVisuals(session);
+      if (!lastSyncTime || timestamp - lastSyncTime >= STREAM_VISUAL_FRAME_INTERVAL_MS) {
+        syncStreamVisuals(session);
+        lastSyncTime = timestamp;
+      }
       if (!transportSessionActive(session) || streamTransport.session !== session) return;
       streamTransport.rafId = window.requestAnimationFrame(tick);
     };
@@ -5261,6 +5388,13 @@
     streamTransport.session = session;
     streamTransport.waitingForGesture = false;
     audio.loop = !state.transport.autoAdvanceRandom;
+    const mediaReady = await waitForStreamMediaReady(audio);
+    if (!transportSessionActive(session)) return false;
+    if (!mediaReady) {
+      streamTransport.error = 'The Stream audio was not ready to repeat.';
+      stopChartPlayback({ render: false });
+      return false;
+    }
     try {
       audio.currentTime = 0;
       requestPlaybackAudioSession();
@@ -5316,6 +5450,14 @@
     resetMelodySelection();
     renderStudy({ keepVisible: false });
     if (state.transport.streamMode) {
+      // applyLoadedSong intentionally deferred this during a Stream handoff.
+      // Wait for the selected MIDI (when one is wanted) so the next WAV is
+      // rendered once from the final chart rather than restarting mid-song
+      // when a late melody download arrives.
+      if (!state.midi && state.midiEntry && (state.showMelody || state.preferSoloChorus)) {
+        await requestMidiSource({ showAfterLoad: true, transport: true });
+        if (!transportSessionActive(session)) return;
+      }
       await startStreamChartPlayback({ session, startIndex, continuation: true });
       return;
     }
@@ -5334,6 +5476,10 @@
   function handleStreamEnded() {
     const session = streamTransport.session;
     if (!state.transport.streamMode || !transportSessionActive(session) || streamTransport.transitioning) return;
+    // Native looping is deliberately owned by the media element. A few WebKit
+    // routes can emit an ended event around a loop boundary; never reload the
+    // source or restart the Stream session in response to that spurious event.
+    if (streamTransport.audio?.loop) return;
     stopStreamVisualLoop();
     state.activeMelodyNote = null;
     if (state.transport.autoAdvanceRandom) {
@@ -5458,7 +5604,7 @@
     return state.timeline.findIndex(entry => entry.type === 'chord');
   }
 
-  async function startStreamChartPlayback({ session = null, startIndex = null, continuation = false } = {}) {
+  async function startStreamChartPlayback({ session = null, startIndex = null, continuation = false, attempt = 0 } = {}) {
     if (!state.timeline.length) return;
     if (!streamModeAvailable()) {
       state.transport.streamMode = false;
@@ -5489,18 +5635,26 @@
     const ready = await prepareStreamAsset();
     if (!transportSessionActive(session)) return false;
     if (!ready) {
-      // Rendering is optional: keep Song Mode usable on an older browser or
-      // unusually large chart instead of leaving the user with a dead Play
-      // button. The toggle stays on so a future, compatible chart can retry.
+      // A generation can become stale while a MIDI source is resolving. Retry
+      // that race once or twice, but never quietly fall back to the live Web
+      // Audio scheduler while Stream mode is latched on.
+      if (!streamTransport.error && attempt < 2) {
+        return startStreamChartPlayback({ session, startIndex, continuation: true, attempt: attempt + 1 });
+      }
+      streamTransport.error ||= 'Could not prepare this chart as a stable media stream.';
       stopChartPlayback({ render: false });
-      startLiveChartPlayback({ startIndex });
       return false;
     }
     // A MIDI download or a setting change can complete while OfflineAudioContext
     // is rendering. Render again from the final state instead of starting an
     // asset whose notes no longer match the displayed chart.
     if (streamTransport.readyKey !== streamRenderKey()) {
-      return startStreamChartPlayback({ session, startIndex, continuation: true });
+      if (attempt < 2) {
+        return startStreamChartPlayback({ session, startIndex, continuation: true, attempt: attempt + 1 });
+      }
+      streamTransport.error = 'The chart changed while its Stream audio was preparing.';
+      stopChartPlayback({ render: false });
+      return false;
     }
     const entry = state.timeline[startIndex] || state.timeline[firstTimelineIndex()];
     const audio = streamAudioElement();
@@ -5796,6 +5950,14 @@
     if (state.transport.streamMode && state.timeline.length) void prepareStreamAsset();
     if (resume) startChartPlayback();
   });
+  elements.streamVisualDelay?.addEventListener('input', () => {
+    state.transport.streamVisualDelayMs = normalizeStreamVisualDelayMs(elements.streamVisualDelay.value);
+    try { localStorage.setItem(STREAM_VISUAL_DELAY_STORAGE_KEY, String(state.transport.streamVisualDelayMs)); } catch (_) {}
+    syncStreamVisualDelayControl();
+    if (state.transport.playing && state.transport.streamMode) {
+      syncStreamVisuals(streamTransport.session, true);
+    }
+  });
   elements.retryLoad.addEventListener('click', loadCatalog);
 
   function instrumentPointerDown(surface, event) {
@@ -5928,6 +6090,7 @@
   try { state.showMelody = localStorage.getItem(MELODY_VISIBILITY_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.transport.autoAdvanceRandom = localStorage.getItem(AUTO_ADVANCE_RANDOM_STORAGE_KEY) === 'on'; } catch (_) {}
   try { state.transport.streamMode = streamModeAvailable() && localStorage.getItem(STREAM_MODE_STORAGE_KEY) === 'on'; } catch (_) {}
+  try { state.transport.streamVisualDelayMs = normalizeStreamVisualDelayMs(localStorage.getItem(STREAM_VISUAL_DELAY_STORAGE_KEY)); } catch (_) {}
   try { state.parkerize.harmonyMode = localStorage.getItem(PARKERIZE_HARMONY_STORAGE_KEY) === 'generated' ? 'generated' : 'standard'; } catch (_) {}
   try { state.parkerize.chartComplexity = Parkerize?.clampLevel?.(localStorage.getItem(PARKERIZE_CHART_COMPLEXITY_STORAGE_KEY)) || 3; } catch (_) {}
   try { state.parkerize.soloComplexity = Parkerize?.clampLevel?.(localStorage.getItem(PARKERIZE_SOLO_COMPLEXITY_STORAGE_KEY)) || 3; } catch (_) {}

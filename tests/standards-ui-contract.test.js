@@ -15,6 +15,16 @@ const wjazzdCatalog = require(path.join(root, 'wjazzd-solo-catalog.js'));
 const azMidiCatalog = require(path.join(root, 'a-z-midi-catalog.js'));
 const parkerCorpus = require(path.join(root, 'parkerize-corpus.js'));
 
+function sourceForFunction(name) {
+  const startPattern = new RegExp(`\\n  (?:async )?function ${name}\\(`);
+  const match = startPattern.exec(js);
+  assert.ok(match, `Expected ${name}() in standards.js.`);
+  const nextPattern = /\n  (?:async )?function [A-Za-z_$][\w$]*\(/g;
+  nextPattern.lastIndex = match.index + match[0].length;
+  const next = nextPattern.exec(js);
+  return js.slice(match.index, next ? next.index : js.length);
+}
+
 assert.doesNotMatch(html, /id="(?:voicingNotes|scaleNotes|playVoicing)"/);
 assert.match(html, /id="toggleNoteNames"/);
 assert.match(html, /id="toggleMelody"/);
@@ -52,6 +62,11 @@ assert.match(html, /id="tempoRange"/);
 assert.match(html, /id="autoAdvanceRandom"/);
 assert.match(html, /id="streamMode"[^>]*type="checkbox"/);
 assert.match(html, /title="Use a single stable rendered audio stream for car and Bluetooth playback\."[^>]*><input id="streamMode"[^>]*> Stream mode<\/label>/);
+assert.match(html, /id="streamVisualDelay"[^>]*type="range"/);
+assert.match(html, /id="streamVisualDelay"[^>]*min="0"/);
+assert.match(html, /id="streamVisualDelay"[^>]*max="1500"/);
+assert.match(html, /id="streamVisualDelay"[^>]*step="25"/);
+assert.match(html, /id="streamVisualDelayValue"/);
 assert.match(html, /id="chartSource"/);
 assert.match(html, /id="instrumentView"/);
 assert.match(html, /id="keyboardRangeMode"/);
@@ -187,19 +202,79 @@ assert.match(js, /function startChartPlayback\(/);
 assert.match(js, /const AUDIO_LATENCY_HINT = 'playback';/);
 assert.match(js, /new AudioContextClass\(\{ latencyHint: AUDIO_LATENCY_HINT \}\)/);
 assert.match(js, /const STREAM_MODE_STORAGE_KEY = 'keyer-jazz-stream-mode';/);
+assert.match(js, /const STREAM_VISUAL_DELAY_STORAGE_KEY = 'keyer-jazz-stream-visual-delay-ms';/);
 assert.match(js, /const STREAM_RENDER_TAIL_SECONDS = 0;/);
 assert.match(js, /function streamModeAvailable\(/);
 assert.match(js, /function renderStreamAudio\(/);
 assert.match(js, /new OfflineAudioContextClass\(STREAM_CHANNELS, frameLength, STREAM_SAMPLE_RATE\)/);
 assert.match(js, /function audioBufferToWavBlob\(/);
+assert.match(js, /function waitForStreamMediaReady\(/);
+assert.match(js, /deferStreamPreparation/);
 assert.match(js, /audio\.addEventListener\('ended', handleStreamEnded\)/);
 assert.match(js, /state\.transport\.streamMode/);
 assert.match(js, /audio\.loop = !state\.transport\.autoAdvanceRandom/);
 assert.match(js, /transitioning: false/);
 assert.match(js, /!streamTransport\.transitioning/);
+assert.match(js, /const DEFAULT_STREAM_VISUAL_DELAY_MS = 250;/);
+assert.match(js, /streamVisualDelayMs:\s*DEFAULT_STREAM_VISUAL_DELAY_MS/);
+assert.match(js, /localStorage\.getItem\(STREAM_VISUAL_DELAY_STORAGE_KEY\)/);
+assert.match(js, /localStorage\.setItem\(STREAM_VISUAL_DELAY_STORAGE_KEY/);
+assert.match(js, /elements\.streamVisualDelay\?\.addEventListener\('input'/);
+assert.match(js, /state\.transport\.streamVisualDelayMs\s*\/\s*1000/);
 assert.match(js, /const chord = event\?\.chord\?\.raw \|\| event\?\.chord\?\.display \|\| '';/);
 assert.match(js, /function startLiveChartPlayback\(\{ startIndex = null \} = \{\}\)/);
-assert.match(js, /if \(!ready\) \{[\s\S]*startLiveChartPlayback\(\{ startIndex \}\);/);
+const streamPlaybackSource = sourceForFunction('startStreamChartPlayback');
+assert.doesNotMatch(
+  streamPlaybackSource,
+  /if \(!ready\) \{[\s\S]*?startLiveChartPlayback\(/,
+  'A failed Stream render must remain a Stream-mode error, never silently fall back to the live Web Audio scheduler.'
+);
+assert.match(streamPlaybackSource, /if \(!ready\) \{[\s\S]*?streamTransport\.error/);
+const streamAssetSource = sourceForFunction('prepareStreamAsset');
+assert.match(
+  streamAssetSource,
+  /audio\.load\(\);[\s\S]*?await waitForStreamMediaReady\(audio\);/,
+  'The replacement media source must be ready before an automatic stream handoff attempts playback.'
+);
+const streamVisualSource = sourceForFunction('syncStreamVisuals');
+assert.match(
+  streamVisualSource,
+  /audioSeconds[\s\S]*?state\.transport\.streamVisualDelayMs\s*\/\s*1000/
+);
+assert.match(streamVisualSource, /visualSeconds\s*\/\s*secondsPerBeat/);
+const restartStreamSource = sourceForFunction('restartStreamChartFromBeginning');
+assert.match(restartStreamSource, /audio\.loop = !state\.transport\.autoAdvanceRandom/);
+assert.match(restartStreamSource, /audio\.currentTime = 0;[\s\S]*?await audio\.play\(\);/);
+assert.doesNotMatch(restartStreamSource, /audio\.src\s*=/, 'Repeats must reuse the already-buffered stream source.');
+assert.doesNotMatch(restartStreamSource, /audio\.load\(\)/, 'Repeats must not tear down the media route.');
+const streamEndedSource = sourceForFunction('handleStreamEnded');
+assert.match(streamEndedSource, /if \(streamTransport\.audio\?\.loop\) return;/);
+const streamRecoverySource = sourceForFunction('recoverAudioOutput');
+assert.match(
+  streamRecoverySource,
+  /if \(state\.transport\.playing && state\.transport\.streamMode\) \{[\s\S]*?return;/,
+  'Route recovery must not revive Web Audio underneath an active Stream session.'
+);
+const randomContinuationSource = sourceForFunction('continueWithRandomChart');
+assert.match(randomContinuationSource, /await requestMidiSource\(\{ showAfterLoad: true, transport: true \}\);/);
+assert.match(randomContinuationSource, /await startStreamChartPlayback\(\{ session, startIndex, continuation: true \}\);/);
+assert.ok(
+  randomContinuationSource.indexOf('await requestMidiSource({ showAfterLoad: true, transport: true })')
+    < randomContinuationSource.indexOf('await startStreamChartPlayback({ session, startIndex, continuation: true })'),
+  'Random-next must settle its MIDI/chart state before rendering and starting the next Stream asset.'
+);
+const loadedSongSource = sourceForFunction('applyLoadedSong');
+assert.match(loadedSongSource, /const deferStreamPreparation = Boolean\(/);
+assert.match(
+  loadedSongSource,
+  /if \(state\.transport\.streamMode && !deferStreamPreparation\) void prepareStreamAsset\(\)/,
+  'A transition must not launch a competing background stream render before the final MIDI/chart state is known.'
+);
+assert.match(
+  loadedSongSource,
+  /state\.midiEntry && !preloadedMidi && !deferStreamPreparation\) \{\s*void requestMidiSource/,
+  'A transition must not launch a competing MIDI download before Random-next awaits the final source.'
+);
 assert.match(js, /navigator\?\.audioSession/);
 assert.doesNotMatch(js, /createMediaElementSource\(/);
 assert.match(js, /function resumeAudioContext\(/);
@@ -308,6 +383,11 @@ assert.match(desktopHtml, /id="midiChorus"/);
 assert.match(desktopHtml, /id="autoAdvanceRandom"/);
 assert.match(desktopHtml, /id="streamMode"[^>]*type="checkbox"/);
 assert.match(desktopHtml, /title="Use a single stable rendered audio stream for car and Bluetooth playback\."[^>]*><input id="streamMode"[^>]*> Stream mode<\/label>/);
+assert.match(desktopHtml, /id="streamVisualDelay"[^>]*type="range"/);
+assert.match(desktopHtml, /id="streamVisualDelay"[^>]*min="0"/);
+assert.match(desktopHtml, /id="streamVisualDelay"[^>]*max="1500"/);
+assert.match(desktopHtml, /id="streamVisualDelay"[^>]*step="25"/);
+assert.match(desktopHtml, /id="streamVisualDelayValue"/);
 assert.doesNotMatch(desktopCss, /melody-wheel|melody-panel/);
 assert.match(desktopCss, /\.desktop-mode \.workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 assert.match(desktopCss, /\.desktop-mode \.fretboard\s*\{[^}]*min-height:\s*240px/);
