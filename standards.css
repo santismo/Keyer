@@ -100,6 +100,16 @@ input[type="search"]::placeholder { color: #7f8999; }
 .reharm-control { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; color: var(--muted); font: 800 .56rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em; text-transform: uppercase; }
 .reharm-control select { max-width: 116px; min-height: 28px; padding: 0 20px 0 6px; color: var(--gold); background: #1b2432; border: 1px solid #53647c; border-radius: 7px; font: 850 .58rem ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
 .chart-scroll { height: min(69vh, 735px); overflow-x: hidden; overflow-y: auto; padding: 10px; background: #0b0e13; overscroll-behavior: contain; scroll-behavior: auto; }
+.midi-roll { min-width: 0; padding: 9px 10px 11px; border-top: 1px solid var(--line); background: linear-gradient(180deg, #0b111a, #080b10); }
+.midi-roll[hidden] { display: none; }
+.midi-roll-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; color: #dce5f4; font: 800 .62rem/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+.midi-roll-head span { min-width: 0; color: var(--muted); font: 700 .55rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; }
+.midi-roll-scroll { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; border: 1px solid #334052; border-radius: 8px; background: #05070a; }
+.midi-roll svg { display: block; width: max(100%, 760px); min-width: 760px; height: 188px; }
+.midi-roll-grid { stroke: #617188; stroke-width: .55; opacity: .45; vector-effect: non-scaling-stroke; }
+.midi-roll-keyline { stroke: #a8b6c9; stroke-width: .45; opacity: .13; vector-effect: non-scaling-stroke; }
+.midi-roll-note { stroke: #ffffff; stroke-opacity: .19; stroke-width: .55; vector-effect: non-scaling-stroke; }
+.midi-roll-note.selected-track { stroke-opacity: .72; }
 .realbook-chart { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; min-width: 0; max-width: 100%; overflow: hidden; color: var(--paper-ink); background: var(--paper); border: 1px solid #364154; border-radius: 5px; box-shadow: 0 10px 30px #0008, inset 0 0 40px #73809a0d; font-family: "Marker Felt", "Comic Sans MS", ui-rounded, system-ui, sans-serif; }
 .measure { position: relative; min-width: 0; min-height: 82px; padding: 18px 4px 7px; border-right: 1.5px solid var(--paper-line); border-bottom: 1.5px solid var(--paper-line); background: linear-gradient(100deg, transparent, #ffffff08 49%, transparent); }
 .pickup-measure { min-height: 66px; background: linear-gradient(100deg, #b8904e1c, transparent); }
