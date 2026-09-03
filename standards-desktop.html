@@ -7,12 +7,12 @@
   <link rel="icon" href="icon.png" type="image/png">
   <link rel="stylesheet" href="standards.css">
   <link rel="stylesheet" href="standards-desktop.css">
-  <title>Keyer · Jazz Standards Desktop</title>
+  <title>Keyer · Songs Desktop</title>
 </head>
 <body class="desktop-mode">
   <main class="app">
     <header class="topbar">
-      <div class="brand"><h1>Keyer</h1><span>Jazz Standards · Desktop</span></div>
+      <div class="brand"><h1>Keyer</h1><span>Songs · Desktop</span></div>
       <nav aria-label="Keyer views">
         <a href="index.html">Cards</a>
         <a href="practice.html">Practice</a>
@@ -22,32 +22,32 @@
     </header>
 
     <section class="library-card" aria-labelledby="library-title">
-      <h2 class="sr-only" id="library-title">Jazz standard library</h2>
+      <h2 class="sr-only" id="library-title">Song library</h2>
       <div class="library-row">
         <div class="search-wrap">
-          <label class="sr-only" for="songSearch">Find a jazz standard</label>
-          <input id="songSearch" type="search" inputmode="search" autocomplete="off" placeholder="Find a standard or composer…" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false">
+          <label class="sr-only" for="songSearch">Find a song</label>
+          <input id="songSearch" type="search" inputmode="search" autocomplete="off" placeholder="Find a song or composer…" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false">
           <div class="search-results" id="searchResults" role="listbox" hidden></div>
         </div>
-        <div class="library-actions"><button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random standard" title="Random standard">Random</button><button class="random-standard-button" id="openTabFile" type="button" aria-label="Open a personal Guitar Pro or MusicXML tab" title="Open Guitar Pro or MusicXML tab">Open tab</button><input id="tabFileInput" type="file" accept=".gp,.gpx,.gp3,.gp4,.gp5,.musicxml,.xml,.ptb,.pt2" hidden><button class="random-standard-button performance-button primary library-play-button" id="playChart" type="button" aria-label="Play the current chart" aria-pressed="false" disabled>Play chart</button></div>
+        <div class="library-actions"><button class="random-standard-button" id="randomSong" type="button" aria-label="Choose a random song" title="Random song">Random</button><button class="random-standard-button" id="openTabFile" type="button" aria-label="Open a personal Guitar Pro or MusicXML tab" title="Open Guitar Pro or MusicXML tab">Open tab</button><input id="tabFileInput" type="file" accept=".gp,.gpx,.gp3,.gp4,.gp5,.musicxml,.xml,.ptb,.pt2" hidden><button class="random-standard-button" id="openMidiFile" type="button" aria-label="Open a local MIDI file" title="Open a local MIDI file">Open MIDI</button><input id="midiFileInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden><button class="random-standard-button performance-button primary library-play-button" id="playChart" type="button" aria-label="Play the current chart" aria-pressed="false" disabled>Play chart</button></div>
       </div>
-      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span><select id="songAvailabilityFilter" aria-label="Choose a standards bank"><option value="all">All standards</option><option value="solos">Jazz solos</option><option value="parker">Charlie Parker solos</option><option value="legends">Jazz legend solos</option><option value="tab-files">Tab files</option><option value="az-midi">A–Z MIDI songs</option><option value="parkerize">Parkerize</option><option value="favorites">Favorites</option><option value="melody">With MIDI melody</option><option value="chords">Chord charts only</option></select></label>
+      <label class="library-filter" for="songAvailabilityFilter"><span>Show</span><select id="songAvailabilityFilter" aria-label="Choose a song bank"><option value="all">All songs</option><option value="solos">Jazz solos</option><option value="parker">Charlie Parker solos</option><option value="legends">Jazz legend solos</option><option value="tab-files">Tab files</option><option value="az-midi">A–Z MIDI songs</option><option value="parkerize">Parkerize</option><option value="favorites">Favorites</option><option value="melody">With MIDI melody</option><option value="chords">Chord charts only</option></select></label>
       <section class="parkerize-panel" id="parkerizePanel" aria-labelledby="parkerizeTitle" hidden>
         <div class="parkerize-heading"><strong id="parkerizeTitle">Parkerize</strong><span id="parkerizeStatus">Ready to generate a bebop solo</span></div>
         <div class="parkerize-controls">
-          <label class="parkerize-mode-control" for="parkerizeHarmonyMode"><span>Harmony</span><select id="parkerizeHarmonyMode"><option value="standard" selected>Existing standard</option><option value="generated">Original bebop chart</option></select></label>
+          <label class="parkerize-mode-control" for="parkerizeHarmonyMode"><span>Harmony</span><select id="parkerizeHarmonyMode"><option value="standard" selected>Existing song</option><option value="generated">Original bebop chart</option></select></label>
           <label class="parkerize-slider" for="parkerizeChartComplexity"><span>Chart complexity <output id="parkerizeChartComplexityValue">3 · Bebop</output></span><input id="parkerizeChartComplexity" type="range" min="1" max="5" step="1" value="3" disabled></label>
           <label class="parkerize-slider" for="parkerizeSoloComplexity"><span>Solo complexity <output id="parkerizeSoloComplexityValue">3 · Bebop</output></span><input id="parkerizeSoloComplexity" type="range" min="1" max="5" step="1" value="3"></label>
           <div class="parkerize-actions"><button class="parkerize-generate" id="generateParkerize" type="button">Generate solo</button><button id="regenerateParkerizeSolo" type="button" hidden>New solo</button><button id="exportParkerizeMidi" type="button" disabled>Export MIDI</button></div>
         </div>
         <p>Original notes and changes from aggregate Parker-solo and jazz-chart patterns. Export includes chord markers.</p>
       </section>
-      <p class="library-status" id="libraryStatus" role="status">Loading jazz standards…</p>
+      <p class="library-status" id="libraryStatus" role="status">Loading songs…</p>
     </section>
 
     <section class="lesson" id="lesson" hidden>
       <header class="song-heading">
-        <div class="song-heading-title"><div><h2 id="songTitle">Jazz standard</h2><p id="songComposer"></p></div><button class="favorite-song-button" id="favoriteSong" type="button" aria-pressed="false" aria-label="Add this standard to favorites" title="Add to favorites">☆</button></div>
+        <div class="song-heading-title"><div><h2 id="songTitle">Song</h2><p id="songComposer"></p></div><button class="favorite-song-button" id="favoriteSong" type="button" aria-pressed="false" aria-label="Add this song to favorites" title="Add to favorites">☆</button></div>
         <div class="song-meta" id="songMeta"></div>
       </header>
 
@@ -55,6 +55,7 @@
         <section class="chart-panel" aria-labelledby="chart-title">
           <div class="panel-head"><h3 id="chart-title">Chart</h3><span id="chartStatus">Tap any chord</span><label class="reharm-control" for="reharmLevel"><span>Reharm</span><select id="reharmLevel" aria-label="Reharmonization amount"><option value="0" selected>0 · Original</option><option value="1">1 · Color</option><option value="2">2 · Diatonic</option><option value="3">3 · Dominants</option><option value="4">4 · Borrowed</option><option value="5">5 · Advanced</option></select></label></div>
           <div class="chart-scroll" id="chartScroll"><div class="realbook-chart" id="chart" aria-label="Clickable Real Book-style chord chart"></div></div>
+          <section class="midi-roll" id="midiRoll" aria-label="Imported MIDI piano roll" hidden></section>
         </section>
 
         <aside class="study-card" aria-labelledby="selectedChord">
@@ -106,6 +107,7 @@
           </div>
           <div class="midi-source-line" id="midiSourceLine" aria-live="polite"><span id="midiStatus">Looking for a matching MIDI…</span><a class="midi-attribution" id="midiAttribution" href="" target="_blank" rel="noopener noreferrer" hidden></a><label id="chartSourceLabel" hidden>Chart <select id="chartSource"><option value="ireal">iReal form</option><option value="midi">MIDI markers</option></select></label></div>
           <label class="midi-chorus-control" id="midiStudyControl" for="midiStudy" hidden><span>Solo source</span><select id="midiStudy" aria-label="Choose a solo transcription"></select></label>
+          <label class="midi-chorus-control" id="midiTrackControl" for="midiTrack" hidden><span>MIDI track</span><select id="midiTrack" aria-label="Choose an imported MIDI track"></select></label>
           <label class="midi-chorus-control" id="tabTrackControl" for="tabTrack" hidden><span>Tab track</span><select id="tabTrack" aria-label="Choose a Guitar Pro track"></select></label>
           <label class="midi-chorus-control" id="tabMixControl" for="tabPlayAllTracks" hidden><span><input id="tabPlayAllTracks" type="checkbox"> Play all guitar tracks</span></label>
           <label class="midi-chorus-control" id="midiChorusControl" for="midiChorus" hidden><span>Study chorus</span><select id="midiChorus" aria-label="Choose a MIDI chorus"></select></label>
@@ -114,7 +116,7 @@
       </div>
     </section>
 
-    <section class="error-card" id="errorCard" hidden><h2>Could not open the standards catalog</h2><p id="errorMessage">Check your connection and try again.</p><button id="retryLoad" type="button">Try again</button></section>
+    <section class="error-card" id="errorCard" hidden><h2>Could not open the song catalog</h2><p id="errorMessage">Check your connection and try again.</p><button id="retryLoad" type="button">Try again</button></section>
   </main>
   <script src="jazz-theory.js"></script>
   <script src="ireal.js"></script>
