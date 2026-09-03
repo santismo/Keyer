@@ -112,6 +112,11 @@
     minor: ['Aeolian', 'Locrian', 'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian']
   };
   const PARKERIZE_COMPLEXITY_LABELS = ['','Spacious', 'Swinging', 'Bebop', 'Intricate', 'Bird fire'];
+  const LOCAL_MIDI_EXTENSION = /\.(?:mid|midi)$/i;
+  const MIDI_ROLL_WIDTH = 1200;
+  const MIDI_ROLL_HEIGHT = 188;
+  const MIDI_ROLL_MAX_NOTES = 6500;
+  const MIDI_ROLL_TRACK_COLORS = ['#80c7ff', '#ff8fa3', '#9af0c3', '#d7adff', '#ffd36e', '#77e1df', '#ffb86b', '#9bb0ff'];
 
   const elements = {
     search: document.querySelector('#songSearch'),
@@ -130,6 +135,8 @@
     randomSong: document.querySelector('#randomSong'),
     openTabFile: document.querySelector('#openTabFile'),
     tabFileInput: document.querySelector('#tabFileInput'),
+    openMidiFile: document.querySelector('#openMidiFile'),
+    midiFileInput: document.querySelector('#midiFileInput'),
     favoriteSong: document.querySelector('#favoriteSong'),
     libraryStatus: document.querySelector('#libraryStatus'),
     lesson: document.querySelector('#lesson'),
@@ -138,6 +145,7 @@
     songMeta: document.querySelector('#songMeta'),
     chart: document.querySelector('#chart'),
     chartScroll: document.querySelector('#chartScroll'),
+    midiRoll: document.querySelector('#midiRoll'),
     chartStatus: document.querySelector('#chartStatus'),
     reharmLevel: document.querySelector('#reharmLevel'),
     sectionReadout: document.querySelector('#sectionReadout'),
@@ -152,6 +160,8 @@
     midiAttribution: document.querySelector('#midiAttribution'),
     midiStudyControl: document.querySelector('#midiStudyControl'),
     midiStudy: document.querySelector('#midiStudy'),
+    midiTrackControl: document.querySelector('#midiTrackControl'),
+    midiTrack: document.querySelector('#midiTrack'),
     tabTrackControl: document.querySelector('#tabTrackControl'),
     tabTrack: document.querySelector('#tabTrack'),
     tabMixControl: document.querySelector('#tabMixControl'),
@@ -249,6 +259,7 @@
     midiEntries: [],
     midiEntry: null,
     midi: null,
+    midiImport: null,
     tabSession: null,
     tabSource: null,
     melodyTrack: null,
@@ -349,12 +360,12 @@
     if (elements.regenerateParkerizeSolo) elements.regenerateParkerizeSolo.hidden = state.parkerize.harmonyMode !== 'generated';
     if (elements.exportParkerizeMidi) elements.exportParkerizeMidi.disabled = !state.parkerize.lastTake || state.midiEntry?.type !== 'parkerize';
     if (elements.search) elements.search.placeholder = active && state.parkerize.harmonyMode === 'standard'
-      ? 'Choose a standard to Parkerize…'
-      : 'Find a standard or composer…';
+      ? 'Choose a song to Parkerize…'
+      : 'Find a song or composer…';
     if (elements.randomSong) {
       const generated = active && state.parkerize.harmonyMode === 'generated';
       elements.randomSong.textContent = generated ? 'New tune' : active ? 'Random tune' : 'Random';
-      elements.randomSong.setAttribute('aria-label', generated ? 'Generate a new original bebop chart and solo' : active ? 'Parkerize a random standard' : 'Choose a random standard');
+      elements.randomSong.setAttribute('aria-label', generated ? 'Generate a new original bebop chart and solo' : active ? 'Parkerize a random song' : 'Choose a random song');
       elements.randomSong.title = elements.randomSong.getAttribute('aria-label');
     }
   }
@@ -374,12 +385,12 @@
         events,
         complexity: state.parkerize.soloComplexity,
         seed: nextParkerizeSeed('solo'),
-        title: `${state.song.title || 'Standard'} · Parkerize`,
+        title: `${state.song.title || 'Song'} · Parkerize`,
         bpm: Number(state.song.bpm) || DEFAULT_TEMPO
       });
       const entry = {
         type: 'parkerize',
-        name: `${state.song.title || 'Standard'}-parkerize.mid`,
+        name: `${state.song.title || 'Song'}-parkerize.mid`,
         title: result.title,
         sourceLabel: 'Parkerize · aggregate Parker model',
         soloTitle: result.title
@@ -931,6 +942,129 @@
     return Math.max(1, Math.round((Number(midi?.ppq) || 120) * meter.beats * 4 / meter.beatUnit));
   }
 
+  function importedMusicalNotes(midi) {
+    return (midi?.tracks || []).flatMap(track => (track?.notes || []).filter(note => (
+      Number.isFinite(Number(note?.midi))
+      && Number.isFinite(Number(note?.tick))
+      && Number.isFinite(Number(note?.endTick))
+      && Number(note.endTick) > Number(note.tick)
+      && Number(note?.channel) !== 10
+    ))).sort((left, right) => Number(left.tick) - Number(right.tick) || Number(left.midi) - Number(right.midi));
+  }
+
+  function inferredMidiChordSymbol(notes) {
+    if (!notes?.length) return '';
+    const rootMidi = Math.min(...notes.map(note => Number(note.midi)).filter(Number.isFinite));
+    if (!Number.isFinite(rootMidi)) return '';
+    const root = Theory.mod(rootMidi);
+    const pcs = new Set(notes.map(note => Theory.mod(note.midi)));
+    const has = interval => pcs.has(Theory.mod(root + interval));
+    const names = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const rootName = names[root];
+    const minorThird = has(3);
+    const majorThird = has(4);
+    const flatFive = has(6);
+    const fifth = has(7);
+    const sharpFive = has(8);
+    const flatSeven = has(10);
+    const majorSeven = has(11);
+
+    if (minorThird) {
+      if (flatFive && has(9)) return `${rootName}dim7`;
+      if (flatFive) return flatSeven ? `${rootName}m7b5` : `${rootName}dim`;
+      if (majorSeven) return `${rootName}mMaj7`;
+      if (flatSeven) return `${rootName}m7`;
+      return `${rootName}m`;
+    }
+    if (majorThird) {
+      if (sharpFive) return flatSeven ? `${rootName}7#5` : `${rootName}aug`;
+      if (flatSeven) return `${rootName}7`;
+      if (majorSeven) return `${rootName}maj7`;
+      return rootName;
+    }
+    if (has(5)) return flatSeven ? `${rootName}7sus4` : `${rootName}sus4`;
+    if (fifth || pcs.size === 1) return `${rootName}5`;
+    return rootName;
+  }
+
+  // Ordinary MIDI files generally have notes, tempo, and meter but no chord
+  // marker metadata.  Quantize their sounding (non-drum) notes to the written
+  // beat so the normal Keyer chart, navigator, keys, and frets still have a
+  // useful study timeline. This is deliberately labelled as inferred harmony
+  // in the UI; marker-authored charts always take precedence below.
+  function buildInferredMidiChart(midi) {
+    const ppq = Number(midi?.ppq) || 120;
+    const notes = importedMusicalNotes(midi);
+    const finalTick = Math.max(1, Number(midi?.durationTicks) || 0, ...notes.map(note => Number(note.endTick) || 0));
+    if (!notes.length || !Number.isFinite(finalTick)) return null;
+    const bars = [];
+    const active = [];
+    let noteCursor = 0;
+    let tick = 0;
+    let segmentCount = 0;
+    const maxSegments = 4096;
+
+    const updateActiveNotes = targetTick => {
+      while (noteCursor < notes.length && Number(notes[noteCursor].tick) <= targetTick) {
+        active.push(notes[noteCursor]);
+        noteCursor += 1;
+      }
+      for (let index = active.length - 1; index >= 0; index -= 1) {
+        if (Number(active[index].endTick) <= targetTick) active.splice(index, 1);
+      }
+      return active;
+    };
+
+    while (tick < finalTick && segmentCount < maxSegments) {
+      const meter = midiMeterAtTick(midi, tick);
+      const barEnd = Math.min(finalTick, tick + midiBarTicks(midi, tick));
+      const beatTicks = Math.max(1, Math.round(ppq * 4 / meter.beatUnit));
+      const chords = [];
+      let priorSymbol = '';
+      for (let segmentTick = tick; segmentTick < barEnd && segmentCount < maxSegments; segmentTick += beatTicks, segmentCount += 1) {
+        const segmentEnd = Math.min(barEnd, segmentTick + beatTicks);
+        const symbol = inferredMidiChordSymbol(updateActiveNotes(segmentTick));
+        if (symbol === priorSymbol) continue;
+        if (chords.length) chords[chords.length - 1].endBeat = segmentTick / ppq;
+        if (symbol) {
+          chords.push({
+            raw: symbol,
+            startBeat: segmentTick / ppq,
+            endBeat: segmentEnd / ppq,
+            inferred: true
+          });
+        }
+        priorSymbol = symbol;
+      }
+      if (chords.length) chords[chords.length - 1].endBeat = barEnd / ppq;
+      bars.push({
+        index: bars.length,
+        chords,
+        overflowChords: [],
+        timeSignature: { beats: meter.beats, beatUnit: meter.beatUnit },
+        timeSignatureChange: bars.length === 0 ? { beats: meter.beats, beatUnit: meter.beatUnit } : null,
+        annotations: [],
+        comments: [],
+        repeatStart: false,
+        repeatEnd: false,
+        noChord: !chords.length,
+        pause: false,
+        startBeat: tick / ppq,
+        endBeat: barEnd / ppq
+      });
+      tick = barEnd;
+    }
+    if (!bars.some(bar => bar.chords.length)) return null;
+    return {
+      bars,
+      playbackOrder: bars.map((_, index) => index),
+      tempoBpm: Number(midi.tempos?.[0]?.bpm) || null,
+      sourceKey: '',
+      title: midi.title || state.song?.title || 'MIDI',
+      inferredHarmony: true
+    };
+  }
+
   function buildMidiChart(midi, melodyNotes = []) {
     if (!midi || !MiditarMidi || !Array.isArray(midi.markers)) return null;
     const markers = midi.markers
@@ -938,7 +1072,7 @@
       .map(marker => ({ ...marker, raw: safeText(marker.text), parsed: Theory.parseChordSymbol(safeText(marker.text)) }))
       .filter(marker => marker.raw && marker.parsed && Number.isFinite(marker.parsed.root))
       .sort((left, right) => left.tick - right.tick);
-    if (!markers.length) return null;
+    if (!markers.length) return buildInferredMidiChart(midi);
 
     const ppq = Number(midi.ppq) || 120;
     const initialBarTicks = midiBarTicks(midi, 0);
@@ -1072,7 +1206,8 @@
       playbackOrder: bars.map((_, index) => index),
       tempoBpm: Number(midi.tempos?.[0]?.bpm) || null,
       sourceKey: '',
-      title: midi.title || state.song?.title || 'MIDI'
+      title: midi.title || state.song?.title || 'MIDI',
+      inferredHarmony: false
     };
   }
 
@@ -1169,6 +1304,7 @@
 
   function clearMidiSource() {
     state.midi = null;
+    state.midiImport = null;
     state.melodyTrack = null;
     state.allMelodyNotes = [];
     state.melodyNotes = [];
@@ -1178,6 +1314,57 @@
     state.tabSource = null;
     state.melodyOverlayChartId = null;
     invalidateDerivedHarmony();
+  }
+
+  function syncMidiImportTrackControl() {
+    if (!elements.midiTrackControl || !elements.midiTrack) return;
+    const active = localMidiImportActive();
+    const tracks = active ? localMidiTracks() : [];
+    const canChoose = tracks.length > 1;
+    elements.midiTrackControl.hidden = !canChoose;
+    if (!canChoose) {
+      elements.midiTrack.replaceChildren();
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    const automatic = document.createElement('option');
+    automatic.value = 'auto';
+    automatic.textContent = `Auto · ${state.melodyTrack?.name || 'best melody line'}`;
+    fragment.appendChild(automatic);
+    tracks.forEach(track => {
+      const option = document.createElement('option');
+      option.value = String(track.index);
+      option.textContent = `${track.name || `Track ${track.index + 1}`} · ${(track.notes || []).length.toLocaleString()} notes`;
+      fragment.appendChild(option);
+    });
+    elements.midiTrack.replaceChildren(fragment);
+    elements.midiTrack.value = Number.isInteger(state.midiImport?.trackIndex) ? String(state.midiImport.trackIndex) : 'auto';
+  }
+
+  function selectImportedMidiTrack(value) {
+    if (!localMidiImportActive()) return false;
+    const tracks = localMidiTracks();
+    const automatic = value === 'auto';
+    const nextTrack = automatic
+      ? MiditarMidi?.chooseMelodyTrack?.(state.midi)
+      : tracks.find(track => track.index === Number(value)) || null;
+    if (!nextTrack || !tracks.some(track => track.index === nextTrack.index)) return false;
+    if ((automatic && state.midiImport.trackIndex == null) || (!automatic && state.midiImport.trackIndex === nextTrack.index)) return false;
+    const notes = buildMelodyNotes(state.midi, nextTrack);
+    if (!notes.length) return false;
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    state.midiImport.trackIndex = automatic ? null : nextTrack.index;
+    state.melodyTrack = nextTrack;
+    state.allMelodyNotes = notes;
+    state.midiChoruses = [];
+    state.midiChorusIndex = 0;
+    state.melodyNotes = notes;
+    state.melodyOverlayChartId = state.midiChart ? 'midi' : 'ireal';
+    invalidateDerivedHarmony();
+    activateChartSource(state.melodyOverlayChartId, { transport: true });
+    syncMidiImportTrackControl();
+    syncMidiSourceStatus();
+    return true;
   }
 
   function selectMidiStudy(index) {
@@ -1407,7 +1594,104 @@
     view.scrollTop = Math.min(maxScroll, Math.max(0, view.scrollTop + delta));
   }
 
+  function localMidiImportActive() {
+    return state.midiEntry?.type === 'local-midi' && Boolean(state.midi && state.midiImport);
+  }
+
+  function localMidiTracks() {
+    return (state.midi?.tracks || []).filter(track => (track?.notes || []).some(note => Number(note?.channel) !== 10));
+  }
+
+  function renderImportedMidiRoll() {
+    const surface = elements.midiRoll;
+    if (!surface) return;
+    if (!localMidiImportActive()) {
+      surface.hidden = true;
+      surface.replaceChildren();
+      return;
+    }
+    const selectedTrackIndex = Number.isInteger(state.midiImport?.trackIndex) ? state.midiImport.trackIndex : null;
+    const tracks = localMidiTracks().filter(track => selectedTrackIndex == null || track.index === selectedTrackIndex);
+    const allNotes = tracks.flatMap(track => (track.notes || []).filter(note => Number(note?.channel) !== 10));
+    if (!allNotes.length) {
+      surface.hidden = true;
+      surface.replaceChildren();
+      return;
+    }
+    const durationTicks = Math.max(1, Number(state.midi.durationTicks) || 0, ...allNotes.map(note => Number(note.endTick) || 0));
+    const pitches = allNotes.map(note => Number(note.midi)).filter(Number.isFinite);
+    const low = Math.max(0, Math.floor(Math.min(...pitches) / 12) * 12);
+    const high = Math.min(127, Math.ceil(Math.max(...pitches) / 12) * 12);
+    const pitchSpan = Math.max(1, high - low + 1);
+    const scaleY = midi => (high - Number(midi)) / pitchSpan * MIDI_ROLL_HEIGHT;
+    const namespace = 'http://www.w3.org/2000/svg';
+    const head = document.createElement('div');
+    head.className = 'midi-roll-head';
+    const title = document.createElement('strong');
+    title.textContent = 'Imported MIDI · piano roll';
+    const details = document.createElement('span');
+    const shownTrackText = selectedTrackIndex == null ? `${tracks.length} tracks` : tracks[0]?.name || 'selected track';
+    details.textContent = `${shownTrackText} · ${allNotes.length.toLocaleString()} notes`;
+    head.append(title, details);
+    const scroll = document.createElement('div');
+    scroll.className = 'midi-roll-scroll';
+    const svg = document.createElementNS(namespace, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${MIDI_ROLL_WIDTH} ${MIDI_ROLL_HEIGHT}`);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', `Piano roll for ${state.song?.title || 'the imported MIDI'}: ${details.textContent}`);
+
+    for (let midi = low; midi <= high; midi += 1) {
+      const line = document.createElementNS(namespace, 'line');
+      const y = scaleY(midi);
+      line.setAttribute('x1', '0');
+      line.setAttribute('x2', String(MIDI_ROLL_WIDTH));
+      line.setAttribute('y1', String(y));
+      line.setAttribute('y2', String(y));
+      line.setAttribute('class', midi % 12 === 0 ? 'midi-roll-grid' : 'midi-roll-keyline');
+      svg.appendChild(line);
+    }
+    let barTick = 0;
+    let barCount = 0;
+    while (barTick <= durationTicks && barCount < 256) {
+      const line = document.createElementNS(namespace, 'line');
+      const x = barTick / durationTicks * MIDI_ROLL_WIDTH;
+      line.setAttribute('x1', String(x));
+      line.setAttribute('x2', String(x));
+      line.setAttribute('y1', '0');
+      line.setAttribute('y2', String(MIDI_ROLL_HEIGHT));
+      line.setAttribute('class', 'midi-roll-grid');
+      svg.appendChild(line);
+      barTick += midiBarTicks(state.midi, barTick);
+      barCount += 1;
+    }
+    const noteStride = Math.max(1, Math.ceil(allNotes.length / MIDI_ROLL_MAX_NOTES));
+    allNotes.forEach((note, index) => {
+      if (index % noteStride) return;
+      const rect = document.createElementNS(namespace, 'rect');
+      const x = Math.max(0, Number(note.tick) / durationTicks * MIDI_ROLL_WIDTH);
+      const width = Math.max(1.4, (Number(note.endTick) - Number(note.tick)) / durationTicks * MIDI_ROLL_WIDTH);
+      const y = Math.max(0, Math.min(MIDI_ROLL_HEIGHT - 2.4, scaleY(note.midi)));
+      const trackColor = MIDI_ROLL_TRACK_COLORS[Number(note.trackIndex) % MIDI_ROLL_TRACK_COLORS.length];
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(Math.min(MIDI_ROLL_WIDTH - x, width)));
+      rect.setAttribute('height', String(Math.max(2.4, MIDI_ROLL_HEIGHT / pitchSpan * .78)));
+      rect.setAttribute('rx', '1.2');
+      rect.setAttribute('fill', trackColor);
+      rect.setAttribute('fill-opacity', selectedTrackIndex == null ? '.72' : '.9');
+      rect.setAttribute('class', `midi-roll-note${Number(note.trackIndex) === selectedTrackIndex ? ' selected-track' : ''}`);
+      const noteTitle = document.createElementNS(namespace, 'title');
+      noteTitle.textContent = `${note.trackName || `Track ${Number(note.trackIndex) + 1}`} · ${Theory.midiName(note.midi, state.preferFlats)}`;
+      rect.appendChild(noteTitle);
+      svg.appendChild(rect);
+    });
+    scroll.appendChild(svg);
+    surface.replaceChildren(head, scroll);
+    surface.hidden = false;
+  }
+
   function renderChart() {
+    renderImportedMidiRoll();
     const fragment = document.createDocumentFragment();
     const finalRowStart = Math.floor((state.bars.length - 1) / 4) * 4;
     state.bars.forEach(bar => {
@@ -3090,14 +3374,14 @@
         ? generatedParkerize
           ? 'At the end of the chart, generate a new original bebop chart and solo and keep playing'
           : standardParkerize
-            ? 'At the end of the chart, Parkerize a random standard and keep playing'
-            : 'At the end of the chart, choose a random chart from the selected bank and keep playing'
+            ? 'At the end of the chart, Parkerize a random song and keep playing'
+            : 'At the end of the chart, choose a random song from the selected bank and keep playing'
         : 'At the end of the chart, loop this chart from the beginning');
       elements.autoAdvanceRandom.parentElement.title = state.transport.autoAdvanceRandom
         ? generatedParkerize
           ? 'New generated chart is on: Parkerize creates another composition with the saved complexity settings.'
           : standardParkerize
-            ? 'Random next chart is on: Parkerize creates a new solo over another standard.'
+            ? 'Random next chart is on: Parkerize creates a new solo over another song.'
             : 'Random next chart is on: the selected bank supplies the next chart.'
         : 'Random next chart is off: this chart loops from the beginning.';
       if (elements.autoAdvanceRandomLabel) elements.autoAdvanceRandomLabel.textContent = generatedParkerize ? 'Generate next tune' : standardParkerize ? 'Parkerize next chart' : 'Random next chart';
@@ -3279,6 +3563,7 @@
     if (!state.song) {
       if (elements.midiAttribution) elements.midiAttribution.hidden = true;
       if (elements.midiStudyControl) elements.midiStudyControl.hidden = true;
+      if (elements.midiTrackControl) elements.midiTrackControl.hidden = true;
       if (elements.midiChorusControl) elements.midiChorusControl.hidden = true;
       return;
     }
@@ -3291,11 +3576,14 @@
       }
     }
     syncMidiStudyControl();
+    syncMidiImportTrackControl();
     syncMidiChorusControl();
     if (state.midi) {
       const chordEventCount = state.midiChart?.events.filter(event => event.kind !== 'pickup').length || 0;
       const pickupSuffix = state.midiChart?.events.some(event => event.kind === 'pickup') ? ' · pickup' : '';
-      const markerText = state.midiEntry?.type === 'wjazzd-solo'
+      const markerText = state.midiEntry?.type === 'local-midi' && state.midiChart?.inferredHarmony
+        ? `${chordEventCount} inferred chord changes${pickupSuffix}`
+        : state.midiEntry?.type === 'wjazzd-solo'
         ? 'source-harmony timing'
         : state.melodyOverlayChartId === 'ireal'
         ? `${soloStudyActive() ? 'solo' : 'melody'} over iReal timing`
@@ -3303,11 +3591,13 @@
         ? `${chordEventCount} chord markers${pickupSuffix}`
         : 'melody over iReal timing';
       const tempo = Number(state.midi.tempos?.[0]?.bpm);
-      const caution = !state.midiChart && !['parkerize', 'wjazzd-solo', 'tab-file'].includes(state.midiEntry?.type) ? ' · check the form matches' : '';
+      const caution = !state.midiChart && !['parkerize', 'wjazzd-solo', 'tab-file', 'local-midi'].includes(state.midiEntry?.type) ? ' · check the form matches' : '';
       const chorusText = state.midiChoruses.length > 1
         ? ` · chorus ${state.midiChorusIndex + 1} of ${state.midiChoruses.length}`
         : '';
-      const studyText = state.midiEntry?.type === 'tab-file'
+      const studyText = state.midiEntry?.type === 'local-midi'
+        ? 'local MIDI'
+        : state.midiEntry?.type === 'tab-file'
         ? 'tab study · original positions'
         : state.midiEntry?.type === 'parkerize'
         ? `Parkerize solo ${state.parkerize.soloComplexity}`
@@ -3326,7 +3616,7 @@
       return;
     }
     if (state.midiCatalogReady) {
-      elements.midiStatus.textContent = 'No matching melody MIDI available for this standard';
+      elements.midiStatus.textContent = 'No matching melody MIDI available for this song';
     }
   }
 
@@ -3568,16 +3858,18 @@
     clearMidiSource();
     const generatedPractice = parkerizeActive();
     state.preferSoloChorus = generatedPractice || Boolean(song.tabSource) || ['solos', 'parker', 'legends'].includes(state.songAvailabilityFilter);
-    state.midiEntries = generatedPractice ? [] : midiEntriesForSong(song);
+    state.midiEntries = generatedPractice ? [] : song.localMidiEntry ? [song.localMidiEntry] : midiEntriesForSong(song);
     state.midiEntry = state.midiEntries[0] || null;
 
     if (state.preferSoloChorus && state.midiEntry) setMelodyVisibility(true, { persist: false });
 
-    elements.songTitle.textContent = song.title || 'Untitled standard';
+    elements.songTitle.textContent = song.title || 'Untitled song';
     elements.songComposer.textContent = song.parkerizeGenerated
       ? 'Parkerize · original generated composition'
       : song.tabSource
       ? 'Tab import · original string and fret positions'
+      : song.localMidiEntry
+      ? 'Local MIDI import · tracks, notes, and inferred form'
       : state.midiEntry?.type === 'parker-solo'
       ? `${song.composer || 'Charlie Parker'} · Parker solo study`
       : state.midiEntry?.type === 'wjazzd-solo'
@@ -3819,6 +4111,43 @@
     return installParsedTab(parsed, entry, parsed.preferredTrackIndex);
   }
 
+  async function loadLocalMidiFile(file) {
+    if (!file) return false;
+    if (!MiditarMidi?.parseMidi) throw new Error('The MIDI reader did not load. Reload Keyer and try again.');
+    if (!LOCAL_MIDI_EXTENSION.test(file.name || '')) throw new Error('Choose a Standard MIDI file ending in .mid or .midi.');
+    const midi = MiditarMidi.parseMidi(await file.arrayBuffer(), file.name);
+    const melodyTrack = MiditarMidi.chooseMelodyTrack(midi);
+    const melodyNotes = buildMelodyNotes(midi, melodyTrack);
+    const chart = buildMidiChart(midi, melodyNotes);
+    if (!melodyNotes.length || !chart?.bars?.length || !chart.playbackOrder?.length) {
+      throw new Error('This MIDI has no playable melodic notes or readable musical timing.');
+    }
+    const entry = {
+      type: 'local-midi',
+      name: file.name,
+      title: midi.title || titleFromMidiFileName(file.name),
+      sourceLabel: 'Local MIDI import',
+      local: true,
+      inferredHarmony: Boolean(chart.inferredHarmony)
+    };
+    const song = {
+      title: entry.title,
+      composer: 'Local MIDI import',
+      style: chart.inferredHarmony ? 'MIDI import · inferred harmony' : 'MIDI import · chord markers',
+      key: chart.sourceKey || '',
+      bpm: Number(chart.tempoBpm) || DEFAULT_TEMPO,
+      bars: chart.bars,
+      playbackOrder: chart.playbackOrder,
+      localMidiEntry: entry,
+      midiImportTiming: true
+    };
+    if (!applyLoadedSong(song, { preloadedMidi: midi })) return false;
+    state.midiImport = { fileName: file.name, trackIndex: null, inferredHarmony: Boolean(chart.inferredHarmony) };
+    installMidiSource(midi, entry);
+    elements.libraryStatus.textContent = `${song.title} · ${localMidiTracks().length} tracks · ${chart.inferredHarmony ? 'harmony inferred from notes' : 'using MIDI chord markers'}`;
+    return true;
+  }
+
   function selectTabTrack(value) {
     const session = state.tabSession;
     if (!session) return false;
@@ -3895,7 +4224,7 @@
     button.disabled = !state.song;
     button.textContent = favorite ? '★' : '☆';
     button.setAttribute('aria-pressed', String(favorite));
-    button.setAttribute('aria-label', favorite ? 'Remove this standard from favorites' : 'Add this standard to favorites');
+    button.setAttribute('aria-label', favorite ? 'Remove this song from favorites' : 'Add this song to favorites');
     button.title = favorite ? 'Remove from favorites' : 'Add to favorites';
   }
 
@@ -3998,7 +4327,7 @@
     if (requiresMidiCatalog && !state.midiCatalogReady) {
       elements.libraryStatus.textContent = 'Finding MIDI melody availability…';
     } else {
-      const label = state.songAvailabilityFilter === 'favorites' ? 'favorite standards'
+      const label = state.songAvailabilityFilter === 'favorites' ? 'favorite songs'
         : state.songAvailabilityFilter === 'melody' ? 'with MIDI melody'
         : state.songAvailabilityFilter === 'chords' ? 'chord charts only'
         : state.songAvailabilityFilter === 'solos' ? 'jazz solo studies'
@@ -4029,7 +4358,7 @@
       const wjazzdCount = WJazzDSoloCatalog?.entryCount || 0;
       const azCount = AzMidiCatalog?.playableCount || 0;
       const tabCount = state.tabSongs.length;
-      elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz-standard charts · ${wjazzdCount} Jazzomat legend solos · ${parkerCount} Parker Omnibook solos · ${multiChorusCount} multi-chorus studies · ${azCount.toLocaleString()} A–Z MIDI songs · ${tabCount.toLocaleString()} tab files`;
+      elements.libraryStatus.textContent = `${state.songs.length.toLocaleString()} jazz charts · ${wjazzdCount} Jazzomat legend solos · ${parkerCount} Parker Omnibook solos · ${multiChorusCount} multi-chorus studies · ${azCount.toLocaleString()} A–Z MIDI songs · ${tabCount.toLocaleString()} tab files`;
     }
   }
 
@@ -4214,7 +4543,9 @@
   function songMetaText() {
     if (!state.song) return '';
     const chart = state.chartSource === 'midi' ? state.midiChart : state.irealChart;
-    const source = state.chartSource === 'midi' ? 'MIDI markers' : '';
+    const source = state.chartSource === 'midi'
+      ? chart?.inferredHarmony ? 'MIDI inferred form' : 'MIDI markers'
+      : '';
     const key = state.chartSource === 'midi'
       ? chart?.sourceKey ? `Key ${chart.sourceKey}` : 'MIDI form'
       : chart?.sourceKey ? `Key ${chart.sourceKey}` : state.song.key ? `Key ${state.song.key}` : '';
@@ -4250,6 +4581,15 @@
     const chart = buildMidiChart(midi, melodyNotes);
     state.midi = midi;
     state.midiEntry = entry || state.midiEntry;
+    if (state.midiEntry?.type === 'local-midi') {
+      state.midiImport = {
+        fileName: state.midiEntry.name || midi.fileName || 'imported.mid',
+        trackIndex: Number.isInteger(state.midiImport?.trackIndex) ? state.midiImport.trackIndex : null,
+        inferredHarmony: Boolean(chart?.inferredHarmony)
+      };
+    } else {
+      state.midiImport = null;
+    }
     state.tabSource = midi?.tabSource || null;
     state.melodyTrack = melodyTrack;
     state.allMelodyNotes = melodyNotes;
@@ -4261,6 +4601,7 @@
         tempoBpm: chart.tempoBpm
       })
       : null;
+    if (state.midiChart) state.midiChart.inferredHarmony = Boolean(chart?.inferredHarmony);
     const studyTiming = isSoloStudyEntry(state.midiEntry);
     state.midiChoruses = studyTiming ? midiChorusesForNotes(melodyNotes) : [];
     state.midiChorusIndex = state.midiChoruses.length > 1 && state.preferSoloChorus ? 1 : 0;
@@ -4269,9 +4610,12 @@
     // selected chorus can loop against the chart and audible accompaniment.
     state.melodyOverlayChartId = studyTiming ? 'ireal' : state.midiChart ? 'midi' : 'ireal';
     setMelodyVisibility(true);
+    const midiChartOption = elements.chartSource?.querySelector('option[value="midi"]');
+    if (midiChartOption) midiChartOption.textContent = chart?.inferredHarmony ? 'MIDI inferred form' : 'MIDI markers';
     activateChartSource(state.melodyOverlayChartId, { transport: true });
     elements.songMeta.textContent = songMetaText();
     syncMidiChorusControl();
+    syncMidiImportTrackControl();
     syncMidiSourceStatus();
     // A MIDI file may finish loading after the chart itself. Pre-render its
     // final voicings while stopped so the next Play tap has a ready asset.
@@ -4316,7 +4660,7 @@
         await loadMatchedMiditarMidi(state.midiEntry, state.song, { transport });
         return;
       }
-      elements.midiStatus.textContent = 'No matching melody MIDI is available for this standard.';
+      elements.midiStatus.textContent = 'No matching melody MIDI is available for this song.';
     } catch (error) {
       console.error(error);
       elements.midiStatus.textContent = error?.message || 'Could not load this MIDI source.';
@@ -4342,10 +4686,10 @@
     if (state.loading) return;
     state.loading = true;
     elements.errorCard.hidden = true;
-    elements.libraryStatus.textContent = 'Loading jazz standards…';
+    elements.libraryStatus.textContent = 'Loading songs…';
     elements.randomSong.disabled = true;
     try {
-      if (!Theory || !IReal || typeof IReal.parsePlaylist !== 'function' || !Parkerize) throw new Error('The standards parser did not load.');
+      if (!Theory || !IReal || typeof IReal.parsePlaylist !== 'function' || !Parkerize) throw new Error('The songs parser did not load.');
       const text = await fetchCatalog();
       elements.libraryStatus.textContent = 'Reading chart forms and chord symbols…';
       await new Promise(resolve => requestAnimationFrame(resolve));
@@ -4398,7 +4742,7 @@
         };
       });
       state.tabSongs = (TabLibraryCatalog?.entries || []).map(tabSongForCatalogEntry);
-      if (!state.songs.length) throw new Error('No readable standards were found in the catalog.');
+      if (!state.songs.length) throw new Error('No readable songs were found in the catalog.');
       state.songs.sort((a, b) => safeText(a.title).localeCompare(safeText(b.title), undefined, { sensitivity: 'base' }));
       const legendHarmonySongs = state.legendSoloSongs.map(song => ({
         ...song,
@@ -5809,8 +6153,20 @@
       elements.libraryStatus.textContent = error?.message || `Could not open ${file.name}.`;
     });
   });
+  elements.openMidiFile?.addEventListener('click', () => { elements.midiFileInput?.click(); });
+  elements.midiFileInput?.addEventListener('change', event => {
+    const file = event.target?.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    elements.libraryStatus.textContent = `Opening ${file.name}…`;
+    void loadLocalMidiFile(file).catch(error => {
+      console.error(error);
+      elements.libraryStatus.textContent = error?.message || `Could not open ${file.name}.`;
+    });
+  });
   elements.tabTrack?.addEventListener('change', () => { selectTabTrack(elements.tabTrack.value); });
   elements.tabPlayAllTracks?.addEventListener('change', () => { setTabPlayAllTracks(elements.tabPlayAllTracks.checked); });
+  elements.midiTrack?.addEventListener('change', () => { selectImportedMidiTrack(elements.midiTrack.value); });
   elements.parkerizeHarmonyMode?.addEventListener('change', () => {
     state.parkerize.harmonyMode = elements.parkerizeHarmonyMode.value === 'generated' ? 'generated' : 'standard';
     try { localStorage.setItem(PARKERIZE_HARMONY_STORAGE_KEY, state.parkerize.harmonyMode); } catch (_) {}
@@ -6128,6 +6484,10 @@
     generateParkerizedChart,
     exportParkerizedMidi,
     installMidiSource,
+    loadLocalMidiFile,
+    selectImportedMidiTrack,
+    buildInferredMidiChart,
+    renderImportedMidiRoll,
     startChartPlayback,
     startStreamChartPlayback,
     stopChartPlayback,
