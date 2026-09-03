@@ -110,6 +110,11 @@ input[type="search"]::placeholder { color: #7f8999; }
 .midi-roll-keyline { stroke: #a8b6c9; stroke-width: .45; opacity: .13; vector-effect: non-scaling-stroke; }
 .midi-roll-note { stroke: #ffffff; stroke-opacity: .19; stroke-width: .55; vector-effect: non-scaling-stroke; }
 .midi-roll-note.selected-track { stroke-opacity: .72; }
+.midi-roll-note { cursor: pointer; }
+.midi-roll-chord { fill: #dfb54e; fill-opacity: .15; stroke: #dfb54e; stroke-opacity: .55; stroke-width: .8; cursor: pointer; }
+.midi-roll-chord.active { fill-opacity: .34; stroke: #fff0b6; stroke-opacity: .95; }
+.midi-roll-bar { stroke: #8ea1b9; stroke-width: .8; opacity: .6; vector-effect: non-scaling-stroke; }
+.midi-roll-playhead { stroke: #ff7781; stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
 .realbook-chart { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; min-width: 0; max-width: 100%; overflow: hidden; color: var(--paper-ink); background: var(--paper); border: 1px solid #364154; border-radius: 5px; box-shadow: 0 10px 30px #0008, inset 0 0 40px #73809a0d; font-family: "Marker Felt", "Comic Sans MS", ui-rounded, system-ui, sans-serif; }
 .measure { position: relative; min-width: 0; min-height: 82px; padding: 18px 4px 7px; border-right: 1.5px solid var(--paper-line); border-bottom: 1.5px solid var(--paper-line); background: linear-gradient(100deg, transparent, #ffffff08 49%, transparent); }
 .pickup-measure { min-height: 66px; background: linear-gradient(100deg, #b8904e1c, transparent); }
@@ -168,6 +173,8 @@ input[type="search"]::placeholder { color: #7f8999; }
 .chord-identity > span { justify-self: center; min-width: 0; max-width: 100%; margin-top: 7px; overflow: hidden; color: var(--blue); font-size: .68rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .display-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 6px 9px; border-bottom: 1px solid var(--line); background: #0e131c; }
 .display-control { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px; color: var(--muted); font: 800 .57rem ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .05em; }
+.display-toggle { min-height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; color: var(--blue); background: #1b2432; border: 1px solid #3b4b60; border-radius: 7px; font: 800 .58rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; }
+.display-toggle input { accent-color: var(--gold); }
 .display-control select { width: 100%; min-width: 0; min-height: 30px; padding: 0 5px; color: var(--ink); background: #1b2432; border: 1px solid #3b4b60; border-radius: 7px; font: 800 .6rem ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
 .display-control select:disabled { opacity: .52; }
 .display-control:has(select:disabled) { opacity: .62; }

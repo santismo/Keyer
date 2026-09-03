@@ -146,6 +146,8 @@
     chart: document.querySelector('#chart'),
     chartScroll: document.querySelector('#chartScroll'),
     midiRoll: document.querySelector('#midiRoll'),
+    showChart: document.querySelector('#showChart'),
+    showMidiView: document.querySelector('#showMidiView'),
     chartStatus: document.querySelector('#chartStatus'),
     reharmLevel: document.querySelector('#reharmLevel'),
     sectionReadout: document.querySelector('#sectionReadout'),
@@ -270,6 +272,9 @@
     preferSoloChorus: false,
     melodyOverlayChartId: null,
     showMelody: false,
+    showChart: true,
+    showMidiView: true,
+    playheadBeat: 0,
     melodyCursor: 0,
     // The melody cursor is tied to an occurrence, not just an index. A repeated
     // chord can have a different melody phrase each time through the form.
@@ -1602,36 +1607,53 @@
     return (state.midi?.tracks || []).filter(track => (track?.notes || []).some(note => Number(note?.channel) !== 10));
   }
 
+  function seekTimelineBeat(beat, eventIndex = null, note = null) {
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    state.playheadBeat = Math.max(0, Number(beat) || 0);
+    const entry = Number.isInteger(eventIndex)
+      ? state.timeline.find(candidate => candidate.eventIndex === eventIndex)
+      : streamTimelineEntryAtBeat(state.playheadBeat);
+    if (Number.isInteger(entry?.eventIndex)) selectEvent(entry.eventIndex, false);
+    if (note) {
+      state.activeMelodyNote = note;
+      state.melodyCursor = Math.max(0, state.melodyNotes.findIndex(candidate => candidate.id === note.id));
+      state.melodyCursorEventKey = melodyEventKey(activeChartEvent());
+      renderStudy({ keepVisible: false });
+      previewMelodyNote(note);
+    }
+    renderImportedMidiRoll();
+  }
+
   function renderImportedMidiRoll() {
     const surface = elements.midiRoll;
     if (!surface) return;
-    if (!localMidiImportActive()) {
+    if (!state.showMidiView || !state.timeline.length) {
       surface.hidden = true;
       surface.replaceChildren();
       return;
     }
     const selectedTrackIndex = Number.isInteger(state.midiImport?.trackIndex) ? state.midiImport.trackIndex : null;
-    const tracks = localMidiTracks().filter(track => selectedTrackIndex == null || track.index === selectedTrackIndex);
-    const allNotes = tracks.flatMap(track => (track.notes || []).filter(note => Number(note?.channel) !== 10));
-    if (!allNotes.length) {
-      surface.hidden = true;
-      surface.replaceChildren();
-      return;
-    }
-    const durationTicks = Math.max(1, Number(state.midi.durationTicks) || 0, ...allNotes.map(note => Number(note.endTick) || 0));
+    const tracks = localMidiImportActive()
+      ? localMidiTracks().filter(track => selectedTrackIndex == null || track.index === selectedTrackIndex)
+      : [];
+    const allNotes = tracks.length
+      ? tracks.flatMap(track => (track.notes || []).filter(note => Number(note?.channel) !== 10))
+      : state.melodyNotes;
+    const durationBeats = Math.max(.01, state.timeline[state.timeline.length - 1]?.endBeat || 0);
+    const ppq = Number(state.midi?.ppq) || 120;
     const pitches = allNotes.map(note => Number(note.midi)).filter(Number.isFinite);
-    const low = Math.max(0, Math.floor(Math.min(...pitches) / 12) * 12);
-    const high = Math.min(127, Math.ceil(Math.max(...pitches) / 12) * 12);
+    const low = pitches.length ? Math.max(0, Math.floor(Math.min(...pitches) / 12) * 12) : 48;
+    const high = pitches.length ? Math.min(127, Math.ceil(Math.max(...pitches) / 12) * 12) : 72;
     const pitchSpan = Math.max(1, high - low + 1);
     const scaleY = midi => (high - Number(midi)) / pitchSpan * MIDI_ROLL_HEIGHT;
     const namespace = 'http://www.w3.org/2000/svg';
     const head = document.createElement('div');
     head.className = 'midi-roll-head';
     const title = document.createElement('strong');
-    title.textContent = 'Imported MIDI · piano roll';
+    title.textContent = state.midi ? 'MIDI · timeline' : 'Chart · timeline';
     const details = document.createElement('span');
-    const shownTrackText = selectedTrackIndex == null ? `${tracks.length} tracks` : tracks[0]?.name || 'selected track';
-    details.textContent = `${shownTrackText} · ${allNotes.length.toLocaleString()} notes`;
+    const shownTrackText = localMidiImportActive() ? (selectedTrackIndex == null ? `${tracks.length} tracks` : tracks[0]?.name || 'selected track') : state.midi ? 'melody timing' : 'chart timing';
+    details.textContent = `${shownTrackText} · ${allNotes.length.toLocaleString()} notes · tap to seek`;
     head.append(title, details);
     const scroll = document.createElement('div');
     scroll.className = 'midi-roll-scroll';
@@ -1650,26 +1672,36 @@
       line.setAttribute('class', midi % 12 === 0 ? 'midi-roll-grid' : 'midi-roll-keyline');
       svg.appendChild(line);
     }
-    let barTick = 0;
-    let barCount = 0;
-    while (barTick <= durationTicks && barCount < 256) {
+    (state.bars || []).forEach(bar => {
+      const beat = Number(bar.startBeat);
+      if (!Number.isFinite(beat)) return;
       const line = document.createElementNS(namespace, 'line');
-      const x = barTick / durationTicks * MIDI_ROLL_WIDTH;
+      const x = beat / durationBeats * MIDI_ROLL_WIDTH;
       line.setAttribute('x1', String(x));
       line.setAttribute('x2', String(x));
       line.setAttribute('y1', '0');
       line.setAttribute('y2', String(MIDI_ROLL_HEIGHT));
-      line.setAttribute('class', 'midi-roll-grid');
+      line.setAttribute('class', 'midi-roll-bar');
       svg.appendChild(line);
-      barTick += midiBarTicks(state.midi, barTick);
-      barCount += 1;
-    }
+    });
+    state.timeline.filter(entry => entry.type === 'chord' || entry.type === 'pickup').forEach(entry => {
+      const x = Math.max(0, entry.startBeat / durationBeats * MIDI_ROLL_WIDTH);
+      const width = Math.max(2, (entry.endBeat - entry.startBeat) / durationBeats * MIDI_ROLL_WIDTH);
+      const chord = document.createElementNS(namespace, 'rect');
+      chord.setAttribute('x', String(x)); chord.setAttribute('y', '2'); chord.setAttribute('width', String(width)); chord.setAttribute('height', '14');
+      chord.setAttribute('rx', '2');
+      chord.setAttribute('class', `midi-roll-chord${entry.eventIndex === state.activeIndex ? ' active' : ''}`);
+      chord.addEventListener('click', () => seekTimelineBeat(entry.startBeat, entry.eventIndex));
+      svg.appendChild(chord);
+    });
     const noteStride = Math.max(1, Math.ceil(allNotes.length / MIDI_ROLL_MAX_NOTES));
     allNotes.forEach((note, index) => {
       if (index % noteStride) return;
       const rect = document.createElementNS(namespace, 'rect');
-      const x = Math.max(0, Number(note.tick) / durationTicks * MIDI_ROLL_WIDTH);
-      const width = Math.max(1.4, (Number(note.endTick) - Number(note.tick)) / durationTicks * MIDI_ROLL_WIDTH);
+      const startBeat = Number.isFinite(Number(note.startBeat)) ? Number(note.startBeat) : Number(note.tick) / ppq;
+      const endBeat = Number.isFinite(Number(note.endBeat)) ? Number(note.endBeat) : Number(note.endTick) / ppq;
+      const x = Math.max(0, startBeat / durationBeats * MIDI_ROLL_WIDTH);
+      const width = Math.max(1.4, (endBeat - startBeat) / durationBeats * MIDI_ROLL_WIDTH);
       const y = Math.max(0, Math.min(MIDI_ROLL_HEIGHT - 2.4, scaleY(note.midi)));
       const trackColor = MIDI_ROLL_TRACK_COLORS[Number(note.trackIndex) % MIDI_ROLL_TRACK_COLORS.length];
       rect.setAttribute('x', String(x));
@@ -1680,11 +1712,16 @@
       rect.setAttribute('fill', trackColor);
       rect.setAttribute('fill-opacity', selectedTrackIndex == null ? '.72' : '.9');
       rect.setAttribute('class', `midi-roll-note${Number(note.trackIndex) === selectedTrackIndex ? ' selected-track' : ''}`);
+      rect.addEventListener('click', () => seekTimelineBeat(startBeat, null, note));
       const noteTitle = document.createElementNS(namespace, 'title');
       noteTitle.textContent = `${note.trackName || `Track ${Number(note.trackIndex) + 1}`} · ${Theory.midiName(note.midi, state.preferFlats)}`;
       rect.appendChild(noteTitle);
       svg.appendChild(rect);
     });
+    const playhead = document.createElementNS(namespace, 'line');
+    const playheadX = Math.max(0, Math.min(MIDI_ROLL_WIDTH, (Number(state.playheadBeat) || 0) / durationBeats * MIDI_ROLL_WIDTH));
+    playhead.setAttribute('x1', String(playheadX)); playhead.setAttribute('x2', String(playheadX)); playhead.setAttribute('y1', '0'); playhead.setAttribute('y2', String(MIDI_ROLL_HEIGHT)); playhead.setAttribute('class', 'midi-roll-playhead');
+    svg.appendChild(playhead);
     scroll.appendChild(svg);
     surface.replaceChildren(head, scroll);
     surface.hidden = false;
@@ -1692,6 +1729,7 @@
 
   function renderChart() {
     renderImportedMidiRoll();
+    elements.chartScroll.hidden = !state.showChart;
     const fragment = document.createDocumentFragment();
     const finalRowStart = Math.floor((state.bars.length - 1) / 4) * 4;
     state.bars.forEach(bar => {
@@ -1962,6 +2000,8 @@
   }
 
   function syncInstrumentControls() {
+    if (elements.showChart) elements.showChart.checked = state.showChart;
+    if (elements.showMidiView) elements.showMidiView.checked = state.showMidiView;
     const fullAvailable = Boolean(fullSongKeyboardData()?.range);
     const soloFocus = soloStudyActive();
     if (elements.keyboardRangeMode) {
@@ -3652,6 +3692,8 @@
     if (!state.events.length) return;
     if (state.transport.playing && !options.transport) stopChartPlayback({ render: false });
     state.activeIndex = Theory.mod(index, state.events.length);
+    const timelineEntry = state.timelineByEventIndex.get(state.activeIndex);
+    if (timelineEntry) state.playheadBeat = Number(timelineEntry.startBeat) || 0;
     state.activeAlternateCellId = null;
     state.activeAlternateIndex = -1;
     if (!options.transport) {
@@ -5357,6 +5399,7 @@
     );
     const visualSeconds = audio.loop && chartSeconds > 0 ? delayedSeconds % chartSeconds : delayedSeconds;
     const beat = Math.min(maxBeat, visualSeconds / secondsPerBeat);
+    state.playheadBeat = beat;
     const entry = streamTimelineEntryAtBeat(beat);
     let changed = force;
     if (entry && Number.isInteger(entry.eventIndex) && state.activeIndex !== entry.eventIndex) {
@@ -5377,6 +5420,7 @@
       changed = true;
     }
     if (changed) renderStudy({ keepVisible: false });
+    else renderImportedMidiRoll();
     streamTransport.lastVisualBeat = beat;
   }
 
@@ -5649,6 +5693,15 @@
   function navigateChord(direction) {
     const step = Number(direction) < 0 ? -1 : 1;
     if (!state.events.length) return;
+    if (localMidiImportActive() && state.allMelodyNotes.length) {
+      const notes = state.allMelodyNotes;
+      const current = state.activeMelodyNote
+        ? notes.findIndex(note => note.id === state.activeMelodyNote.id)
+        : notes.findIndex(note => Number(note.startBeat) >= Number(state.playheadBeat) - .0001);
+      const index = Theory.mod((current < 0 ? (step > 0 ? -1 : 0) : current) + step, notes.length);
+      seekTimelineBeat(notes[index].startBeat, null, notes[index]);
+      return;
+    }
     if (!melodyNavigationEnabled()) {
       selectEvent(state.activeIndex + step, true);
       return;
@@ -5915,6 +5968,7 @@
       return;
     }
     if ((entry.type === 'chord' || entry.type === 'pickup') && Number.isInteger(entry.eventIndex)) {
+      state.playheadBeat = Number(entry.startBeat) || 0;
       selectEvent(entry.eventIndex, false, { transport: true });
       const event = activeChartEvent();
       if (event) {
@@ -5925,6 +5979,7 @@
         scheduleMelodyForSegment(entry, secondsPerBeat, session);
       }
     } else {
+      state.playheadBeat = Number(entry.startBeat) || 0;
       state.activeMelodyNote = null;
       renderStudy({ keepVisible: false });
       scheduleMelodyForSegment(entry, secondsPerBeat, session);
@@ -6208,6 +6263,14 @@
   elements.favoriteSong?.addEventListener('click', toggleFavoriteSong);
   elements.previousChord.addEventListener('click', () => navigateChord(-1));
   elements.nextChord.addEventListener('click', () => navigateChord(1));
+  elements.showChart?.addEventListener('change', () => {
+    state.showChart = elements.showChart.checked;
+    renderChart();
+  });
+  elements.showMidiView?.addEventListener('change', () => {
+    state.showMidiView = elements.showMidiView.checked;
+    renderImportedMidiRoll();
+  });
   elements.toggleNoteNames.addEventListener('click', toggleNoteNames);
   elements.keyboardRangeMode?.addEventListener('change', () => {
     const selected = ['full', 'split', 'wide'].includes(elements.keyboardRangeMode.value) ? elements.keyboardRangeMode.value : 'compact';

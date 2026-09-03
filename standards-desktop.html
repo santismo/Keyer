@@ -85,6 +85,8 @@
           </div>
 
           <div class="display-options" aria-label="Instrument display settings">
+            <label class="display-toggle"><input id="showChart" type="checkbox" checked> Chart</label>
+            <label class="display-toggle"><input id="showMidiView" type="checkbox" checked> MIDI view</label>
             <label class="display-control" for="instrumentView"><span>View</span><select id="instrumentView" aria-controls="piano fretboard"><option value="piano" selected>Keys</option><option value="fretboard">Frets</option></select></label>
             <label class="display-control" for="keyboardRangeMode"><span>Range</span><select id="keyboardRangeMode" aria-controls="piano"><option value="compact">2 octaves</option><option value="split">Split · 2 + 2</option><option value="wide" selected>Wide keyboard</option><option value="full">Full song</option></select></label>
             <label class="display-control piano-voicing-control" for="pianoVoicingStyle"><span>Voicing</span><select id="pianoVoicingStyle" aria-controls="piano"><option value="root-shell" selected>Root + shell</option><option value="shell">Shell</option><option value="rootless">Rootless</option><option value="closed">Closed</option><option value="spread">Spread</option><option value="upper-structure">Upper structure</option><option value="modern">Modern</option><option value="cluster">Cluster</option><option value="avant-garde">Avant-garde</option></select></label>
