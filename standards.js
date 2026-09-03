@@ -4594,8 +4594,13 @@
     state.melodyTrack = melodyTrack;
     state.allMelodyNotes = melodyNotes;
     invalidateDerivedHarmony();
-    state.midiChart = chart?.bars?.length && chart.playbackOrder.length
-      ? createChartData('midi', chart.bars, chart.playbackOrder, {
+    // Marker-authored MIDI bars already carry most chart metadata, while an
+    // ordinary uploaded file gets a compact inferred form. Normalize both
+    // here before activating the MIDI source so the renderer, transport, and
+    // chord arrows always receive the same complete bar shape.
+    const midiBars = chart?.bars?.length ? normalizeBars({ bars: chart.bars }) : [];
+    state.midiChart = midiBars.length && chart?.playbackOrder?.length
+      ? createChartData('midi', midiBars, chart.playbackOrder, {
         explicitTiming: true,
         sourceKey: chart.sourceKey,
         tempoBpm: chart.tempoBpm
@@ -5559,7 +5564,14 @@
   }
 
   function melodyNavigationEnabled() {
-    return state.showMelody && state.melodyNotes.length > 0 && melodyMatchesChart();
+    // An uploaded file can contain several independent parts, and its
+    // inferred harmony is the shared navigation surface. Keep these arrows
+    // literal chord/form steps instead of making them appear stuck while they
+    // silently walk every note of the auto-selected melody track.
+    return !localMidiImportActive()
+      && state.showMelody
+      && state.melodyNotes.length > 0
+      && melodyMatchesChart();
   }
 
   function setChordNavigationLabel(element, label) {

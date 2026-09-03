@@ -349,6 +349,9 @@ assert.match(js, /function buildInferredMidiChart\(/);
 assert.match(js, /function renderImportedMidiRoll\(/);
 assert.match(js, /function selectImportedMidiTrack\(/);
 assert.match(js, /type: 'local-midi'/);
+assert.match(js, /const midiBars = chart\?\.bars\?\.length \? normalizeBars\(\{ bars: chart\.bars \}\) : \[\];/);
+assert.match(js, /createChartData\('midi', midiBars, chart\.playbackOrder/);
+assert.match(js, /function melodyNavigationEnabled\(\) \{\s*\/\/ An uploaded file[\s\S]*?!localMidiImportActive\(\)/);
 
 assert.match(desktopHtml, /<body class="desktop-mode">/);
 assert.match(desktopHtml, /href="standards-desktop\.css"/);
