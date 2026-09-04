@@ -235,8 +235,8 @@ input[type="search"]::placeholder { color: #7f8999; }
 .piano-key.black.chord-tone { background: #c93443; }
 .piano-key.white.root-tone { background: var(--root-tone); }
 .piano-key.black.root-tone { color: #10151d; background: #bf922d; }
-.piano-key.white.raw-midi-tone { color: #071a1d; background: #58d5cf; box-shadow: inset 0 -4px 0 #208d8b; }
-.piano-key.black.raw-midi-tone { color: #eaffff; background: #177978; box-shadow: inset 0 -4px 0 #0b4545, 0 5px 8px #0008; }
+.piano-key.white.raw-midi-tone { color: #062617; background: #45f58c; outline: 2px solid #d7ffe5; outline-offset: -2px; box-shadow: inset 0 -5px 0 #078647, 0 0 10px #45f58c8c; }
+.piano-key.black.raw-midi-tone { color: #effff5; background: #049c51; outline: 2px solid #b8ffd0; outline-offset: -2px; box-shadow: inset 0 -4px 0 #03542d, 0 0 10px #45f58c9c, 0 5px 8px #0008; }
 .piano-key.white.melody-tone, .piano-key.black.melody-tone { color: var(--melody-ink); background: var(--melody-tone); outline: 2px solid #dfc9ff; outline-offset: -2px; box-shadow: inset 0 -4px 0 #5527a0, 0 0 0 1px #d7bcff; filter: saturate(1.16); }
 .piano-key.melody-tone::after { content: "M"; position: absolute; z-index: 5; top: 3px; right: 2px; min-width: 12px; height: 12px; display: grid; place-items: center; color: #4a178d; background: #fbf8ff; border-radius: 999px; font: 950 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .piano-key.black.melody-tone::after { top: 3px; right: 1px; }
@@ -286,7 +286,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .fretboard-cell.scale-tone .fretboard-note { color: #eef8ff; background: #277eaf; border-color: #73c8ff; }
 .fretboard-cell.chord-tone .fretboard-note { color: #fff4f4; background: var(--chord-tone); border-color: #ffabb0; }
 .fretboard-cell.root-tone .fretboard-note { color: #211807; background: var(--root-tone); border-color: #fff0b7; text-shadow: none; }
-.fretboard-cell.raw-midi-tone .fretboard-note { color: #071a1d; background: #58d5cf; border-color: #c8fffb; text-shadow: none; box-shadow: 0 0 0 1px #0d5d5d, 0 0 8px #58d5cf70; }
+.fretboard-cell.raw-midi-tone .fretboard-note { color: #062617; background: #45f58c; border-color: #e7fff0; text-shadow: none; box-shadow: 0 0 0 2px #078647, 0 0 11px #45f58cba; }
 /* The selected grip keeps its chord/scale color, but gets a bright ring so
    it reads as a playable chord-melody shape instead of just another dot. */
 .fretboard-cell.chord-melody-tone:not(.melody-tone) .fretboard-note { box-shadow: 0 0 0 2px #f7f8fc, 0 0 9px #ffffff9c; }
