@@ -205,6 +205,11 @@ input[type="search"]::placeholder { color: #7f8999; }
 .stream-visual-delay input { width: 100%; accent-color: #8ffff6; }
 .stream-visual-delay input:disabled { opacity: .58; }
 .midi-source-line { min-height: 25px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 11px; color: var(--muted); border-bottom: 1px solid var(--line); font: 700 .56rem/1.15 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.midi-track-mix { margin: 0; padding: 6px 10px 8px; border: 0; border-bottom: 1px solid var(--line); color: var(--muted); font: 750 .56rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+.midi-track-mix legend { padding: 0 3px; color: var(--blue); text-transform: uppercase; letter-spacing: .06em; }
+.midi-track-mix-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.midi-track-mix label { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid #3b4b60; border-radius: 6px; background: #17202d; }
+.midi-track-mix input { accent-color: var(--gold); }
 .midi-source-line > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .midi-attribution { flex: 0 1 auto; overflow: hidden; color: var(--violet); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .midi-attribution:hover { color: #e0d4ff; text-decoration: underline; }
