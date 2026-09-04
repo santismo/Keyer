@@ -3493,7 +3493,7 @@
     const rawMidi = localMidiImportActive() && state.pianoVoicingStyle === 'original-midi';
     const rawNotes = state.activeRawMidiNotes.length ? state.activeRawMidiNotes : importedPlaybackNotes().filter(note => melodyNoteOverlapsEvent(note, event));
     const voicing = pickup || tabBarMarker ? [] : rawMidi
-      ? rawNotes.map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'chord' }))
+      ? rawNotes.map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'voicing' }))
       : pianoVoicingForChord(displayChord, scale, melodyNotesOnCard);
     if (state.activeMelodyNote && !melodyNotesOnCard.some(note => note.id === state.activeMelodyNote.id)) state.activeMelodyNote = null;
     const melodyNote = activeMelodyForEvent(event);
@@ -3538,8 +3538,8 @@
         : '';
       elements.chartStatus.textContent = `Bar ${event.barIndex + 1} · ${event.sectionLabel || 'form'}${reharmStatus}`;
     }
-    renderPiano(displayChord, scale, voicing, melodyNote, melodyNotesOnCard);
-    renderFretboard(event, scale, melodyNote);
+    renderPiano(rawMidi ? null : displayChord, rawMidi ? null : scale, voicing, melodyNote, rawMidi ? [] : melodyNotesOnCard);
+    renderFretboard(event, rawMidi ? null : scale, melodyNote);
     syncInstrumentControls();
     syncMelodyControls(event, melodyNotes, melodyNote);
     syncTransportControls();
@@ -5757,7 +5757,9 @@
       state.activeRawMidiNotes = group;
       state.activeMelodyNote = group[0] || null;
       seekTimelineBeat(beat);
+      state.playheadBeat = beat;
       renderStudy({ keepVisible: false });
+      renderImportedMidiRoll();
       group.forEach((note, noteIndex) => previewMelodyNote(note, `raw-midi-step-${noteIndex}`));
       return;
     }
