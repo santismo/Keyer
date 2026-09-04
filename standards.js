@@ -1671,8 +1671,10 @@
       return;
     }
     const selectedTrackIndex = Number.isInteger(state.midiImport?.trackIndex) ? state.midiImport.trackIndex : null;
-    const tracks = localMidiImportActive()
-      ? localMidiTracks().filter(track => selectedTrackIndex == null || track.index === selectedTrackIndex)
+    const tracks = state.midi
+      ? (localMidiImportActive()
+        ? localMidiTracks().filter(track => selectedTrackIndex == null || track.index === selectedTrackIndex)
+        : (state.midi.tracks || []).filter(track => (track?.notes || []).some(note => Number(note?.channel) !== 10)))
       : [];
     const allNotes = tracks.length
       ? tracks.flatMap(track => (track.notes || []).filter(note => Number(note?.channel) !== 10))
@@ -2280,14 +2282,14 @@
       key.dataset.midi = String(midi);
       const spelling = sounding?.spelling || chordSpellingByPc.get(pc) || scaleSpellingByPc.get(pc) || Theory.noteName(pc, state.preferFlats);
       const name = spelling ? Theory.spelledMidiName(midi, spelling, state.preferFlats) : Theory.midiName(midi, state.preferFlats);
-      key.setAttribute('aria-label', `${name}${sounding ? `, suggested ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${melodyFolded ? ', shown in this two-octave view' : ''}` : ''}`);
+      key.setAttribute('aria-label', `${name}${sounding && sounding.role !== 'raw' ? `, suggested ${sounding.role}` : ''}${melodyHere ? `, melody ${melodyLabel(melodyNote)}${melodyFolded ? ', shown in this two-octave view' : ''}` : ''}`);
       if (state.showNoteNames && toneVisible) {
         const noteLabel = document.createElement('span');
         noteLabel.className = 'key-name';
         noteLabel.textContent = Theory.displayNoteSpelling(spelling);
         key.appendChild(noteLabel);
       }
-      if (sounding) {
+      if (sounding && sounding.role !== 'raw') {
         const role = document.createElement('span');
         role.className = 'key-role';
         role.textContent = sounding.role === 'Bass' ? 'B' : sounding.role;
@@ -3493,7 +3495,7 @@
     const rawMidi = localMidiImportActive() && state.pianoVoicingStyle === 'original-midi';
     const rawNotes = state.activeRawMidiNotes.length ? state.activeRawMidiNotes : importedPlaybackNotes().filter(note => melodyNoteOverlapsEvent(note, event));
     const voicing = pickup || tabBarMarker ? [] : rawMidi
-      ? rawNotes.map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'voicing' }))
+      ? rawNotes.map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'raw' }))
       : pianoVoicingForChord(displayChord, scale, melodyNotesOnCard);
     if (state.activeMelodyNote && !melodyNotesOnCard.some(note => note.id === state.activeMelodyNote.id)) state.activeMelodyNote = null;
     const melodyNote = activeMelodyForEvent(event);
