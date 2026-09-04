@@ -1740,9 +1740,10 @@
 
   function activeOriginalMidiNotes() {
     const notes = originalMidiNotes();
-    const ids = new Set(notes.map(note => note.id));
-    const active = (state.activeRawMidiNotes || []).filter(note => ids.has(note.id));
-    return active.length ? active : rawMidiNotesAtBeat(state.playheadBeat, notes);
+    // The playhead is the authoritative raw-MIDI position. This avoids a
+    // chart selection temporarily leaving the keyboard or fretboard on a
+    // different chord boundary than the MIDI note group being stepped to.
+    return rawMidiNotesAtBeat(state.playheadBeat, notes);
   }
 
   function originalMidiTrackSelectionIsAutomatic() {
@@ -1790,17 +1791,27 @@
 
   function seekTimelineBeat(beat, eventIndex = null, note = null) {
     if (state.transport.playing) stopChartPlayback({ render: false });
-    state.playheadBeat = Math.max(0, Number(beat) || 0);
+    const targetBeat = Math.max(0, Number(beat) || 0);
+    state.playheadBeat = targetBeat;
     if (rawMidiVisualizationActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
     const entry = Number.isInteger(eventIndex)
       ? state.timeline.find(candidate => candidate.eventIndex === eventIndex)
       : streamTimelineEntryAtBeat(state.playheadBeat);
     if (Number.isInteger(entry?.eventIndex)) selectEvent(entry.eventIndex, false);
+    // selectEvent moves to the enclosing chord start. Restore an explicit
+    // MIDI-note seek afterwards so the visual playhead and raw note group
+    // remain at the requested moment rather than at that chord boundary.
+    state.playheadBeat = targetBeat;
+    if (rawMidiVisualizationActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(targetBeat);
     if (note) {
       state.activeMelodyNote = note;
       state.melodyCursor = Math.max(0, state.melodyNotes.findIndex(candidate => candidate.id === note.id));
       state.melodyCursorEventKey = melodyEventKey(activeChartEvent());
+    }
+    if (rawMidiVisualizationActive() || note) {
       renderStudy({ keepVisible: false });
+    }
+    if (note) {
       previewMelodyNote(note);
     }
     renderImportedMidiRoll();
@@ -1816,18 +1827,21 @@
     renderImportedMidiRoll();
   }
 
-  function centerMidiRollPlayhead(scroll, svg, playheadX) {
+  function centerMidiRollPlayhead(scroll, playhead) {
     const center = attempt => {
-      if (!scroll.isConnected || !svg.isConnected) return;
+      if (!scroll.isConnected || !playhead.isConnected) return;
       const viewport = scroll.clientWidth || 0;
-      const svgWidth = svg.getBoundingClientRect().width || svg.clientWidth || Number.parseFloat(svg.style.width) || 0;
-      if (!viewport || !svgWidth) {
+      const scrollRect = scroll.getBoundingClientRect();
+      const playheadRect = playhead.getBoundingClientRect();
+      if (!viewport || !scrollRect.width || !Number.isFinite(playheadRect.left)) {
         if (attempt < 2) window.requestAnimationFrame(() => center(attempt + 1));
         return;
       }
-      const x = Math.max(0, Math.min(svgWidth, playheadX / MIDI_ROLL_WIDTH * svgWidth));
+      const playheadCenter = playheadRect.left + Math.max(0, playheadRect.width) / 2;
+      const viewportCenter = scrollRect.left + viewport / 2;
       const maxScroll = Math.max(0, scroll.scrollWidth - viewport);
-      scroll.scrollLeft = Math.max(0, Math.min(maxScroll, x - viewport / 2));
+      const target = scroll.scrollLeft + playheadCenter - viewportCenter;
+      scroll.scrollLeft = Math.max(0, Math.min(maxScroll, target));
     };
     window.requestAnimationFrame(() => center(0));
   }
@@ -1907,9 +1921,11 @@
     scroll.className = 'midi-roll-scroll';
     const svg = document.createElementNS(namespace, 'svg');
     svg.setAttribute('viewBox', `0 0 ${MIDI_ROLL_WIDTH} ${MIDI_ROLL_HEIGHT}`);
+    // This is a horizontal timeline zoom. Stretch the timeline itself rather
+    // than letterboxing the fixed-size viewBox inside a wider SVG viewport.
+    svg.setAttribute('preserveAspectRatio', 'none');
     const zoomedWidth = Math.max(760, Math.round(MIDI_ROLL_WIDTH * clampMidiRollZoom(state.midiRollZoom)));
-    svg.style.width = `${zoomedWidth}px`;
-    svg.style.minWidth = `${zoomedWidth}px`;
+    svg.style.setProperty('--midi-roll-width', `${zoomedWidth}px`);
     svg.setAttribute('role', 'img');
     svg.setAttribute('aria-label', `Piano roll for ${state.song?.title || 'the imported MIDI'}: ${details.textContent}`);
 
@@ -1985,7 +2001,7 @@
     scroll.appendChild(svg);
     surface.replaceChildren(head, scroll);
     surface.hidden = false;
-    centerMidiRollPlayhead(scroll, svg, playheadX);
+    centerMidiRollPlayhead(scroll, playhead);
   }
 
   function renderChart() {
@@ -6095,10 +6111,10 @@
       }
       const beat = moments[index];
       const onsetGroup = notes.filter(note => Math.abs(Number(note.startBeat) - beat) < .0001);
-      state.activeRawMidiNotes = rawMidiNotesAtBeat(beat, notes);
-      state.activeMelodyNote = onsetGroup[0] || state.activeRawMidiNotes[0] || null;
       seekTimelineBeat(beat);
       state.playheadBeat = beat;
+      state.activeRawMidiNotes = rawMidiNotesAtBeat(beat, notes);
+      state.activeMelodyNote = onsetGroup[0] || state.activeRawMidiNotes[0] || null;
       renderStudy({ keepVisible: false });
       renderImportedMidiRoll();
       onsetGroup.forEach((note, noteIndex) => previewMelodyNote(note, `raw-midi-step-${noteIndex}`));
