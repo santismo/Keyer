@@ -164,6 +164,8 @@
     midiStudy: document.querySelector('#midiStudy'),
     midiTrackControl: document.querySelector('#midiTrackControl'),
     midiTrack: document.querySelector('#midiTrack'),
+    midiTrackMix: document.querySelector('#midiTrackMix'),
+    midiTrackMixOptions: document.querySelector('#midiTrackMixOptions'),
     tabTrackControl: document.querySelector('#tabTrackControl'),
     tabTrack: document.querySelector('#tabTrack'),
     tabMixControl: document.querySelector('#tabMixControl'),
@@ -1344,6 +1346,40 @@
     });
     elements.midiTrack.replaceChildren(fragment);
     elements.midiTrack.value = Number.isInteger(state.midiImport?.trackIndex) ? String(state.midiImport.trackIndex) : 'auto';
+    if (elements.midiTrackMix && elements.midiTrackMixOptions) {
+      const selected = new Set(state.midiImport?.playTrackIndexes || [state.melodyTrack?.index]);
+      elements.midiTrackMix.hidden = !active;
+      const options = document.createDocumentFragment();
+      tracks.forEach(track => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'checkbox'; input.checked = selected.has(track.index); input.value = String(track.index);
+        input.addEventListener('change', () => setImportedMidiPlaybackTracks());
+        label.append(input, document.createTextNode(track.name || `Track ${track.index + 1}`));
+        options.appendChild(label);
+      });
+      elements.midiTrackMixOptions.className = 'midi-track-mix-options';
+      elements.midiTrackMixOptions.replaceChildren(options);
+    }
+  }
+
+  function importedPlaybackNotes() {
+    if (!localMidiImportActive()) return state.melodyNotes;
+    const indexes = new Set(state.midiImport?.playTrackIndexes || [state.melodyTrack?.index]);
+    const ppq = Number(state.midi?.ppq) || 120;
+    return localMidiTracks().filter(track => indexes.has(track.index)).flatMap(track => (track.notes || []).map(note => ({
+      ...note, id: `track-${track.index}-${note.tick}-${note.midi}`, startBeat: Number(note.tick) / ppq,
+      endBeat: Number(note.endTick) / ppq, durationBeats: Math.max(.001, Number(note.endTick - note.tick) / ppq)
+    }))).sort((a, b) => a.startBeat - b.startBeat || a.midi - b.midi);
+  }
+
+  function setImportedMidiPlaybackTracks() {
+    if (!localMidiImportActive() || !elements.midiTrackMixOptions) return;
+    const indexes = [...elements.midiTrackMixOptions.querySelectorAll('input:checked')].map(input => Number(input.value)).filter(Number.isInteger);
+    state.midiImport.playTrackIndexes = indexes.length ? indexes : [state.melodyTrack?.index].filter(Number.isInteger);
+    if (state.transport.playing) stopChartPlayback({ render: false });
+    invalidateStreamAsset();
+    renderImportedMidiRoll();
   }
 
   function selectImportedMidiTrack(value) {
@@ -1359,6 +1395,7 @@
     if (!notes.length) return false;
     if (state.transport.playing) stopChartPlayback({ render: false });
     state.midiImport.trackIndex = automatic ? null : nextTrack.index;
+    state.midiImport.playTrackIndexes = [...new Set([...(state.midiImport.playTrackIndexes || []), nextTrack.index])];
     state.melodyTrack = nextTrack;
     state.allMelodyNotes = notes;
     state.midiChoruses = [];
@@ -1693,6 +1730,15 @@
       chord.setAttribute('class', `midi-roll-chord${entry.eventIndex === state.activeIndex ? ' active' : ''}`);
       chord.addEventListener('click', () => seekTimelineBeat(entry.startBeat, entry.eventIndex));
       svg.appendChild(chord);
+      const event = Number.isInteger(entry.eventIndex) ? state.events[entry.eventIndex] : null;
+      const label = event?.chord?.display || (entry.type === 'pickup' ? 'Pickup' : '');
+      if (label && width > 24) {
+        const text = document.createElementNS(namespace, 'text');
+        text.setAttribute('x', String(x + 3)); text.setAttribute('y', '12');
+        text.setAttribute('fill', '#fff0b6'); text.setAttribute('font-size', '9'); text.setAttribute('font-weight', '800');
+        text.setAttribute('pointer-events', 'none'); text.textContent = label;
+        svg.appendChild(text);
+      }
     });
     const noteStride = Math.max(1, Math.ceil(allNotes.length / MIDI_ROLL_MAX_NOTES));
     allNotes.forEach((note, index) => {
@@ -4627,6 +4673,7 @@
       state.midiImport = {
         fileName: state.midiEntry.name || midi.fileName || 'imported.mid',
         trackIndex: Number.isInteger(state.midiImport?.trackIndex) ? state.midiImport.trackIndex : null,
+        playTrackIndexes: state.midiImport?.playTrackIndexes?.length ? state.midiImport.playTrackIndexes : [melodyTrack?.index].filter(Number.isInteger),
         inferredHarmony: Boolean(chart?.inferredHarmony)
       };
     } else {
@@ -5266,7 +5313,7 @@
     });
 
     if (state.transport.playMelody && melodyMatchesChart()) {
-      state.melodyNotes.forEach(note => {
+      importedPlaybackNotes().forEach(note => {
         const startBeat = Math.max(0, Number(note.startBeat) || 0);
         if (startBeat >= chartEndBeat - .0001) return;
         const nativeDuration = Number(note.durationBeats)
@@ -5933,7 +5980,7 @@
     if (!state.transport.playMelody || !melodyMatchesChart()) return;
     const segmentStart = Number(entry.startBeat) || 0;
     const segmentEnd = Number(entry.endBeat) || segmentStart + Number(entry.durationBeats) || segmentStart;
-    const notes = state.melodyNotes.filter(note => (
+    const notes = importedPlaybackNotes().filter(note => (
       note.startBeat >= segmentStart - .0001 && note.startBeat < segmentEnd - .0001
     ));
     if (!notes.length) return;
