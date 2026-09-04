@@ -102,8 +102,13 @@ input[type="search"]::placeholder { color: #7f8999; }
 .chart-scroll { height: min(69vh, 735px); overflow-x: hidden; overflow-y: auto; padding: 10px; background: #0b0e13; overscroll-behavior: contain; scroll-behavior: auto; }
 .midi-roll { min-width: 0; padding: 9px 10px 11px; border-top: 1px solid var(--line); background: linear-gradient(180deg, #0b111a, #080b10); }
 .midi-roll[hidden] { display: none; }
-.midi-roll-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; color: #dce5f4; font: 800 .62rem/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+.midi-roll-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; color: #dce5f4; font: 800 .62rem/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+.midi-roll-heading { min-width: 0; display: flex; flex: 1 1 auto; align-items: baseline; justify-content: space-between; gap: 10px; }
 .midi-roll-head span { min-width: 0; color: var(--muted); font: 700 .55rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; }
+.midi-roll-zoom { flex: 0 0 auto; display: inline-flex; gap: 4px; }
+.midi-roll-zoom-button { width: 26px; min-width: 26px; min-height: 26px; padding: 0; color: #edf3fb; background: #1a2636; border: 1px solid #52667e; border-radius: 7px; font: 900 1rem/1 ui-rounded, system-ui, sans-serif; touch-action: manipulation; }
+.midi-roll-zoom-button:disabled { opacity: .38; }
+.midi-roll-zoom-button:not(:disabled):active { color: #181107; background: var(--gold); border-color: #fff0b6; }
 .midi-roll-scroll { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; border: 1px solid #334052; border-radius: 8px; background: #05070a; }
 .midi-roll svg { display: block; width: max(100%, 760px); min-width: 760px; height: 188px; }
 .midi-roll-grid { stroke: #617188; stroke-width: .55; opacity: .45; vector-effect: non-scaling-stroke; }
@@ -230,6 +235,8 @@ input[type="search"]::placeholder { color: #7f8999; }
 .piano-key.black.chord-tone { background: #c93443; }
 .piano-key.white.root-tone { background: var(--root-tone); }
 .piano-key.black.root-tone { color: #10151d; background: #bf922d; }
+.piano-key.white.raw-midi-tone { color: #071a1d; background: #58d5cf; box-shadow: inset 0 -4px 0 #208d8b; }
+.piano-key.black.raw-midi-tone { color: #eaffff; background: #177978; box-shadow: inset 0 -4px 0 #0b4545, 0 5px 8px #0008; }
 .piano-key.white.melody-tone, .piano-key.black.melody-tone { color: var(--melody-ink); background: var(--melody-tone); outline: 2px solid #dfc9ff; outline-offset: -2px; box-shadow: inset 0 -4px 0 #5527a0, 0 0 0 1px #d7bcff; filter: saturate(1.16); }
 .piano-key.melody-tone::after { content: "M"; position: absolute; z-index: 5; top: 3px; right: 2px; min-width: 12px; height: 12px; display: grid; place-items: center; color: #4a178d; background: #fbf8ff; border-radius: 999px; font: 950 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .piano-key.black.melody-tone::after { top: 3px; right: 1px; }
@@ -279,6 +286,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .fretboard-cell.scale-tone .fretboard-note { color: #eef8ff; background: #277eaf; border-color: #73c8ff; }
 .fretboard-cell.chord-tone .fretboard-note { color: #fff4f4; background: var(--chord-tone); border-color: #ffabb0; }
 .fretboard-cell.root-tone .fretboard-note { color: #211807; background: var(--root-tone); border-color: #fff0b7; text-shadow: none; }
+.fretboard-cell.raw-midi-tone .fretboard-note { color: #071a1d; background: #58d5cf; border-color: #c8fffb; text-shadow: none; box-shadow: 0 0 0 1px #0d5d5d, 0 0 8px #58d5cf70; }
 /* The selected grip keeps its chord/scale color, but gets a bright ring so
    it reads as a playable chord-melody shape instead of just another dot. */
 .fretboard-cell.chord-melody-tone:not(.melody-tone) .fretboard-note { box-shadow: 0 0 0 2px #f7f8fc, 0 0 9px #ffffff9c; }
