@@ -110,7 +110,7 @@ input[type="search"]::placeholder { color: #7f8999; }
 .midi-roll-zoom-button:disabled { opacity: .38; }
 .midi-roll-zoom-button:not(:disabled):active { color: #181107; background: var(--gold); border-color: #fff0b6; }
 .midi-roll-scroll { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; border: 1px solid #334052; border-radius: 8px; background: #05070a; }
-.midi-roll svg { display: block; width: max(100%, 760px); min-width: 760px; height: 188px; }
+.midi-roll svg { display: block; width: max(100%, var(--midi-roll-width, 760px)); min-width: var(--midi-roll-width, 760px); height: 188px; }
 .midi-roll-grid { stroke: #617188; stroke-width: .55; opacity: .45; vector-effect: non-scaling-stroke; }
 .midi-roll-keyline { stroke: #a8b6c9; stroke-width: .45; opacity: .13; vector-effect: non-scaling-stroke; }
 .midi-roll-note { stroke: #ffffff; stroke-opacity: .19; stroke-width: .55; vector-effect: non-scaling-stroke; }
