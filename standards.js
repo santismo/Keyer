@@ -1774,6 +1774,11 @@
     scroll.appendChild(svg);
     surface.replaceChildren(head, scroll);
     surface.hidden = false;
+    window.requestAnimationFrame(() => {
+      const x = Math.max(0, Math.min(MIDI_ROLL_WIDTH, (Number(state.playheadBeat) || 0) / durationBeats * MIDI_ROLL_WIDTH));
+      const viewport = scroll.clientWidth || 0;
+      scroll.scrollLeft = Math.max(0, x / MIDI_ROLL_WIDTH * scroll.scrollWidth - viewport / 2);
+    });
   }
 
   function renderChart() {
@@ -2342,6 +2347,15 @@
     }
 
     if (rangeMode === 'split') {
+      if (localMidiImportActive() && state.pianoVoicingStyle === 'original-midi') {
+        const raw = state.activeRawMidiNotes.length ? state.activeRawMidiNotes : importedPlaybackNotes().filter(note => melodyNoteOverlapsEvent(note, activeChartEvent()));
+        const leadIndex = state.melodyTrack?.index;
+        const lead = raw.filter(note => note.trackIndex === leadIndex).map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'raw' }));
+        const accompaniment = raw.filter(note => note.trackIndex !== leadIndex).map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'raw' }));
+        renderKeyboardSurface(elements.piano, null, null, { range: displayRangeForVoicing(accompaniment.length ? accompaniment : raw), rangeMode: 'compact', toneMode: 'voicing', voicing: accompaniment.length ? accompaniment : raw, label: 'Original MIDI', updateDisplayState: true });
+        renderKeyboardSurface(elements.melodyPiano, null, null, { range: displayRangeForVoicing(lead.length ? lead : raw), rangeMode: 'compact', toneMode: 'voicing', voicing: lead.length ? lead : raw, label: 'Original MIDI lead', updateDisplayState: false });
+        return;
+      }
       const chordRange = displayRangeForVoicing(soundingVoicing, []);
       renderKeyboardSurface(elements.piano, chord, scale, {
         range: chordRange,
