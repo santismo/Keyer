@@ -283,6 +283,7 @@
     melodyCursorEventKey: '',
     melodyNavigationEventKey: '',
     activeMelodyNote: null,
+    activeRawMidiNotes: [],
     // Split mode keeps its melody range stable across a phrase instead of
     // recentering around every newly selected note.
     splitMelodyRange: null,
@@ -3490,8 +3491,9 @@
     const melodyNotes = melodyNotesForEvent(event);
     const melodyNotesOnCard = melodyNotesDuringEvent(event);
     const rawMidi = localMidiImportActive() && state.pianoVoicingStyle === 'original-midi';
+    const rawNotes = state.activeRawMidiNotes.length ? state.activeRawMidiNotes : importedPlaybackNotes().filter(note => melodyNoteOverlapsEvent(note, event));
     const voicing = pickup || tabBarMarker ? [] : rawMidi
-      ? importedPlaybackNotes().filter(note => melodyNoteOverlapsEvent(note, event)).map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'original-midi' }))
+      ? rawNotes.map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'chord' }))
       : pianoVoicingForChord(displayChord, scale, melodyNotesOnCard);
     if (state.activeMelodyNote && !melodyNotesOnCard.some(note => note.id === state.activeMelodyNote.id)) state.activeMelodyNote = null;
     const melodyNote = activeMelodyForEvent(event);
@@ -5745,6 +5747,20 @@
   function navigateChord(direction) {
     const step = Number(direction) < 0 ? -1 : 1;
     if (!state.events.length) return;
+    if (localMidiImportActive() && state.pianoVoicingStyle === 'original-midi') {
+      const notes = importedPlaybackNotes();
+      const moments = [...new Map(notes.map(note => [Number(note.startBeat).toFixed(6), Number(note.startBeat)])).values()];
+      const current = moments.findIndex(beat => Math.abs(beat - state.playheadBeat) < .0001);
+      const index = Theory.mod((current < 0 ? (direction > 0 ? -1 : 0) : current) + (direction < 0 ? -1 : 1), moments.length);
+      const beat = moments[index];
+      const group = notes.filter(note => Math.abs(Number(note.startBeat) - beat) < .0001);
+      state.activeRawMidiNotes = group;
+      state.activeMelodyNote = group[0] || null;
+      seekTimelineBeat(beat);
+      renderStudy({ keepVisible: false });
+      group.forEach((note, noteIndex) => previewMelodyNote(note, `raw-midi-step-${noteIndex}`));
+      return;
+    }
     if (localMidiImportActive() && state.allMelodyNotes.length) {
       const notes = state.allMelodyNotes;
       const current = state.activeMelodyNote
@@ -5804,6 +5820,7 @@
     stopStreamPlayback();
     [...voices.keys()].filter(id => String(id).startsWith('chart-')).forEach(id => stopVoice(id, true));
     if (wasPlaying) state.activeMelodyNote = null;
+    if (wasPlaying) state.activeRawMidiNotes = [];
     if (render && state.events.length) renderStudy({ keepVisible: false });
     else syncTransportControls();
   }
@@ -5994,6 +6011,8 @@
       const offsetBeats = Math.max(0, note.startBeat - segmentStart);
       const play = () => {
         if (!state.transport.playing || state.transport.session !== session) return;
+        const sameMoment = notes.filter(candidate => Math.abs(Number(candidate.startBeat) - Number(note.startBeat)) < .0001);
+        state.activeRawMidiNotes = localMidiImportActive() && state.pianoVoicingStyle === 'original-midi' ? sameMoment : [];
         state.activeMelodyNote = note;
         state.playheadBeat = note.startBeat;
         const activeNotes = melodyNotesForEvent(activeChartEvent());
