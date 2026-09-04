@@ -526,7 +526,7 @@
     // moves through a phrase.
     const strings = activeFretboardStrings();
     const highStringMidi = strings[0].midi;
-    const sourceNotes = originalMidiModeActive() ? originalMidiNotes() : state.melodyNotes;
+    const sourceNotes = fretboardMidiDisplayActive() ? originalMidiNotes() : state.melodyNotes;
     const highestMelodyMidi = sourceNotes.reduce((highest, note) => {
       const midi = Number(note?.midi);
       return Number.isFinite(midi) ? Math.max(highest, fretboardSoloDisplayMidi(midi)) : highest;
@@ -1656,12 +1656,40 @@
     return (state.midi?.tracks || []).filter(track => (track?.notes || []).some(note => Number(note?.channel) !== 10));
   }
 
+  function midiNotesCanRender() {
+    return Boolean(state.midi && !soloStudyActive() && !state.tabSource?.exactPositions);
+  }
+
   function originalMidiModeActive() {
+    return midiNotesCanRender() && state.pianoVoicingStyle === 'original-midi';
+  }
+
+  // MIDI notes is a visual fallback for either surface. Unlike the Original
+  // MIDI voicing, it does not replace the inferred accompaniment audio.
+  function keyboardMidiDisplayActive() {
+    return midiNotesCanRender() && (
+      state.pianoVoicingStyle === 'original-midi' || state.keyboardToneMode === 'midi'
+    );
+  }
+
+  function fretboardMidiDisplayActive() {
+    return midiNotesCanRender() && (
+      state.pianoVoicingStyle === 'original-midi' || state.fretboardToneMode === 'midi'
+    );
+  }
+
+  function rawMidiVisualizationActive() {
+    return keyboardMidiDisplayActive() || fretboardMidiDisplayActive();
+  }
+
+  function midiSourceRequested() {
     return Boolean(
-      state.midi
-      && state.pianoVoicingStyle === 'original-midi'
-      && !soloStudyActive()
-      && !state.tabSource?.exactPositions
+      state.showMelody
+      || state.showMidiView
+      || state.preferSoloChorus
+      || state.pianoVoicingStyle === 'original-midi'
+      || state.keyboardToneMode === 'midi'
+      || state.fretboardToneMode === 'midi'
     );
   }
 
@@ -1707,9 +1735,7 @@
     ));
     if (sounding.length) return sounding;
     const onsets = notes.filter(note => Math.abs(Number(note.startBeat) - target) < .0001);
-    if (onsets.length) return onsets;
-    const event = activeChartEvent();
-    return event ? notes.filter(note => melodyNoteOverlapsEvent(note, event)) : [];
+    return onsets;
   }
 
   function activeOriginalMidiNotes() {
@@ -1765,7 +1791,7 @@
   function seekTimelineBeat(beat, eventIndex = null, note = null) {
     if (state.transport.playing) stopChartPlayback({ render: false });
     state.playheadBeat = Math.max(0, Number(beat) || 0);
-    if (originalMidiModeActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
+    if (rawMidiVisualizationActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
     const entry = Number.isInteger(eventIndex)
       ? state.timeline.find(candidate => candidate.eventIndex === eventIndex)
       : streamTimelineEntryAtBeat(state.playheadBeat);
@@ -1788,6 +1814,22 @@
   function setMidiRollZoom(value) {
     state.midiRollZoom = Math.round(clampMidiRollZoom(value) * 100) / 100;
     renderImportedMidiRoll();
+  }
+
+  function centerMidiRollPlayhead(scroll, svg, playheadX) {
+    const center = attempt => {
+      if (!scroll.isConnected || !svg.isConnected) return;
+      const viewport = scroll.clientWidth || 0;
+      const svgWidth = svg.getBoundingClientRect().width || svg.clientWidth || Number.parseFloat(svg.style.width) || 0;
+      if (!viewport || !svgWidth) {
+        if (attempt < 2) window.requestAnimationFrame(() => center(attempt + 1));
+        return;
+      }
+      const x = Math.max(0, Math.min(svgWidth, playheadX / MIDI_ROLL_WIDTH * svgWidth));
+      const maxScroll = Math.max(0, scroll.scrollWidth - viewport);
+      scroll.scrollLeft = Math.max(0, Math.min(maxScroll, x - viewport / 2));
+    };
+    window.requestAnimationFrame(() => center(0));
   }
 
   function renderImportedMidiRoll() {
@@ -1943,11 +1985,7 @@
     scroll.appendChild(svg);
     surface.replaceChildren(head, scroll);
     surface.hidden = false;
-    window.requestAnimationFrame(() => {
-      const x = Math.max(0, Math.min(MIDI_ROLL_WIDTH, (Number(state.playheadBeat) || 0) / durationBeats * MIDI_ROLL_WIDTH));
-      const viewport = scroll.clientWidth || 0;
-      scroll.scrollLeft = Math.max(0, x / MIDI_ROLL_WIDTH * scroll.scrollWidth - viewport / 2);
-    });
+    centerMidiRollPlayhead(scroll, svg, playheadX);
   }
 
   function renderChart() {
@@ -2156,7 +2194,7 @@
 
   function fullSongKeyboardAvailable() {
     return Boolean(state.events.length && state.midi && (
-      originalMidiModeActive()
+      keyboardMidiDisplayActive()
       || (state.melodyNotes.length && melodyMatchesChart())
     ));
   }
@@ -2168,7 +2206,7 @@
       return `${event.eventIndex}:${event.cellId}:${variants}:${timing?.startBeat ?? ''}:${timing?.endBeat ?? ''}`;
     }).join('|');
     const melody = state.melodyNotes.map(note => `${note.id}:${note.midi}:${note.startBeat}:${note.endBeat}`).join('|');
-    const raw = originalMidiModeActive()
+    const raw = keyboardMidiDisplayActive()
       ? originalMidiNotes().map(note => `${note.id}:${note.midi}:${note.startBeat}:${note.endBeat}`).join('|')
       : '';
     return `${state.chartSource}::solo-${soloStudyActive()}::${state.pianoVoicingStyle}::reharm-${state.reharmLevel}::${events}::${melody}::${raw}`;
@@ -2199,11 +2237,12 @@
     const key = fullSongKeyboardKey();
     if (state.fullSongKeyboard?.key === key && state.fullSongKeyboard.range) return state.fullSongKeyboard;
 
-    const allMidis = originalMidiModeActive()
+    const rawKeyboardMidi = keyboardMidiDisplayActive();
+    const allMidis = rawKeyboardMidi
       ? originalMidiNotes().map(note => Number(note.midi)).filter(Number.isFinite)
       : melodyMidiValues(state.melodyNotes);
     const eventVoicings = new Map();
-    if (!soloStudyActive() && !originalMidiModeActive()) {
+    if (!soloStudyActive() && !rawKeyboardMidi) {
       state.events.forEach(event => {
         // Use the exact held-note ownership rule used by the live card.  A
         // note crossing a marker can change the fitted accompaniment register.
@@ -2336,7 +2375,7 @@
   }
 
   function validToneMode(mode) {
-    return ['scale', 'chord', 'voicing', 'none'].includes(mode) ? mode : 'scale';
+    return ['scale', 'chord', 'voicing', 'midi', 'none'].includes(mode) ? mode : 'scale';
   }
 
   function validPianoVoicingStyle(style) {
@@ -2518,7 +2557,8 @@
       return;
     }
 
-    if (originalMidiModeActive()) {
+    if (keyboardMidiDisplayActive()) {
+      const originalMidiAudio = originalMidiModeActive();
       const raw = activeOriginalMidiNotes().map(note => ({ ...note, midi: Number(note.midi), displayMidi: Number(note.midi), role: 'raw' }));
       if (rangeMode === 'split') {
         const leadIndex = state.melodyTrack?.index;
@@ -2532,14 +2572,14 @@
           ...lowerPresentation,
           toneMode: 'none',
           voicing: lower,
-          label: 'Original MIDI accompaniment',
-          updateDisplayState: true
+          label: originalMidiAudio ? 'Original MIDI accompaniment' : 'MIDI accompaniment',
+          updateDisplayState: originalMidiAudio
         });
         renderKeyboardSurface(elements.melodyPiano, null, null, {
           ...upperPresentation,
           toneMode: 'none',
           voicing: upper,
-          label: 'Original MIDI lead',
+          label: originalMidiAudio ? 'Original MIDI lead' : 'MIDI lead',
           updateDisplayState: false
         });
       } else {
@@ -2549,8 +2589,8 @@
           ...presentation,
           toneMode: 'none',
           voicing: raw,
-          label: 'Original MIDI',
-          updateDisplayState: true
+          label: originalMidiAudio ? 'Original MIDI' : 'MIDI notes',
+          updateDisplayState: originalMidiAudio
         });
       }
       elements.piano.closest('.study-card')?.querySelector('.color-legend')?.setAttribute('data-melody-visible', 'false');
@@ -3358,7 +3398,8 @@
     // triggers a fresh render through the instrument control handler.
     if (!elements.fretboard || state.instrumentView !== 'fretboard') return;
     const soloFocus = soloStudyActive();
-    const rawMidi = originalMidiModeActive();
+    const rawMidi = fretboardMidiDisplayActive();
+    const originalMidiAudio = originalMidiModeActive();
     const originalMidiLoading = state.pianoVoicingStyle === 'original-midi' && !state.midi;
     const rawNotes = rawMidi ? activeOriginalMidiNotes() : [];
     const strings = activeFretboardStrings();
@@ -3421,7 +3462,7 @@
     // Melody is auditioned/scheduled as its own purple voice; a later melody
     // can temporarily replace a held chord finger on that string, so omit
     // that released tone from replay too.
-    state.fretboardVoicing = [...voicingByPosition.entries()]
+    const renderedFretboardVoicing = [...voicingByPosition.entries()]
       .filter(([key, note]) => !releasedVoicingKeys.has(key) && !note.melody && note.kind !== 'melody')
       .map(([, note]) => note)
       .map(note => {
@@ -3435,6 +3476,9 @@
       })
       .filter(note => Number.isFinite(note.midi))
       .sort((left, right) => left.midi - right.midi);
+    // MIDI notes is display-only: leave inferred accompaniment playback in
+    // place unless the dedicated Original MIDI voicing has been selected.
+    if (!rawMidi || originalMidiAudio) state.fretboardVoicing = renderedFretboardVoicing;
     const columnCount = maxFret + 1;
     const extendedNeck = maxFret > FRETBOARD_MAX_FRET;
     elements.fretboard.dataset.lowMidi = String(strings[strings.length - 1].midi);
@@ -3445,7 +3489,7 @@
     elements.fretboard.dataset.extended = String(extendedNeck);
     elements.fretboard.dataset.rangeMode = 'fretboard';
     elements.fretboard.dataset.toneMode = toneMode;
-    elements.fretboard.dataset.voicingStyle = rawMidi ? 'original-midi' : soloFocus ? 'solo-line' : guitarVoicingStyle;
+    elements.fretboard.dataset.voicingStyle = rawMidi ? (originalMidiAudio ? 'original-midi' : 'midi-notes') : soloFocus ? 'solo-line' : guitarVoicingStyle;
     elements.fretboard.dataset.melodyMidi = melodyNote ? String(melodyNote.midi) : '';
     elements.fretboard.dataset.visualMelodyMidi = fretboardMelodyNote ? String(fretboardMelodyNote.midi) : '';
     elements.fretboard.dataset.soloOctaveDown = String(Boolean(soloFocus && !hasExactTabPositions && state.fretboardSoloOctaveDown));
@@ -3458,7 +3502,7 @@
       : String(state.fretboardPositionAnchor);
     elements.fretboard.dataset.gripEventKey = melodyEventKey(event) || `${state.chartSource}:${state.activeIndex}`;
     elements.fretboard.dataset.arrangement = rawMidi
-      ? 'original-midi'
+      ? originalMidiAudio ? 'original-midi' : 'midi-notes'
       : soloFocus
       ? 'solo-line'
       : event?.kind === 'pickup'
@@ -3472,7 +3516,7 @@
     elements.fretboard.style.setProperty('--fretboard-min-width', `${columnCount * 27}px`);
     elements.fretboard.setAttribute('aria-colcount', String(columnCount));
     const positionDescription = rawMidi
-      ? 'original MIDI pitches'
+      ? originalMidiAudio ? 'original MIDI pitches' : 'MIDI pitches'
       : hasExactTabPositions
       ? 'authored tab positions'
       : state.fretboardPositionAnchor == null
@@ -3484,7 +3528,7 @@
         : ' · neighboring-string chord block'
       : '';
     elements.fretboard.setAttribute('aria-label', rawMidi
-      ? `Guitar fretboard from the open strings through fret ${maxFret}, showing ${rawNotes.length} original MIDI ${rawNotes.length === 1 ? 'note' : 'notes'} at the current playhead`
+      ? `Guitar fretboard from the open strings through fret ${maxFret}, showing ${rawNotes.length} ${originalMidiAudio ? 'original ' : ''}MIDI ${rawNotes.length === 1 ? 'note' : 'notes'} at the current playhead`
       : soloFocus
       ? `Guitar fretboard from the open strings through fret ${maxFret}, showing only the solo line, ${positionDescription}${!hasExactTabPositions && state.fretboardSoloOctaveDown ? '; visual octave down is on while MIDI playback remains at the written octave' : ''}; harmony remains audible in playback`
       : event?.kind === 'pickup'
@@ -3995,7 +4039,7 @@
     state.activeIndex = Theory.mod(index, state.events.length);
     const timelineEntry = state.timelineByEventIndex.get(state.activeIndex);
     if (timelineEntry) state.playheadBeat = Number(timelineEntry.startBeat) || 0;
-    if (originalMidiModeActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
+    if (rawMidiVisualizationActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
     state.activeAlternateCellId = null;
     state.activeAlternateIndex = -1;
     if (!options.transport) {
@@ -4232,7 +4276,7 @@
     // Keep it on through Random/song selection and quietly load the next
     // compatible melody when the catalog has a match.
     if (generatedPractice) installParkerizedSolo({ transport });
-    else if ((state.showMelody || state.showMidiView || state.preferSoloChorus || state.pianoVoicingStyle === 'original-midi') && state.midiEntry && !preloadedMidi && !deferStreamPreparation) {
+    else if (midiSourceRequested() && state.midiEntry && !preloadedMidi && !deferStreamPreparation) {
       void requestMidiSource({ showAfterLoad: true, transport });
     }
     if (!song.parkerizeGenerated && !song.tabSource) {
@@ -4872,7 +4916,7 @@
         state.midiEntries = midiEntriesForSong(state.song);
         state.midiEntry = state.midiEntries.find(entry => midiEntryKey(entry) === selectedKey) || state.midiEntries[0] || null;
         renderImportedMidiRoll();
-        if ((state.showMelody || state.showMidiView || state.preferSoloChorus || state.pianoVoicingStyle === 'original-midi') && state.midiEntry && !state.midi) void requestMidiSource({ showAfterLoad: true });
+        if (midiSourceRequested() && state.midiEntry && !state.midi) void requestMidiSource({ showAfterLoad: true });
       }
     } catch (error) {
       console.warn('Miditar catalog unavailable', error);
@@ -5720,7 +5764,7 @@
       state.activeAlternateIndex = -1;
       changed = true;
     }
-    if (originalMidiModeActive()) {
+    if (rawMidiVisualizationActive()) {
       const raw = rawMidiNotesAtBeat(beat);
       const rawKey = raw.map(note => note.id).join('|');
       if (rawKey !== state.activeRawMidiNotes.map(note => note.id).join('|')) {
@@ -5915,6 +5959,12 @@
     // to provide navigation/timing, so never add a synthetic C5 underneath.
     if (state.tabSource?.exactPositions) return { voicing: [], visual: 'chord' };
     if (soloStudyActive()) return { voicing: state.voicing, visual: 'chord' };
+    if (state.instrumentView === 'fretboard' && fretboardMidiDisplayActive()) {
+      return { voicing: state.voicing, visual: 'none' };
+    }
+    if (state.instrumentView !== 'fretboard' && keyboardMidiDisplayActive()) {
+      return { voicing: state.voicing, visual: 'none' };
+    }
     if (state.instrumentView === 'fretboard') {
       return { voicing: state.fretboardVoicing, visual: 'fretboard-chord' };
     }
@@ -6025,8 +6075,24 @@
       const notes = originalMidiNotes();
       if (!notes.length) return;
       const moments = [...new Map(notes.map(note => [Number(note.startBeat).toFixed(6), Number(note.startBeat)])).values()];
-      const current = moments.findIndex(beat => Math.abs(beat - state.playheadBeat) < .0001);
-      const index = Theory.mod((current < 0 ? (direction > 0 ? -1 : 0) : current) + (direction < 0 ? -1 : 1), moments.length);
+      const currentBeat = Number(state.playheadBeat) || 0;
+      const current = moments.findIndex(beat => Math.abs(beat - currentBeat) < .0001);
+      let index;
+      if (current >= 0) {
+        index = Theory.mod(current + step, moments.length);
+      } else if (step > 0) {
+        index = moments.findIndex(beat => beat > currentBeat + .0001);
+        if (index < 0) index = 0;
+      } else {
+        index = -1;
+        for (let candidate = moments.length - 1; candidate >= 0; candidate -= 1) {
+          if (moments[candidate] < currentBeat - .0001) {
+            index = candidate;
+            break;
+          }
+        }
+        if (index < 0) index = moments.length - 1;
+      }
       const beat = moments[index];
       const onsetGroup = notes.filter(note => Math.abs(Number(note.startBeat) - beat) < .0001);
       state.activeRawMidiNotes = rawMidiNotesAtBeat(beat, notes);
@@ -6209,7 +6275,7 @@
       // Wait for the selected MIDI (when one is wanted) so the next WAV is
       // rendered once from the final chart rather than restarting mid-song
       // when a late melody download arrives.
-      if (!state.midi && state.midiEntry && (state.showMelody || state.showMidiView || state.preferSoloChorus || state.pianoVoicingStyle === 'original-midi')) {
+      if (!state.midi && state.midiEntry && midiSourceRequested()) {
         await requestMidiSource({ showAfterLoad: true, transport: true });
         if (!transportSessionActive(session)) return;
       }
@@ -6275,6 +6341,37 @@
     startVoice(id, note.midi, duration, displayMidi == null ? note.midi : displayMidi, 'melody');
   }
 
+  function scheduleRawMidiVisualsForSegment(entry, secondsPerBeat, session) {
+    if (!rawMidiVisualizationActive()) return;
+    const sourceNotes = originalMidiNotes();
+    if (!sourceNotes.length) return;
+    const segmentStart = Number(entry.startBeat) || 0;
+    const segmentEnd = Number(entry.endBeat) || segmentStart + Number(entry.durationBeats) || segmentStart;
+    const moments = new Set([segmentStart.toFixed(6)]);
+    sourceNotes.forEach(note => {
+      const startBeat = Number(note.startBeat);
+      const endBeat = Number(note.endBeat);
+      if (Number.isFinite(startBeat) && startBeat > segmentStart + .0001 && startBeat < segmentEnd - .0001) moments.add(startBeat.toFixed(6));
+      if (Number.isFinite(endBeat) && endBeat > segmentStart + .0001 && endBeat < segmentEnd - .0001) moments.add(endBeat.toFixed(6));
+    });
+    [...moments].map(Number).sort((left, right) => left - right).forEach(beat => {
+      const update = () => {
+        if (!state.transport.playing || state.transport.session !== session) return;
+        const raw = rawMidiNotesAtBeat(beat, sourceNotes);
+        const rawKey = raw.map(note => note.id).join('|');
+        const previousKey = state.activeRawMidiNotes.map(note => note.id).join('|');
+        state.activeRawMidiNotes = raw;
+        state.playheadBeat = beat;
+        if (originalMidiModeActive()) state.activeMelodyNote = raw[0] || null;
+        if (rawKey !== previousKey) renderStudy({ keepVisible: false });
+        else renderImportedMidiRoll();
+      };
+      const offsetBeats = Math.max(0, beat - segmentStart);
+      if (offsetBeats <= .001) update();
+      else scheduleTransport(update, offsetBeats * secondsPerBeat * 1000, session);
+    });
+  }
+
   function scheduleMelodyForSegment(entry, secondsPerBeat, session) {
     if (!state.transport.playMelody || (!originalMidiModeActive() && !melodyMatchesChart())) return;
     const segmentStart = Number(entry.startBeat) || 0;
@@ -6289,7 +6386,7 @@
       const offsetBeats = Math.max(0, note.startBeat - segmentStart);
       const play = () => {
         if (!state.transport.playing || state.transport.session !== session) return;
-        state.activeRawMidiNotes = originalMidiModeActive() ? rawMidiNotesAtBeat(note.startBeat, sourceNotes) : [];
+        if (originalMidiModeActive()) state.activeRawMidiNotes = rawMidiNotesAtBeat(note.startBeat, sourceNotes);
         state.activeMelodyNote = note;
         state.playheadBeat = note.startBeat;
         const activeNotes = melodyNotesForEvent(activeChartEvent());
@@ -6334,6 +6431,7 @@
       renderStudy({ keepVisible: false });
       scheduleMelodyForSegment(entry, secondsPerBeat, session);
     }
+    scheduleRawMidiVisualsForSegment(entry, secondsPerBeat, session);
     const next = state.timeline[timelineIndex + 1];
     if (!next) {
       scheduleTransport(() => continueAfterChart(session), Math.max(.06, entry.durationBeats * secondsPerBeat) * 1000, session);
@@ -6661,11 +6759,24 @@
   });
   elements.keyboardToneMode?.addEventListener('change', () => {
     state.keyboardToneMode = validToneMode(elements.keyboardToneMode.value);
+    if (state.keyboardToneMode === 'midi') {
+      selectAllOriginalMidiTracks();
+      if (state.midi) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
+      syncMidiImportTrackControl();
+      if (!state.midi && state.midiEntry) void requestMidiSource({ showAfterLoad: true });
+    }
+    state.fullSongKeyboard = { key: '', range: null, eventVoicings: new Map(), midis: [] };
     try { localStorage.setItem(KEYBOARD_TONE_STORAGE_KEY, state.keyboardToneMode); } catch (_) {}
     renderStudy({ keepVisible: false });
   });
   elements.fretboardToneMode?.addEventListener('change', () => {
     state.fretboardToneMode = validToneMode(elements.fretboardToneMode.value);
+    if (state.fretboardToneMode === 'midi') {
+      selectAllOriginalMidiTracks();
+      if (state.midi) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
+      syncMidiImportTrackControl();
+      if (!state.midi && state.midiEntry) void requestMidiSource({ showAfterLoad: true });
+    }
     try { localStorage.setItem(FRETBOARD_TONE_STORAGE_KEY, state.fretboardToneMode); } catch (_) {}
     renderStudy({ keepVisible: false });
   });
