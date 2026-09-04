@@ -80,7 +80,7 @@
   const STREAM_VISUAL_FRAME_INTERVAL_MS = 1000 / 30;
   const PIANO_VOICING_STYLES = new Set([
     'root-shell', 'shell', 'rootless', 'closed', 'spread',
-    'upper-structure', 'modern', 'cluster', 'avant-garde'
+    'upper-structure', 'modern', 'cluster', 'avant-garde', 'original-midi'
   ]);
   const GUITAR_VOICING_STYLES = new Set([
     'chord-melody', 'adjacent-strings', 'shell', 'rootless', 'triads', 'drop-2', 'spread'
@@ -1949,6 +1949,7 @@
   }
 
   function pianoVoicingForChord(chord, scale, notes = []) {
+    if (localMidiImportActive() && state.pianoVoicingStyle === 'original-midi') return [];
     if (!chord) return [];
     if (typeof Theory.makePianoVoicing !== 'function') {
       return soundingVoicingForMelody(Theory.makeVoicing(chord), notes);
@@ -3488,7 +3489,10 @@
     const scale = pickup || tabBarMarker ? null : scaleForEvent(event, nextEvent);
     const melodyNotes = melodyNotesForEvent(event);
     const melodyNotesOnCard = melodyNotesDuringEvent(event);
-    const voicing = pickup || tabBarMarker ? [] : pianoVoicingForChord(displayChord, scale, melodyNotesOnCard);
+    const rawMidi = localMidiImportActive() && state.pianoVoicingStyle === 'original-midi';
+    const voicing = pickup || tabBarMarker ? [] : rawMidi
+      ? importedPlaybackNotes().filter(note => melodyNoteOverlapsEvent(note, event)).map(note => ({ midi: note.midi, displayMidi: note.midi, role: 'original-midi' }))
+      : pianoVoicingForChord(displayChord, scale, melodyNotesOnCard);
     if (state.activeMelodyNote && !melodyNotesOnCard.some(note => note.id === state.activeMelodyNote.id)) state.activeMelodyNote = null;
     const melodyNote = activeMelodyForEvent(event);
     state.scale = scale;
@@ -5163,7 +5167,7 @@
   }
 
   function streamChordVoicingForEvent(event, eventIndex) {
-    if (!event?.chord || state.tabSource?.exactPositions) return [];
+    if (!event?.chord || state.tabSource?.exactPositions || (localMidiImportActive() && state.pianoVoicingStyle === 'original-midi')) return [];
     const nextEvent = state.events[eventIndex + 1] || null;
     const scale = scaleForEvent(event, nextEvent);
     const melody = melodyNotesDuringEvent(event);
@@ -5633,6 +5637,7 @@
   }
 
   function currentChordPlayback() {
+    if (localMidiImportActive() && state.pianoVoicingStyle === 'original-midi') return { voicing: [], visual: 'chord' };
     // Solo study intentionally removes the visual chord grip. The harmonic
     // accompaniment remains part of playback, including while Frets is open.
     // Imported tabs supply their own notes and use placeholder chart cells only
@@ -5990,10 +5995,12 @@
       const play = () => {
         if (!state.transport.playing || state.transport.session !== session) return;
         state.activeMelodyNote = note;
+        state.playheadBeat = note.startBeat;
         const activeNotes = melodyNotesForEvent(activeChartEvent());
         const noteIndex = activeNotes.findIndex(candidate => candidate.id === note.id);
         if (noteIndex >= 0) state.melodyCursor = noteIndex;
         renderStudy({ keepVisible: false });
+        renderImportedMidiRoll();
         // Let a held melody note ring across a chord marker. It is scheduled
         // once at its real onset, not chopped/restarted at every harmony cell.
         const playableBeats = Math.max(.06, Math.min(
