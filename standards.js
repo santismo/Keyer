@@ -83,7 +83,7 @@
     'upper-structure', 'modern', 'cluster', 'avant-garde', 'original-midi'
   ]);
   const GUITAR_VOICING_STYLES = new Set([
-    'chord-melody', 'adjacent-strings', 'shell', 'rootless', 'triads', 'drop-2', 'spread'
+    'chord-melody', 'adjacent-strings', 'shell', 'rootless', 'triads', 'drop-2', 'spread', 'original-midi'
   ]);
   const BLACK_PCS = new Set([1, 3, 6, 8, 10]);
   // Display high E first, just as a guitar is normally drawn from the
@@ -1660,8 +1660,15 @@
     return Boolean(state.midi && !soloStudyActive() && !state.tabSource?.exactPositions);
   }
 
+  function originalMidiModeSelected() {
+    return (
+      state.pianoVoicingStyle === 'original-midi'
+      || (state.instrumentView === 'fretboard' && state.guitarVoicingStyle === 'original-midi')
+    );
+  }
+
   function originalMidiModeActive() {
-    return midiNotesCanRender() && state.pianoVoicingStyle === 'original-midi';
+    return midiNotesCanRender() && originalMidiModeSelected();
   }
 
   // MIDI notes is a visual fallback for either surface. Unlike the Original
@@ -1674,12 +1681,16 @@
 
   function fretboardMidiDisplayActive() {
     return midiNotesCanRender() && (
-      state.pianoVoicingStyle === 'original-midi' || state.fretboardToneMode === 'midi'
+      state.pianoVoicingStyle === 'original-midi'
+      || state.guitarVoicingStyle === 'original-midi'
+      || state.fretboardToneMode === 'midi'
     );
   }
 
   function rawMidiVisualizationActive() {
-    return keyboardMidiDisplayActive() || fretboardMidiDisplayActive();
+    return state.instrumentView === 'fretboard'
+      ? fretboardMidiDisplayActive()
+      : keyboardMidiDisplayActive();
   }
 
   function midiSourceRequested() {
@@ -1688,6 +1699,7 @@
       || state.showMidiView
       || state.preferSoloChorus
       || state.pianoVoicingStyle === 'original-midi'
+      || state.guitarVoicingStyle === 'original-midi'
       || state.keyboardToneMode === 'midi'
       || state.fretboardToneMode === 'midi'
     );
@@ -3416,7 +3428,9 @@
     const soloFocus = soloStudyActive();
     const rawMidi = fretboardMidiDisplayActive();
     const originalMidiAudio = originalMidiModeActive();
-    const originalMidiLoading = state.pianoVoicingStyle === 'original-midi' && !state.midi;
+    const originalMidiLoading = !state.midi && (
+      state.pianoVoicingStyle === 'original-midi' || state.guitarVoicingStyle === 'original-midi'
+    );
     const rawNotes = rawMidi ? activeOriginalMidiNotes() : [];
     const strings = activeFretboardStrings();
     const maxFret = fretboardMaxFret();
@@ -5485,7 +5499,7 @@
   }
 
   function streamChordVoicingForEvent(event, eventIndex) {
-    if (!event?.chord || state.tabSource?.exactPositions || state.pianoVoicingStyle === 'original-midi') return [];
+    if (!event?.chord || state.tabSource?.exactPositions || originalMidiModeSelected()) return [];
     const nextEvent = state.events[eventIndex + 1] || null;
     const scale = scaleForEvent(event, nextEvent);
     const melody = melodyNotesDuringEvent(event);
@@ -5622,7 +5636,7 @@
     master.connect(compressor);
     compressor.connect(context.destination);
 
-    if (state.pianoVoicingStyle !== 'original-midi') {
+    if (!originalMidiModeSelected()) {
       state.timeline.forEach(entry => {
         if (entry.type !== 'chord' || !Number.isInteger(entry.eventIndex)) return;
         const event = state.events[entry.eventIndex];
@@ -5968,7 +5982,7 @@
   }
 
   function currentChordPlayback() {
-    if (state.pianoVoicingStyle === 'original-midi') return { voicing: [], visual: 'chord' };
+    if (originalMidiModeSelected()) return { voicing: [], visual: 'chord' };
     // Solo study intentionally removes the visual chord grip. The harmonic
     // accompaniment remains part of playback, including while Frets is open.
     // Imported tabs supply their own notes and use placeholder chart cells only
@@ -6759,6 +6773,14 @@
   elements.guitarVoicingStyle?.addEventListener('change', () => {
     if (state.transport.playing) stopChartPlayback({ render: false });
     state.guitarVoicingStyle = validGuitarVoicingStyle(elements.guitarVoicingStyle.value);
+    if (state.guitarVoicingStyle === 'original-midi') {
+      selectAllOriginalMidiTracks();
+      if (state.midi) state.activeRawMidiNotes = rawMidiNotesAtBeat(state.playheadBeat);
+      syncMidiImportTrackControl();
+      if (!state.midi && state.midiEntry) void requestMidiSource({ showAfterLoad: true });
+    } else if (state.instrumentView === 'fretboard') {
+      state.activeRawMidiNotes = [];
+    }
     state.guitarPlanCache = null;
     try { localStorage.setItem(GUITAR_VOICING_STORAGE_KEY, state.guitarVoicingStyle); } catch (_) {}
     renderStudy({ keepVisible: false });
